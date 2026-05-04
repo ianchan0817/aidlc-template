@@ -1,39 +1,17 @@
 ---
-description: Activated via /project:daily-report. Manager daily executive summary — gather signals from git and memory, synthesize, report to owner.
+description: /project:daily-report — Manager daily executive summary.
 ---
 
 # Daily Report
 
-Run the manager's daily department review.
+Gather signals, then synthesize. Follow format in `manager.md` → Daily Report section.
 
-## Context
-
-Git activity (last 24h):
-```
-$(git log --since="24 hours ago" --oneline --all 2>/dev/null | head -30)
-```
-
-Active branches:
-```
-$(git branch -a --sort=-committerdate 2>/dev/null | head -15)
+## Gather
+```bash
+git log --since="24 hours ago" --oneline --all 2>/dev/null | head -30
+git branch -a --sort=-committerdate 2>/dev/null | head -15
+cat .claude/memory/progress.md 2>/dev/null
+ls .claude/docs/adr/ 2>/dev/null
 ```
 
-Project memory:
-```
-$(cat .claude/memory/progress.md 2>/dev/null)
-```
-
-Architecture decisions:
-```
-$(ls .claude/docs/adr/ 2>/dev/null)
-```
-
-## Instructions
-
-You are the Manager. Review all signals and produce the daily executive summary.
-
-Follow the report format in `.claude/agents/manager.md` under "Daily Executive Summary".
-
-Present the full report. Be direct. Lead with the most important thing. Never bury bad news.
-
-After presenting, update `.claude/memory/progress.md` with any new decisions or status changes.
+Present report. Be direct. Lead with most important thing. Update `.claude/memory/progress.md` after.

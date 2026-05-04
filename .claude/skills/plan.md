@@ -1,72 +1,13 @@
 ---
-description: Activated via /project:plan. Full planning sequence — architecture design, task breakdown, and sequencing. Runs after /project:spec confirms what to build.
+description: /project:plan — Architecture design + task breakdown. Runs after spec.
 ---
 
 # Plan
 
-Architecture + task breakdown for a confirmed spec.
-
-## Anti-Rationalization
-
-| Excuse | Why it fails |
-|--------|-------------|
-| "Let's just start coding" | Rework from missing edge cases costs 5x |
-| "We can refactor later" | Retrofitting architecture is 10x more expensive |
-| "It's a small feature" | Small features with wrong architecture become big problems |
-
 ## Process
+1. **Architecture** — use case (R/W ratio, latency, scale), boundaries, sync vs async, resilience (timeouts, retries, DLQ, idempotency), data (schema from query, indexes, multi-tenant), security (threat model if auth/data/external)
+2. **ADR** (if architectural decision) — write `.claude/docs/adr/ADR-NNN-title.md`: context, options, decision, consequences
+3. **Task Breakdown** — atomic tasks with S/M/L estimates, test tasks, dependencies, risks, definition of done (100% coverage, reviewed, E2E signed off)
+4. **Update Memory** — `.claude/memory/progress.md` Current Focus + What's Next
 
-### Step 1 — Architecture Design
-For every significant feature, work through:
-
-1. **Use case** — read/write ratio, access pattern, consistency, latency, scale target
-2. **Boundaries** — service responsibilities, APIs, data ownership, trust boundaries
-3. **Sync vs async** — sync for immediate response; async for cross-service or deferrable
-4. **Scale** — stateless services, horizontal scaling, circuit breakers, rate limiting
-5. **Resilience** — timeouts, retries, dead-letter queues, idempotency
-6. **Data** — schema from the query, indexes for hot paths, multi-tenant isolation
-7. **Security** — threat model for anything touching auth, data, or external APIs
-
-### Step 2 — ADR (if architectural decision involved)
-Write to `.claude/docs/adr/ADR-NNN-title.md`:
-- Context and scale assumptions
-- Options considered with trade-offs
-- Decision and reasoning
-- Consequences (positive, negative, risks)
-
-### Step 3 — Task Breakdown
-Produce atomic, implementable tasks:
-
-```markdown
-## Feature: [Name]
-
-### Tasks
-- [ ] Task 1 — [S/M/L] — [description]
-- [ ] Task 2 — [S/M/L] — [description]
-
-### Test Tasks
-- [ ] Unit tests for [module]
-- [ ] Integration tests for [boundary]
-
-### Dependencies
-- Task 2 requires Task 1
-- Needs security review for [component]
-
-### Risks
-- [Risk]: [Mitigation]
-
-### Definition of Done
-- [ ] 100% test coverage on new/modified code
-- [ ] Code reviewed by reviewer
-- [ ] E2E sign-off from reviewer
-```
-
-### Step 4 — Update Memory
-Update `.claude/memory/progress.md` with the new work under **Current Focus** and **What's Next**.
-
-## Verification Gate
-Do not begin implementation until:
-- [ ] Architecture designed and documented
-- [ ] Tasks broken down with estimates
-- [ ] Dependencies identified and sequenced
-- [ ] Definition of done agreed
+Gate: do not implement until architecture documented, tasks broken down, dependencies sequenced.

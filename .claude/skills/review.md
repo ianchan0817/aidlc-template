@@ -1,69 +1,19 @@
 ---
-description: Activated via /project:review. Pre-landing code review on the current branch. Two-pass — critical issues first, then informational.
+description: /project:review — Pre-merge code review. Two-pass.
 ---
 
 # Review
 
-Pre-merge code review. Find bugs, security holes, and quality issues before they ship.
-
 ## Context
-
-Current branch:
-```
-$(git branch --show-current)
-```
-
-Diff against main:
-```
-$(git diff origin/main --stat 2>/dev/null | head -30)
+```bash
+git branch --show-current
+git diff origin/main --stat 2>/dev/null | head -30
 ```
 
-## Process
+## Two-Pass Review
+**Pass 1 (blocks merge):** bugs, security, N+1/unbounded queries, races, trust boundaries, test gaps (<100% coverage)
+**Pass 2 (informational):** naming, structure, duplication, consistency
 
-### Pass 1 — Critical Issues
-These block merge:
+Checklist: correctness → security (per rules/security.md) → performance → coverage (100%) → maintainability
 
-- **Bugs** — incorrect logic, race conditions, unhandled errors
-- **Security** — injection, XSS, auth bypass, data leaks, missing validation
-- **Performance** — N+1 queries, unbounded queries, missing indexes, blocking main thread
-- **Trust boundaries** — client data trusted without validation, privilege escalation paths
-- **Test gaps** — uncovered branches, missing error path tests, coverage below 100%
-
-### Pass 2 — Informational
-Author's discretion:
-
-- Code quality — naming, structure, duplication
-- Maintainability — function length, complexity, readability
-- Consistency — style, patterns, conventions
-
-## Review Checklist
-
-### Correctness
-- [ ] All use cases implemented and tested
-- [ ] Edge cases handled
-- [ ] Error paths explicit
-
-### Security
-- [ ] Auth enforced on protected routes
-- [ ] Authorization at data layer
-- [ ] Input validated, queries parameterized
-- [ ] No XSS vectors
-
-### Performance
-- [ ] No N+1, no unbounded queries
-- [ ] Indexes for hot query paths
-
-### Coverage
-- [ ] 100% on new/modified code
-- [ ] Tests describe behavior, not implementation
-
-### Maintainability
-- [ ] Single responsibility
-- [ ] No dead code
-- [ ] Names are precise
-
-## Output
-
-Surface all critical findings with file, line, and explanation. Require resolution before merge.
-
-**Do not approve a merge with open critical issues.**
+Output: critical findings with file:line and explanation. **Never approve with open critical issues.**
