@@ -1,8 +1,10 @@
 ---
-description: Testing standards — always active. 100% coverage required.
+description: Testing standards — 100% coverage required, TDD discipline
 ---
 
 # Testing
+
+Mirror of `aidlc/rules/testing.md` — keep in sync. Always-on (no `paths:` frontmatter).
 
 Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 

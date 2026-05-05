@@ -1,162 +1,196 @@
-# claude-template
+# aidlc-template
 
-A production-ready `.claude/` folder template that turns Claude Code into a coordinated engineering team — 3 agents, 12 workflow skills, and strict quality gates.
+A tool-agnostic AI Development Lifecycle (AIDLC) template that works across **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. Single canonical methodology, three native tool adapters.
 
-Inspired by [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) and [garrytan/gstack](https://github.com/garrytan/gstack).
-
----
-
-## What this is
-
-Most people use Claude Code as a single generic assistant. This template gives it structure.
-
-Three specialist agents. Twelve workflow skills. Always-on rules. Shared context. A process that scales from solo to team.
-
-Every skill encodes senior engineering discipline with anti-rationalization tables and verification gates. The manager orchestrates, the engineer builds, and the reviewer ensures nothing ships broken.
+> Inspired by [AWS Labs' AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates, tool-agnostic markdown), [Metaflow](https://github.com/Netflix/metaflow), [Kedro](https://github.com/kedro-org/kedro), [ZenML](https://github.com/zenml-io/zenml), [Made-With-ML](https://github.com/GokuMohandas/Made-With-ML), and [awesome-production-machine-learning](https://github.com/EthicalML/awesome-production-machine-learning).
 
 ---
 
-## The team
+## Why this exists
 
-| Agent | Role |
-|-------|------|
-| `manager` | Orchestrates the department. Routes work to the right skill or agent. Runs daily executive summaries. Thinks in budget, capacity, and risk. Reports to you. |
-| `engineer` | Full-stack implementation. Architecture, APIs, database, frontend, CI/CD, infrastructure. TDD with 100% coverage. Domain-driven design. Performance-measured. |
-| `reviewer` | Code review, security audit, E2E sign-off, process improvement. Threat modeling (STRIDE). Error logging. Retrospectives. Evolves agent files when patterns repeat. |
+Most agentic coding templates are tool-specific. You set up `.claude/` and your work is locked to Claude. You set up `.cursor/rules/` and the next person on Codex starts from scratch. The methodology is the same — review code, write tests, deploy carefully — but the wiring isn't portable.
+
+This template separates **methodology** (the workflow, rules, role definitions, examples) from **wiring** (how each tool loads them). The methodology lives in `aidlc/`. Each tool has a thin adapter directory pointing at it.
 
 ---
 
-## How it works
-
-Every initiative follows this sequence:
+## The methodology — three phases
 
 ```
-Idea
- → /project:spec (define what + why)
- → /project:design (UI specs, if applicable)
- → /project:plan (architecture + task breakdown)
- → /project:build (engineer implements with TDD)
- → /project:review (code + security review)
- → /project:e2e (E2E sign-off)
- → /project:ship (land branch)
- → /project:retro (log + improve)
+Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
+       gate                    gate                  gate
 ```
 
-No skipping steps. The manager enforces the sequence.
+| Phase | Slash commands / phase prompts |
+|-------|--------------------------------|
+| **Inception** | `spec`, `design` |
+| **Construction** | `plan`, `build`, `test`, `review`, `security`, `e2e`, `ship` |
+| **Operations** | `operate`, `retro`, `investigate`, `daily-report` |
+
+Three roles handle the work: `engineer` (build), `reviewer` (quality/security/E2E), `manager` (orchestrate). Definitions in `aidlc/agents/`.
+
+Always-on rules in `aidlc/rules/`: code-style, testing, security, api-conventions, ux-guidelines, reproducibility, tech-stack.
+
+Concrete fill-in templates in `aidlc/examples/`: feature-spec, ADR, threat-model, e2e-test-plan, postmortem.
+
+Decision gates use the AIDLC structured-question pattern — see `aidlc/common/decision-gates.md`.
 
 ---
 
-## Slash commands
+## Tool support
 
-| Command | What it does |
-|---------|-------------|
-| `/project:spec` | Define what to build — use cases, RICE prioritization, acceptance criteria |
-| `/project:plan` | Architecture design + task breakdown |
-| `/project:design` | UI/component design specs, mobile review |
-| `/project:build` | Incremental implementation with TDD |
-| `/project:test` | Test strategy and coverage enforcement |
-| `/project:review` | Pre-merge code review — critical issues first, then informational |
-| `/project:security` | Security audit — threat model, OWASP Top 10, CVE check |
-| `/project:e2e` | E2E quality assurance and release sign-off |
-| `/project:ship` | Land a reviewed, signed-off branch |
-| `/project:retro` | Sprint retrospective + agent improvement pass |
-| `/project:daily-report` | Manager daily executive summary |
-| `/project:investigate` | Root cause debugging — no fixes without diagnosis |
+| Tool | Entry point | Native features used |
+|------|-------------|---------------------|
+| **Claude Code** | `CLAUDE.md` (imports `AGENTS.md`) | `.claude/rules/` (with `paths:`), `.claude/agents/` subagents, `.claude/skills/` slash commands, `.claude/settings.json` hooks + permissions |
+| **OpenAI Codex CLI** | `AGENTS.md` (hierarchical discovery) | `.codex/config.toml` (MCP servers, profiles), `.codex/hooks.json` (lifecycle hooks) |
+| **Cursor IDE** | `.cursor/rules/*.mdc` (with `globs:`) | `.cursor/agents/` subagents, `.cursor/skills/` skills, `.cursor/hooks.json` lifecycle hooks |
 
----
-
-## Always-on rules
-
-Applied across every agent, every session:
-
-- **tech-stack** — languages, frameworks, databases, infrastructure (fill in before first session)
-- **code-style** — naming, formatting, TypeScript strictness, import order
-- **testing** — 100% coverage (statements, branches, functions, lines), TDD, no I/O in unit tests
-- **api-conventions** — REST naming, response envelope, status codes, pagination, versioning
-- **security** — input validation, secrets management, PII handling, auth/authz gates
-- **ux-guidelines** — spacing scale, typography, mobile rules, interaction patterns
-
----
-
-## Non-negotiables
-
-- 100% unit test coverage on all new and modified code — CI blocks merge if not met
-- Code review before every merge
-- E2E sign-off before every release
-- Security review for anything touching auth, data, or external APIs
-- Every error logged before it's fixed
-- Recurring errors (2+) trigger an agent file update — the reviewer owns this
-
----
-
-## Key patterns
-
-Borrowed from the best in the space:
-
-**From [agent-skills](https://github.com/addyosmani/agent-skills):**
-- Anti-rationalization tables — every skill preemptively counters excuses for skipping steps
-- Gated verification — require evidence (passing tests, clean builds), not "it seems right"
-- Six core operating behaviors baked into the build skill
-
-**From [gstack](https://github.com/garrytan/gstack):**
-- "Boil the Lake" — AI makes completeness cheap, so always do the complete thing
-- Atomic commits per fix in QA workflows
-- Workflow-shaped skills over role-shaped agents
-
----
-
-## Setup
-
-Before your first session, fill in:
-
-| File | What to add |
-|------|------------|
-| `.claude/rules/tech-stack.md` | Your languages, frameworks, databases, infrastructure |
-| `CLAUDE.md` | Build commands for your project |
-
-That's it. The AI derives status from `git log` and keeps decisions in `memory/progress.md`.
+All three read `AGENTS.md` either natively (Codex), via import (Claude), or via reference (Cursor). The canonical methodology in `aidlc/` is referenced by every adapter.
 
 ---
 
 ## Directory structure
 
 ```
-your-project/
-├── CLAUDE.md              — project identity + build commands
-└── .claude/
-    ├── agents/            — 3 specialist agents (manager, engineer, reviewer)
-    ├── skills/            — 12 workflow skills (spec, plan, build, review, ship, etc.)
-    ├── rules/             — 6 constraint files (tech-stack, code-style, testing, etc.)
-    ├── memory/            — lean project memory (progress.md)
-    ├── docs/adr/          — Architecture Decision Records
-    └── settings.json      — tool permissions
+aidlc-template/
+├── AGENTS.md                  # Universal entry — read by Codex natively, imported by CLAUDE.md
+├── CLAUDE.md                  # Claude entry — @-imports AGENTS.md + Claude-specific behaviors
+├── README.md                  # This file
+├── aidlc/                     # ★ Canonical methodology (tool-agnostic)
+│   ├── core-workflow.md       #   Master orchestrator
+│   ├── agents/                #   Role definitions: engineer, manager, reviewer
+│   ├── inception/             #   Phase prompts: spec, design
+│   ├── construction/          #   Phase prompts: plan, build, test, review, security, e2e, ship
+│   ├── operations/            #   Phase prompts: operate, retro, investigate, daily-report
+│   ├── rules/                 #   Tool-neutral rule source (mirrored to .claude/rules/, .cursor/rules/)
+│   ├── common/                #   decision-gates.md
+│   └── examples/              #   feature-spec, adr, threat-model, e2e-test-plan, postmortem
+├── .claude/                   # Claude Code adapters
+│   ├── CLAUDE.md → ../CLAUDE.md (or duplicate)
+│   ├── rules/                 #   7 rules with `paths:` frontmatter (Claude format)
+│   ├── agents/                #   3 subagent adapters with model:/tools: frontmatter, @-import canonical
+│   ├── skills/                #   13 slash-command adapters, @-import canonical phase prompts
+│   ├── settings.json          #   Permissions + hooks
+│   ├── memory/                #   Project notes (progress.md)
+│   └── docs/adr/              #   ADR storage
+├── .cursor/                   # Cursor IDE adapters
+│   ├── rules/                 #   7 .mdc files with `globs:` frontmatter (Cursor format)
+│   ├── agents/                #   3 subagent files (Cursor frontmatter: name, description, model, readonly)
+│   ├── skills/                #   13 skill files (SKILL.md format with name, description)
+│   └── hooks.json             #   Lifecycle hooks
+├── .codex/                    # Codex CLI adapters
+│   ├── config.toml            #   MCP servers, feature flags, profiles
+│   └── hooks.json             #   PreToolUse/SessionStart hooks
+├── docs/adr/                  # ADRs (tool-neutral)
+├── memory/                    # Cross-tool progress notes (or use .claude/memory/)
+└── scripts/audit.sh           # Token-cost footprint audit
 ```
 
-No sprint trackers, no action item tables, no retrospective directories. The AI reads git history for status and updates a single memory file for decisions and context that git can't capture.
+`aidlc/` is the source-of-truth. `.claude/`, `.cursor/`, `.codex/` are tool-specific wiring that points at canonical content.
 
 ---
 
-## Install
+## Setup
 
-Copy the `.claude/` folder and `CLAUDE.md` into your project root:
+### 1. Clone
 
 ```bash
-git clone https://github.com/ianchan0817/claude-template.git
-cp -r claude-template/.claude your-project/
-cp claude-template/CLAUDE.md your-project/
+git clone https://github.com/ianchan0817/aidlc-template.git my-project
+cd my-project
+rm -rf .git && git init
 ```
 
-Then fill in `tech-stack.md` and your build commands. You're ready.
+### 2. Fill in your stack
+
+Edit `aidlc/rules/tech-stack.md` (mirrored to `.claude/rules/tech-stack.md` and `.cursor/rules/tech-stack.mdc`).
+
+### 3. Add your build commands
+
+Edit `AGENTS.md` "How to Run This Project" section.
+
+### 4. Verify the footprint
+
+```bash
+bash scripts/audit.sh
+```
+
+Expected: ~9k words total (1k root + 5.5k canonical + 1.3k Claude adapters + 1.4k Cursor adapters).
+
+### 5. Open in your tool
+
+| Tool | Command |
+|------|---------|
+| Claude Code | `claude` (auto-loads `CLAUDE.md`) |
+| Codex CLI | `codex` (auto-loads `AGENTS.md`) |
+| Cursor | open the directory (auto-loads `.cursor/rules/*.mdc`) |
 
 ---
 
-## Settings
+## How the workflow runs
 
-`.claude/settings.json` controls what Claude can and cannot do in your project.
+For any new initiative, follow `aidlc/core-workflow.md`:
 
-Denied by default: `rm -rf *`, force push, `git reset --hard`, `DROP`/`truncate` on databases, reading `.env` files, decrypting secrets.
+```
+spec → design (if UI) → plan → build → test → review → security → e2e → ship → operate → retro
+```
 
-Adjust the allow list to match your actual toolchain (bun, pnpm, cargo, go, docker, etc. are already included).
+Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D questions with `[Answer]:`) when you need explicit human approval.
+
+In Claude Code: `/spec`, `/build`, `/review`, etc. as slash commands.
+In Codex: invoke phase prompts by referencing the file path.
+In Cursor: `/spec`, `/build`, etc. as skills.
+
+---
+
+## Examples
+
+The `aidlc/examples/` directory contains five fill-in templates that the workflow phases produce:
+
+- `feature-spec.md` — output of `/spec` (problem, use cases, RICE, acceptance criteria)
+- `adr.md` — output of `/plan` when an architectural decision is involved
+- `threat-model.md` — output of `/security` (STRIDE table)
+- `e2e-test-plan.md` — output of `/e2e` (journey table + sign-off checklist)
+- `postmortem.md` — output of `/operate` (timeline, root cause, action items)
+
+These are concrete formats agents fill in, not abstract guidance.
+
+---
+
+## Hooks (deterministic enforcement)
+
+Some rules need to be enforced, not requested. Each tool has a hooks system:
+
+- **Claude Code**: `.claude/settings.json` `hooks` field — fires on `PreToolUse`, `PostToolUse`, `SessionStart`, etc.
+- **Codex CLI**: `.codex/hooks.json` — same lifecycle event names. Requires `[features] codex_hooks = true` in `.codex/config.toml`.
+- **Cursor**: `.cursor/hooks.json` — broader event set including `beforeShellExecution`, `afterFileEdit`, `subagentStart`.
+
+The template ships with one example hook in each: a `PreToolUse` / `beforeShellExecution` block that rejects obviously dangerous commands. Extend as needed.
+
+---
+
+## MCP (external tools)
+
+- **Codex**: configure in `.codex/config.toml` under `[mcp_servers.NAME]`
+- **Claude Code**: `claude mcp add` or edit `.claude/settings.json`
+- **Cursor**: see Cursor's MCP docs
+
+The template doesn't configure any MCP servers by default — add yours per project.
+
+---
+
+## Reference: ideas borrowed from each source
+
+| Source | Concept folded in |
+|--------|------------------|
+| [AWS AIDLC](https://github.com/awslabs/aidlc-workflows) | Three-phase lifecycle (Inception/Construction/Operations), tool-agnostic markdown methodology, structured decision gates with `[Answer]:` files, two-part code planning (plan → execute) |
+| [Metaflow](https://github.com/Netflix/metaflow) | "Human-centric" framing for engineers + reviewers; reproducibility-as-default rule |
+| [Kedro](https://github.com/kedro-org/kedro) | Modular phase-based structure; separation of concerns; rule-of-five organization |
+| [ZenML](https://github.com/zenml-io/zenml) | Stage gates with explicit pass/fail criteria; artifact tracking via examples/ |
+| [Made-With-ML](https://github.com/GokuMohandas/Made-With-ML) | End-to-end iteration loop (operate → retro feeds back into spec/plan) |
+| [awesome-production-ML](https://github.com/EthicalML/awesome-production-machine-learning) | Operations phase emphasis (monitoring, incident response, drift) |
+| [agent-skills](https://github.com/addyosmani/agent-skills) | Anti-rationalization framing (kept lightweight) |
+
+ML-specific concepts (data catalog, experiment tracking, model registry, pipeline DAGs) were considered and rejected — they don't earn token cost for general SWE.
 
 ---
 

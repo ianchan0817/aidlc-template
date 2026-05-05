@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "bash -c 'cat | jq -r .command 2>/dev/null | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main)\" && { echo \"{\\\"permission\\\":\\\"deny\\\",\\\"reason\\\":\\\"dangerous command pattern\\\"}\"; exit 2; } || exit 0'"
+      }
+    ]
+  }
+}

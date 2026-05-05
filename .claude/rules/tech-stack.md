@@ -1,10 +1,10 @@
 ---
-description: Tech stack — fill before first session. All agents read this.
+description: Tech stack — languages, frameworks, infra. Fill before first session.
 ---
 
 # Tech Stack
 
-Fill in before first session. Delete unused lines.
+Mirror of `aidlc/rules/tech-stack.md` — keep in sync. Always-on. Fill in before first session.
 
 - Frontend: <!-- Next.js 14 / Tailwind / Zustand + TanStack Query / Vitest + Playwright -->
 - Backend: <!-- Node.js 20 + TypeScript / Fastify / JWT -->

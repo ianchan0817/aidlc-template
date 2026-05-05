@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CODEX_TOOL_INPUT\" 2>/dev/null | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "timeout": 5,
+            "statusMessage": "Checking command for dangerous patterns"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"AIDLC project. Read aidlc/core-workflow.md before starting work.\"}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

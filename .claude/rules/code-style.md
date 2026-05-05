@@ -1,8 +1,13 @@
 ---
-description: Code style — always active
+description: Code style — naming, formatting, TypeScript strictness
+paths:
+  - "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  - "**/*.{py,go,rs,java,kt,swift,rb}"
 ---
 
 # Code Style
+
+Mirror of `aidlc/rules/code-style.md` — keep in sync.
 
 - 2-space indent, single quotes, no trailing semicolons, max 100 chars, trailing newline
 - `camelCase` vars/functions, `PascalCase` types/components, `SCREAMING_SNAKE_CASE` constants, `kebab-case` files/CSS

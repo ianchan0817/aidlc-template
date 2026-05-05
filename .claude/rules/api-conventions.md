@@ -1,8 +1,15 @@
 ---
-description: API conventions — always active for backend work
+description: REST API conventions — URL naming, response envelope, status codes, pagination
+paths:
+  - "**/api/**/*.{ts,tsx,js,py,go,rs}"
+  - "**/routes/**/*.{ts,tsx,js,py,go,rs}"
+  - "**/handlers/**/*.{ts,tsx,js,py,go,rs}"
+  - "**/controllers/**/*.{ts,tsx,js,py,go,rs}"
 ---
 
 # API Conventions
+
+Mirror of `aidlc/rules/api-conventions.md` — keep in sync.
 
 - URLs: plural nouns, kebab-case, no verbs, max 2 nesting levels, versioned `/v1/`, tenant in JWT not URL
 - Success: `{ "data": {...}, "meta": {...} }` — Error: `{ "error": { "code": "SCREAMING_SNAKE", "message": "...", "fields": {...} } }`

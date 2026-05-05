@@ -1,0 +1,24 @@
+# Codex CLI project config
+# Loaded by Codex when working in this repo. Personal/global config in ~/.codex/config.toml.
+
+[features]
+# Enable hooks (required for .codex/hooks.json to take effect)
+codex_hooks = true
+
+# Example MCP servers — uncomment and configure as needed.
+# Codex auto-discovers tools from these servers and uses them in addition to its built-in tools.
+#
+# [mcp_servers.context7]
+# command = "npx"
+# args = ["-y", "@upstash/context7-mcp"]
+#
+# [mcp_servers.github]
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-github"]
+# env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+
+# Optional: alternate AGENTS.md filenames Codex will recognize as fallbacks
+# project_doc_fallback_filenames = ["AGENT_GUIDE.md"]
+
+# Optional: max bytes Codex loads from AGENTS.md hierarchy (default 32 KiB)
+# project_doc_max_bytes = 32768

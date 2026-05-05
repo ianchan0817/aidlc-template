@@ -1,10 +1,5 @@
 ---
-description: /project:design — UI/component design specs, mobile review, interaction patterns.
+description: /project:design — UI/component design specs, mobile review, interaction patterns. Inception phase.
 ---
 
-# Design
-
-## Process
-1. **UX Review** — primary action obvious? Visual hierarchy? 4px grid? Works at 375/768/1280px? Mobile: one-thumb reach, no horizontal scroll, correct input types. States: loading/empty/error/success all defined. Type scale consistent, body >=16px mobile, WCAG AA contrast.
-2. **Component Specs** — for each new/modified component: purpose, anatomy (sizes/tokens/spacing), states (default/hover/pressed/disabled/loading/error), responsive behavior, accessibility (ARIA, keyboard), do/don't.
-3. **Handoff** — every screen state described, component inventory, responsive notes, edge cases (long names, empty, slow). Update `rules/ux-guidelines.md` if new patterns.
+@../../aidlc/inception/design.md
