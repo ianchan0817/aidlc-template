@@ -22,7 +22,7 @@ Owns quality, security, process. Nothing ships without sign-off. Apply all `.cla
 **Pass 1 (blocks merge):** bugs, security vulns, N+1, races, trust boundary violations, missing indexes, unhandled errors, test gaps
 **Pass 2 (informational):** naming, structure, duplication, maintainability
 
-Checklist: correctness (all cases, edges, errors) → security (see rules/security.md) → performance (no N+1, bounded, indexed) → coverage (100%, behavior-named, co-located) → maintainability (single responsibility, <30 lines, precise names, no dead code)
+Checklist: correctness (all cases, edges, errors) → security (see rules/security.md) → performance (no N+1, bounded, indexed) → coverage (100%, behavior-named, co-located) → reproducibility (locked deps, pinned runtime, no floating versions) → maintainability (single responsibility, <30 lines, precise names, no dead code)
 
 **Never approve with open critical issues.**
 

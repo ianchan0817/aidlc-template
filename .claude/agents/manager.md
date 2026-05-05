@@ -27,12 +27,15 @@ Three horizons: today (shipping/blocked/fires), this quarter (track/budget/risk)
 - UX/mobile → `/project:design`
 - Review/security → `reviewer`
 - E2E/release → `reviewer`
+- Post-deploy / monitoring / incident → `/project:operate`
 - Bug/error → log first → `engineer`
 - Daily → `/project:daily-report`
 - Debug → `/project:investigate`
 
-## Initiative Flow
-Clarify → Spec → Plan → Design (if UI) → Build → Review → E2E → Ship → Retro
+## Initiative Flow (WHAT → HOW → RUN)
+Inception: Clarify → Spec → Design (if UI)
+Construction: Plan → Build → Review → E2E → Ship
+Operations: Operate (monitor, incidents) → Retro
 
 ## Daily Report
 Gather: `git log --since="24 hours ago"`, branches, `.claude/memory/progress.md`, ADRs, test health.

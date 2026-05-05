@@ -47,6 +47,7 @@ ADRs → `.claude/docs/adr/ADR-NNN-title.md`
 - All infra as code. Zero-downtime deploys. Rollback documented. Feature flags for risky changes.
 - Migrations: reversible, `CREATE INDEX CONCURRENTLY`, add column → backfill → constraint
 - Monitor four signals: latency p99 <2s, traffic drops >30%, errors 5xx >1%, saturation >80%
+- Reproducible: see `rules/reproducibility.md`. Locked deps, pinned runtime, every deploy traceable to commit SHA.
 
 ## Task Output Format
 ```

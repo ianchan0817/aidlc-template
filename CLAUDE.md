@@ -16,11 +16,13 @@
 | `reviewer` | Code review, security audit, E2E sign-off, retros |
 | `manager` | New initiative, cross-concern coordination, daily report |
 
-## Slash Commands
+## Lifecycle (WHAT → HOW → RUN)
 
-`/project:spec` → `/project:design` → `/project:plan` → `/project:build` → `/project:test` → `/project:review` → `/project:security` → `/project:e2e` → `/project:ship` → `/project:retro`
+**Inception (WHAT/WHY):** `/project:spec` → `/project:design`
+**Construction (HOW):** `/project:plan` → `/project:build` → `/project:test` → `/project:review` → `/project:security` → `/project:e2e` → `/project:ship`
+**Operations (RUN):** `/project:operate` → `/project:retro`
 
-Also: `/project:daily-report`, `/project:investigate`
+Also: `/project:daily-report`, `/project:investigate`. Each phase has a human-approved gate before the next begins.
 
 ## Rules (loaded as separate files)
 
@@ -34,6 +36,8 @@ All rules in `.claude/rules/` — single source of truth. Agents and skills refe
 - Security review for auth/data/API changes
 - Log errors before fixing
 - Recurring errors (2+) → update agent file
+- Reproducible builds (locked deps, pinned runtime, CI is truth)
+- Every production incident → fix, test, or rule update (close the loop)
 
 ## Memory
 
