@@ -142,6 +142,23 @@ In Cursor: `/spec`, `/build`, etc. as skills.
 
 ---
 
+## Personal vs project layering
+
+Two layers of configuration, both supported by every tool:
+
+| Layer | Location | What goes here |
+|-------|----------|----------------|
+| **Project** (this template) | `./CLAUDE.md`, `./AGENTS.md`, `./.claude/`, `./.cursor/`, `./.codex/`, `./aidlc/` | Team conventions, AIDLC methodology, project-specific rules. Committed to git. |
+| **Personal** | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.cursor/rules/` | Your individual preferences across all projects. Communication style, preferred tools, workflow defaults. Not in any repo. |
+
+The project layer dictates *what the codebase requires*. The personal layer dictates *how you prefer to work*. Tools merge both; project rules win on conflicts.
+
+For Claude Code specifically: also see `~/.claude/projects/<project>/memory/MEMORY.md` — auto-memory written by Claude itself across sessions for the same git repo.
+
+> **Constitution, not prompts.** Borrowing the framing from [Brij Kishore Pandey](https://www.linkedin.com/pulse/how-claude-code-becomes-full-engineering-team-brij-kishore-pandey-6eqkf/): treat each layer as durable infrastructure, not a one-off prompt. Bloating a layer with conversational corrections is anti-pattern — extract them into rules, skills, or hooks instead.
+
+---
+
 ## Examples
 
 The `aidlc/examples/` directory contains five fill-in templates that the workflow phases produce:
