@@ -106,7 +106,7 @@ Edit `aidlc/rules/tech-stack.md` (mirrored to `.claude/rules/tech-stack.md` and 
 
 ### 3. Add your build commands
 
-Edit `AGENTS.md` "How to Run This Project" section.
+Add a `## How to Run` section to `AGENTS.md` with your install/dev/test/lint/build commands. Codex best-practices recommend keeping these in `AGENTS.md` so any agent reads them at session start.
 
 ### 4. Verify the footprint
 

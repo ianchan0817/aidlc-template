@@ -26,29 +26,6 @@ Tool-agnostic project instructions for any AI coding agent. Codex CLI reads this
 └── scripts/                  # Utility scripts (audit.sh)
 ```
 
-## How to Run This Project
-
-Fill in the actual commands for your project. Examples:
-
-```bash
-# Install dependencies
-# bun install / pnpm install / poetry install
-
-# Develop
-# bun dev / pnpm dev / python -m server
-
-# Test
-# bun test / pnpm test / pytest
-
-# Lint
-# bun run lint / pnpm lint / ruff check
-
-# Build
-# bun run build / pnpm build / cargo build --release
-```
-
-Update `aidlc/rules/tech-stack.md` with the real stack before the first session.
-
 ## Lifecycle: WHAT → HOW → RUN
 
 ```
