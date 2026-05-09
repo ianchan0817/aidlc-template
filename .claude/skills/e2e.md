@@ -1,5 +1,5 @@
 ---
-description: /project:e2e — E2E quality assurance and release sign-off. Construction phase.
+description: /e2e — Construction. End-to-end journey verification + sign-off.
 ---
 
-@../../aidlc/construction/e2e.md
+Read and execute `aidlc/construction/e2e.md`.

@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Architecture design + task breakdown. Construction phase. Runs after spec.
+description: Construction. Architecture, task breakdown, sprint contract.
 ---
 
-See `aidlc/construction/plan.md` for the full prompt.
+Read and execute `aidlc/construction/plan.md`.

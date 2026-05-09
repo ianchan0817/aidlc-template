@@ -1,5 +1,5 @@
 ---
-description: /project:spec — Define what to build and why. Inception phase.
+description: /spec — Inception. Define what to build and why.
 ---
 
-@../../aidlc/inception/spec.md
+Read and execute `aidlc/inception/spec.md`.

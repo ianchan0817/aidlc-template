@@ -1,5 +1,5 @@
 ---
-description: Manager — orchestrator. New initiatives, cross-concern coordination, daily reports.
+description: Manager — orchestrator. Initiatives, coordination, daily reports, harness review cadence.
 model: inherit
 tools:
   - Read
@@ -12,4 +12,4 @@ tools:
   - TaskList
 ---
 
-@../../aidlc/agents/manager.md
+Canonical role: `aidlc/agents/manager.md`. Read it first, then start work.

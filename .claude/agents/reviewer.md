@@ -1,5 +1,5 @@
 ---
-description: Reviewer — code review, security, runtime QA, agent evals, E2E sign-off, sprint contracts.
+description: Reviewer — code review, security, runtime QA, agent evals, sprint contracts, E2E sign-off.
 model: inherit
 tools:
   - Read
@@ -14,4 +14,4 @@ tools:
   - TaskList
 ---
 
-@../../aidlc/agents/reviewer.md
+Canonical role: `aidlc/agents/reviewer.md`. Read it first, then start work.

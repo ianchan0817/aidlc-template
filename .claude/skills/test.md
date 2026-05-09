@@ -1,5 +1,5 @@
 ---
-description: /project:test — Test strategy and coverage enforcement. Construction phase.
+description: /test — Construction. Coverage strategy and enforcement.
 ---
 
-@../../aidlc/construction/test.md
+Read and execute `aidlc/construction/test.md`.

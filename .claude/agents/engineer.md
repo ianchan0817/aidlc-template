@@ -12,4 +12,4 @@ tools:
   - TaskList
 ---
 
-@../../aidlc/agents/engineer.md
+Canonical role: `aidlc/agents/engineer.md`. Read it first, then start work.

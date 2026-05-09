@@ -1,6 +1,6 @@
 ---
 name: retro
-description: Sprint retrospective + agent improvement. Operations phase.
+description: Operations. Retrospective + harness review.
 ---
 
-See `aidlc/operations/retro.md` for the full prompt.
+Read and execute `aidlc/operations/retro.md`.

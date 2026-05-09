@@ -1,6 +1,6 @@
 ---
 name: operate
-description: Post-deploy stewardship — monitoring, incident response, drift, feedback. Operations phase.
+description: Operations. Post-deploy stewardship — monitoring, incidents, drift.
 ---
 
-See `aidlc/operations/operate.md` for the full prompt.
+Read and execute `aidlc/operations/operate.md`.

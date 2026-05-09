@@ -1,6 +1,6 @@
 ---
 name: e2e
-description: E2E quality assurance and release sign-off. Construction phase.
+description: Construction. End-to-end journey verification + sign-off.
 ---
 
-See `aidlc/construction/e2e.md` for the full prompt.
+Read and execute `aidlc/construction/e2e.md`.

@@ -1,5 +1,5 @@
 ---
-description: /project:daily-report — Manager daily executive summary. Operations phase.
+description: /daily-report — Operations. Manager's daily executive summary.
 ---
 
-@../../aidlc/operations/daily-report.md
+Read and execute `aidlc/operations/daily-report.md`.

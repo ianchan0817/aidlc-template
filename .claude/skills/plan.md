@@ -1,5 +1,5 @@
 ---
-description: /project:plan — Architecture design + task breakdown. Construction phase.
+description: /plan — Construction. Architecture, task breakdown, sprint contract.
 ---
 
-@../../aidlc/construction/plan.md
+Read and execute `aidlc/construction/plan.md`.

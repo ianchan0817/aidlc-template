@@ -1,5 +1,5 @@
 ---
-description: /project:ship — Land the current branch. Construction phase.
+description: /ship — Construction. Land the current branch.
 ---
 
-@../../aidlc/construction/ship.md
+Read and execute `aidlc/construction/ship.md`.

@@ -1,5 +1,5 @@
 ---
-description: /project:investigate — Structured debugging, no fixes without root cause. Operations phase.
+description: /investigate — Operations. Structured debugging; no fix without root cause.
 ---
 
-@../../aidlc/operations/investigate.md
+Read and execute `aidlc/operations/investigate.md`.

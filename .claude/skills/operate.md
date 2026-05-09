@@ -1,5 +1,5 @@
 ---
-description: /project:operate — Post-deploy stewardship. Operations phase.
+description: /operate — Operations. Post-deploy stewardship.
 ---
 
-@../../aidlc/operations/operate.md
+Read and execute `aidlc/operations/operate.md`.

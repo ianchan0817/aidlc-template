@@ -1,5 +1,5 @@
 ---
-description: /project:retro — Sprint retrospective, agent improvement. Operations phase.
+description: /retro — Operations. Retrospective + harness review.
 ---
 
-@../../aidlc/operations/retro.md
+Read and execute `aidlc/operations/retro.md`.

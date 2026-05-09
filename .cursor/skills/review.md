@@ -1,6 +1,6 @@
 ---
 name: review
-description: Pre-merge code review, two-pass. Construction phase.
+description: Construction. Pre-merge two-pass code review.
 ---
 
-See `aidlc/construction/review.md` for the full prompt.
+Read and execute `aidlc/construction/review.md`.

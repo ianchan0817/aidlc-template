@@ -1,6 +1,6 @@
 ---
 name: design
-description: UI/component design specs, mobile review, interaction patterns. Inception phase.
+description: Inception. UI/component specs, mobile, interaction patterns.
 ---
 
-See `aidlc/inception/design.md` for the full prompt.
+Read and execute `aidlc/inception/design.md`.

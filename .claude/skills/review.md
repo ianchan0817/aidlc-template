@@ -1,5 +1,5 @@
 ---
-description: /project:review — Pre-merge code review, two-pass. Construction phase.
+description: /review — Construction. Pre-merge two-pass code review.
 ---
 
-@../../aidlc/construction/review.md
+Read and execute `aidlc/construction/review.md`.

@@ -1,6 +1,6 @@
 ---
 name: security
-description: Security audit with STRIDE threat model and OWASP review. Construction phase.
+description: Construction. STRIDE threat model + OWASP review.
 ---
 
-See `aidlc/construction/security.md` for the full prompt.
+Read and execute `aidlc/construction/security.md`.

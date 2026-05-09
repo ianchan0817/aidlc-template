@@ -1,6 +1,6 @@
 ---
 name: eval
-description: Agent/LLM feature evaluations (tasks, graders, transcripts). Construction phase.
+description: Construction. Agent/LLM behavior evals — tasks, graders, transcripts.
 ---
 
-See `aidlc/construction/eval.md` for the full prompt.
+Read and execute `aidlc/construction/eval.md`.

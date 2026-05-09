@@ -1,6 +1,6 @@
 ---
 name: daily-report
-description: Manager's daily executive summary from git log, branches, memory. Operations phase.
+description: Operations. Manager's daily executive summary from git, branches, memory.
 ---
 
-See `aidlc/operations/daily-report.md` for the full prompt.
+Read and execute `aidlc/operations/daily-report.md`.

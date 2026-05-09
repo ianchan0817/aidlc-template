@@ -1,5 +1,5 @@
 ---
-description: /project:design — UI/component design specs, mobile review, interaction patterns. Inception phase.
+description: /design — Inception. UI/component specs, mobile, interaction.
 ---
 
-@../../aidlc/inception/design.md
+Read and execute `aidlc/inception/design.md`.

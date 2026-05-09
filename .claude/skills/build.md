@@ -1,5 +1,5 @@
 ---
-description: /project:build — Incremental TDD implementation in thin vertical slices. Construction phase.
+description: /build — Construction. TDD slices; get-bearings → work → handoff.
 ---
 
-@../../aidlc/construction/build.md
+Read and execute `aidlc/construction/build.md`. Session lifecycle: `aidlc/common/session-lifecycle.md`.

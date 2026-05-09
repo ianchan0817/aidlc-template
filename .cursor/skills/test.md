@@ -1,6 +1,6 @@
 ---
 name: test
-description: Test strategy and coverage enforcement. Construction phase.
+description: Construction. Coverage strategy and enforcement.
 ---
 
-See `aidlc/construction/test.md` for the full prompt.
+Read and execute `aidlc/construction/test.md`.

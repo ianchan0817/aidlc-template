@@ -1,5 +1,5 @@
 ---
-description: /project:security — Security audit with STRIDE threat model. Construction phase.
+description: /security — Construction. STRIDE threat model + OWASP review.
 ---
 
-@../../aidlc/construction/security.md
+Read and execute `aidlc/construction/security.md`.

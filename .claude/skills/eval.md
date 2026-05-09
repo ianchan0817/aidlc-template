@@ -1,5 +1,5 @@
 ---
-description: /project:eval — Agent/LLM feature evaluations. Construction phase.
+description: /eval — Construction. Agent/LLM behavior evals (tasks, graders, transcripts).
 ---
 
-@../../aidlc/construction/eval.md
+Read and execute `aidlc/construction/eval.md`.

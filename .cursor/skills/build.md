@@ -1,6 +1,6 @@
 ---
 name: build
-description: Incremental TDD implementation in thin vertical slices. Construction phase.
+description: Construction. TDD slices; get-bearings → work → handoff.
 ---
 
-See `aidlc/construction/build.md` for the full prompt.
+Read and execute `aidlc/construction/build.md`. Session lifecycle: `aidlc/common/session-lifecycle.md`.

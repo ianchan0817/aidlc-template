@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: Structured debugging — reproduce, isolate, diagnose, fix. No fixes without root cause. Operations phase.
+description: Operations. Structured debugging; no fix without root cause.
 ---
 
-See `aidlc/operations/investigate.md` for the full prompt.
+Read and execute `aidlc/operations/investigate.md`.
