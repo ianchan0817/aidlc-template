@@ -1,10 +1,6 @@
 ---
-description: Tech stack — languages, frameworks, infra. Fill before first session.
+description: Tech stack — fill before first session
 alwaysApply: true
 ---
 
-- Frontend: <!-- Next.js 14 / Tailwind / Zustand + TanStack Query / Vitest + Playwright -->
-- Backend: <!-- Node.js 20 + TypeScript / Fastify / JWT -->
-- DB: <!-- PostgreSQL 16 --> Cache: <!-- Redis 7 --> Queue: <!-- BullMQ --> Storage: <!-- S3 -->
-- Infra: <!-- AWS / GitHub Actions / Terraform -->
-- Package manager: <!-- pnpm --> Monorepo: <!-- no --> API: <!-- REST --> ORM: <!-- Drizzle -->
+Apply rules in `aidlc/rules/tech-stack.md`.

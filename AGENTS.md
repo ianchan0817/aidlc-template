@@ -39,6 +39,8 @@ Tool-agnostic instructions for any AI coding agent (Claude Code, Codex CLI, Curs
 │   ├── construction/      plan, build, test, eval, review,
 │   │                      security, e2e, ship                       (HOW)
 │   ├── operations/        operate, retro, investigate, daily-report (RUN)
+│   ├── rules/             code-style, testing, security, api-conventions,
+│   │                      ux-guidelines, reproducibility, tech-stack
 │   ├── common/            decision-gates.md, session-lifecycle.md
 │   └── examples/          feature-spec, feature-list, eval-suite,
 │                          adr, threat-model, e2e-test-plan, postmortem
@@ -78,13 +80,15 @@ Rules and phase files are feedforward guides; hooks, tests, E2E, evals, and revi
 
 ## Engineering rules
 
-Always-on. Tool-specific frontmatter, **identical bodies** (each tool's loader requires its own format/location):
+**Canonical bodies live in `aidlc/rules/*.md`** — single source of truth for every tool. Tool adapters are thin frontmatter wrappers that point at the canonical file:
 
-- Claude Code → `.claude/rules/*.md` (`paths:`)
-- Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`)
-- Codex → this `AGENTS.md` (and any subdirectory `AGENTS.override.md`)
+- Claude Code → `.claude/rules/*.md` (`paths:`) → "Apply `aidlc/rules/X.md`"
+- Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`) → same pointer
+- Codex → reads `aidlc/rules/*.md` directly when this `AGENTS.md` is loaded
 
-Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `tech-stack` before the first session. Keep `.claude/rules/` and `.cursor/rules/` in sync.
+Topics (one file per topic in `aidlc/rules/`): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `aidlc/rules/tech-stack.md` before the first session.
+
+When a tool's rule loader fires, follow the pointer to read the canonical body. Bodies are kept terse so the extra read is negligible.
 
 ## Non-negotiables
 

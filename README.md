@@ -65,7 +65,7 @@ Three roles (definitions in `aidlc/agents/`):
 - **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off.
 - **manager** — orchestrate, daily reports, harness-review cadence after model/tool upgrades.
 
-Always-on rules: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack` — see `.claude/rules/` and `.cursor/rules/`. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
+Always-on rules — single source of truth in [`aidlc/rules/*.md`](aidlc/rules/): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. `.claude/rules/*.md` and `.cursor/rules/*.mdc` are thin pointers in each tool's native frontmatter format. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
 
 ---
 
@@ -134,21 +134,22 @@ aidlc-template/
 │   ├── construction/      plan, build, test, eval, review,
 │   │                      security, e2e, ship                       (HOW)
 │   ├── operations/        operate, retro, investigate, daily-report (RUN)
+│   ├── rules/             7 canonical rule bodies (single source of truth)
 │   ├── common/            decision-gates.md, session-lifecycle.md
 │   └── examples/          feature-spec, feature-list, eval-suite,
 │                          adr, threat-model, e2e-test-plan, postmortem
 ├── memory/                Tool-agnostic handoff state
 │   ├── progress.md        Decisions, last/next session, known issues
 │   └── feature-list.json  Incremental feature backlog
-├── .claude/               Claude Code adapters
-│   ├── rules/             7 rules (paths: frontmatter)
-│   ├── agents/            engineer · manager · reviewer (Claude frontmatter)
-│   ├── skills/            14 slash commands → repo-rooted phase refs
+├── .claude/               Claude Code adapters (frontmatter + pointers, no duplicated content)
+│   ├── rules/             7 .md pointers (paths: frontmatter) → aidlc/rules/
+│   ├── agents/            engineer · manager · reviewer → aidlc/agents/
+│   ├── skills/            14 slash commands → aidlc/{inception,construction,operations}/
 │   └── settings.json      Permissions + hooks
-├── .cursor/               Cursor adapters
-│   ├── rules/             7 .mdc rules (globs: / alwaysApply:)
-│   ├── agents/            engineer · manager · reviewer
-│   ├── skills/            14 skills → repo-rooted phase refs
+├── .cursor/               Cursor adapters (frontmatter + pointers, no duplicated content)
+│   ├── rules/             7 .mdc pointers (globs: / alwaysApply:) → aidlc/rules/
+│   ├── agents/            engineer · manager · reviewer → aidlc/agents/
+│   ├── skills/            14 skills → aidlc/{inception,construction,operations}/
 │   ├── hooks/             Hook scripts (e.g. aidlc-session-start.sh)
 │   └── hooks.json         Lifecycle hooks (sessionStart, beforeShellExecution)
 ├── .codex/                Codex CLI adapters
@@ -167,7 +168,7 @@ git clone https://github.com/ianchan0817/aidlc-template.git my-project
 cd my-project && rm -rf .git && git init
 ```
 
-1. **Stack** — edit `.claude/rules/tech-stack.md` and `.cursor/rules/tech-stack.mdc`. Skip the one you don't use.
+1. **Stack** — edit `aidlc/rules/tech-stack.md` (single source; all three tools point at it).
 2. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Mirror them in `AGENTS.md` `## How to Run`.
 3. **Memory** — `memory/progress.md` and `memory/feature-list.json` ship as empty templates. Set Current Focus once.
 4. **Audit** — `bash scripts/audit.sh`. Expected: ~8–9k words total. Warns if root >1500 or canonical >8000.

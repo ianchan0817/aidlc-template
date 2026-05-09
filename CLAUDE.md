@@ -11,5 +11,5 @@ Read `AGENTS.md` first — it covers methodology, roles, working style, lifecycl
 - **Adapter shape** (`.claude/`):
   - `agents/` — frontmatter (`model`, `tools`) + repo-rooted ref to `aidlc/agents/{engineer,manager,reviewer}.md`. Delegate via the Task tool.
   - `skills/` — slash commands `/spec /design /plan /build /test /eval /review /security /e2e /ship /operate /retro /investigate /daily-report`, each pointing at a phase file under `aidlc/{inception,construction,operations}/`.
-  - `rules/` — path-scoped via `paths:` frontmatter; bodies mirror `.cursor/rules/*.mdc` (tool format requires duplication).
+  - `rules/` — path-scoped via `paths:` frontmatter; bodies are pointers to canonical `aidlc/rules/*.md` (single source of truth shared with Cursor and Codex).
   - `settings.json` `hooks` — ships `SessionStart` (bearings reminder) and `PreToolUse` (dangerous-command guard).
