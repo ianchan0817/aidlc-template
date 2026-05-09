@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s\\n' 'AIDLC: read aidlc/core-workflow.md and aidlc/common/session-lifecycle.md. Then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present. Work one slice; record verification evidence; reviewer flips passes.'",
+            "command": "printf '%s\\n' 'AIDLC session start: follow `aidlc/common/session-lifecycle.md` (get bearings + handoff).'",
             "timeout": 5
           }
         ]

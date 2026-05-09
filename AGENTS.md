@@ -1,35 +1,51 @@
 # AGENTS.md
 
-Tool-agnostic instructions for any AI coding agent (Claude Code, Codex CLI, Cursor IDE, etc.). Canonical methodology lives in `aidlc/`.
+Tool-agnostic instructions for any AI coding agent (Claude Code, Codex CLI, Cursor IDE, etc.). Canonical methodology lives in `aidlc/`. Tool-specific files (`.claude/`, `.cursor/`, `.codex/`) carry only what their tool's loaders require — everything shared lives here or under `aidlc/`.
+
+## Working style
+
+- Output code/answers directly. No preamble.
+- Diff-only output unless a full rewrite is requested.
+- Stop within 5s of detecting logic drift — clarify, don't guess.
+- Non-trivial change → **explore → plan → implement → commit** before any code.
+- When context is stale or compacted, trust repo artifacts (`memory/`, `git`, `init.sh`) over chat memory.
+- Independent reviewer/eval gates sign-off; never self-mark a feature passing.
+- If a user repeats an instruction, suggest editing the previous message instead of stacking corrections.
 
 ## Session lifecycle
 
 **Start:** read `aidlc/common/session-lifecycle.md` — get bearings (`memory/progress.md`, `memory/feature-list.json`, `git log`, `./init.sh` smoke when applicable).
 **End:** commit + update `memory/progress.md` handoff fields. Only `reviewer` flips `passes: true` on `memory/feature-list.json`.
 
+## Memory & artifacts
+
+- Project notes: `memory/progress.md` (decisions, last/next session, known issues).
+- Backlog: `memory/feature-list.json` (template: `aidlc/examples/feature-list.md`).
+- Status comes from `git log` — don't restate in memory files.
+- ADRs: `docs/adr/ADR-NNN-title.md` (format: `aidlc/examples/adr.md`).
+
 ## Layout
 
 ```
 .
-├── AGENTS.md              Universal entry (this file)
-├── CLAUDE.md              Claude Code entry — @-imports this
-├── README.md              Human docs
+├── AGENTS.md              Universal entry (this file) — agent working style + methodology
+├── CLAUDE.md              Claude Code adapter — @-imports this; adds Claude-only specifics
+├── README.md              Human-facing docs
 ├── init.sh.example        Copy to init.sh — bootstrap + smoke test
 ├── aidlc/                 Canonical methodology (single source of truth)
 │   ├── core-workflow.md   One-page master orchestrator
 │   ├── agents/            engineer, manager, reviewer
-│   ├── inception/         spec, design                       (WHAT/WHY)
+│   ├── inception/         spec, design                              (WHAT/WHY)
 │   ├── construction/      plan, build, test, eval, review,
-│   │                      security, e2e, ship                (HOW)
-│   ├── operations/        operate, retro, investigate,
-│   │                      daily-report                       (RUN)
+│   │                      security, e2e, ship                       (HOW)
+│   ├── operations/        operate, retro, investigate, daily-report (RUN)
 │   ├── common/            decision-gates.md, session-lifecycle.md
 │   └── examples/          feature-spec, feature-list, eval-suite,
 │                          adr, threat-model, e2e-test-plan, postmortem
 ├── memory/                progress.md + feature-list.json (handoff state)
-├── .claude/               Claude Code adapters (rules, agents, skills, settings)
-├── .cursor/               Cursor adapters (rules, agents, skills, hooks)
-├── .codex/                Codex config (config.toml, hooks.json)
+├── .claude/               Claude Code-only: rules · agents · skills · settings
+├── .cursor/               Cursor-only:     rules · agents · skills · hooks
+├── .codex/                Codex-only:      config.toml · hooks.json
 ├── docs/adr/              ADRs (tool-neutral)
 └── scripts/audit.sh       Footprint audit
 ```
@@ -42,32 +58,33 @@ Inception → Construction → Operations, with a gate between each. Full workfl
 
 ## Harness shape
 
-This repo is the system of record. Keep the harness split into five subsystems:
-- **Instructions** — short entry points that route to focused files; no giant prompt files.
-- **State** — `memory/progress.md`, `memory/feature-list.json`, and git history.
+The repo is the system of record. Five subsystems:
+
+- **Instructions** — short entry points (this file, `aidlc/`); no giant prompt files.
+- **State** — `memory/progress.md`, `memory/feature-list.json`, git history.
 - **Scope** — one feature/slice at a time, tied to a verifiable sprint contract.
-- **Verification** — tests, lint/type checks, E2E, security review, evals, and transcripts.
+- **Verification** — tests, lint/type, E2E, security review, evals, transcripts.
 - **Lifecycle** — initialize, work, verify, hand off, commit.
 
-Treat rules and phase files as feedforward guides; treat hooks, tests, E2E, evals, and review as feedback sensors. Prefer deterministic sensors. Grade outcomes, not the exact path an agent took, unless policy requires a path.
+Rules and phase files are feedforward guides; hooks, tests, E2E, evals, and review are feedback sensors. Prefer deterministic sensors. Grade **outcomes**, not the exact path the agent took, unless policy requires a path.
 
 ## Roles
 
-| Role | Scope | Definition |
-|------|-------|------------|
+| Role | Scope | Canonical |
+|------|-------|-----------|
 | `engineer` | Build, test, deploy, architecture, DB, CI/CD | `aidlc/agents/engineer.md` |
 | `reviewer` | Code review, security, runtime QA, agent evals, sprint contracts, E2E sign-off | `aidlc/agents/reviewer.md` |
 | `manager`  | Initiatives, coordination, daily reports, harness review cadence | `aidlc/agents/manager.md` |
 
 ## Engineering rules
 
-Always-on, applied to every change. Tool-specific frontmatter, identical content:
+Always-on. Tool-specific frontmatter, **identical bodies** (each tool's loader requires its own format/location):
 
 - Claude Code → `.claude/rules/*.md` (`paths:`)
 - Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`)
-- Codex → loaded via this `AGENTS.md` and any subdirectory `AGENTS.override.md`
+- Codex → this `AGENTS.md` (and any subdirectory `AGENTS.override.md`)
 
-Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `tech-stack` before the first session.
+Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `tech-stack` before the first session. Keep `.claude/rules/` and `.cursor/rules/` in sync.
 
 ## Non-negotiables
 
@@ -84,6 +101,7 @@ Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`,
 ## Done
 
 A change is done when:
+
 - Tests pass at 100% coverage on new/modified files
 - Reviewed, all critical issues resolved
 - E2E journeys signed off for changed flows
@@ -98,8 +116,8 @@ Use the structured-question format in `aidlc/common/decision-gates.md` instead o
 
 ## Tool entry points
 
-| Tool        | Entry                         | Native features |
-|-------------|-------------------------------|-----------------|
+| Tool        | Entry                           | Tool-only files |
+|-------------|---------------------------------|------------------|
 | Codex CLI   | this `AGENTS.md` (hierarchical) | `.codex/config.toml`, `.codex/hooks.json` |
-| Claude Code | `CLAUDE.md` (imports this)    | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
-| Cursor IDE  | `.cursor/rules/*.mdc`         | `.cursor/{agents,skills,hooks}/`, `.cursor/hooks.json` |
+| Claude Code | `CLAUDE.md` (imports this)      | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
+| Cursor IDE  | `.cursor/rules/*.mdc`           | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |

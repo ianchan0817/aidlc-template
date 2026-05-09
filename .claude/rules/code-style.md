@@ -5,8 +5,6 @@ paths:
   - "**/*.{py,go,rs,java,kt,swift,rb}"
 ---
 
-# Code Style
-
 - 2-space indent, single quotes, no trailing semicolons, max 100 chars, trailing newline
 - `camelCase` vars/functions, `PascalCase` types/components, `SCREAMING_SNAKE_CASE` constants, `kebab-case` files/CSS
 - Booleans: `is`, `has`, `can`, `should` prefix

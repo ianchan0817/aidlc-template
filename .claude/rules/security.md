@@ -2,8 +2,6 @@
 description: Security baseline — input validation, secrets, PII, auth/authz
 ---
 
-# Security
-
 - Auth on every protected route. Authorize at data layer. Validate identity from JWT/session only.
 - Validate all input at boundary. Parameterized queries only. No `eval`/`new Function`/`exec` with user input.
 - File uploads: MIME by content, size limit, sanitize filename.

@@ -2,8 +2,6 @@
 description: Testing standards — 100% coverage required, TDD discipline
 ---
 
-# Testing
-
 Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 
 Completion requires evidence, not confidence: include command output, runtime checks, or eval transcript links in the handoff.
@@ -22,6 +20,6 @@ Completion requires evidence, not confidence: include command output, runtime ch
 - Pass 3 consecutive times = stable. Flaky = bug.
 - Every prod escape gets an E2E test before fix closes.
 
-## Skip: framework internals, third-party behavior, private functions, trivial getters
+Skip: framework internals, third-party behavior, private functions, trivial getters.
 
 Tests cover **code**. For **AI/agent** behavior (tools, prompts, multi-turn flows), also maintain an eval suite — `aidlc/construction/eval.md`.
