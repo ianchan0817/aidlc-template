@@ -6,4 +6,4 @@ readonly: true
 is_background: false
 ---
 
-Canonical role: `aidlc/agents/manager.md`. Read it first, then start work.
+Canonical role: `aidlc/agents/manager.md`. Read it and `aidlc/core-workflow.md` first, then start work.

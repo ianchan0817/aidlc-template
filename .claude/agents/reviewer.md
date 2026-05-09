@@ -14,4 +14,4 @@ tools:
   - TaskList
 ---
 
-Canonical role: `aidlc/agents/reviewer.md`. Read it first, then start work.
+Canonical role: `aidlc/agents/reviewer.md`. Read it and the active sprint contract first, then start work.

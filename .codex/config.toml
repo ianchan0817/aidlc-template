@@ -1,5 +1,8 @@
 # Codex CLI project config
 # Loaded by Codex when working in this repo. Personal/global config in ~/.codex/config.toml.
+# Harness note: Codex loads AGENTS.md hierarchically. Keep AGENTS.md compact and stable,
+# route deep methodology to aidlc/, and prefer appending new context over rewriting old
+# instructions so long-running sessions and prompt caching stay predictable.
 
 [features]
 # Enable hooks (required for .codex/hooks.json to take effect)

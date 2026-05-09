@@ -2,7 +2,7 @@
 
 Tool-agnostic AI Development Lifecycle (AIDLC) template for **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. One canonical methodology, three native adapters, harness patterns for long-running agentic work.
 
-> Inspired by [AWS Labs AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates), [Anthropic harness research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (initializer + coding agent, feature list), [Anthropic evals guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (tasks/graders/transcripts), [Anthropic harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) (generator/evaluator, sprint contracts), [LangChain harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (build-verify, context onboarding).
+> Inspired by [AWS Labs AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates), [Anthropic harness research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (initializer + coding agent, feature list), [Anthropic evals guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (tasks/graders/transcripts), [Anthropic harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) (generator/evaluator, sprint contracts), [OpenAI Codex loop](https://openai.com/index/unrolling-the-codex-agent-loop/) (instruction layering, sandbox/context handling), [LangChain harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (self-verification, traces), and [Martin Fowler](https://martinfowler.com/articles/harness-engineering.html) / [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) (guides, sensors, lifecycle).
 
 ---
 
@@ -13,6 +13,13 @@ Agentic coding templates are usually tool-specific: pick `.claude/` and you can'
 This template separates **methodology** (workflow, rules, roles) from **wiring** (how each tool loads it). Methodology lives in `aidlc/`. Each tool has a thin adapter directory that points at it via repo-rooted paths.
 
 It also bakes in patterns from long-running-agent research: a structured **session lifecycle**, a JSON **feature backlog**, **sprint contracts** between engineer and reviewer, and a dedicated **eval phase** for AI/agent behavior.
+
+The harness is intentionally five-part:
+- **Instructions** route agents through focused files instead of one giant prompt.
+- **State** persists progress, backlog, and git history across resets.
+- **Scope** keeps work to one independently committable slice.
+- **Verification** uses tests, hooks, E2E, evals, transcripts, and review as sensors.
+- **Lifecycle** forces initialize → work → verify → handoff → commit.
 
 ---
 
@@ -107,6 +114,8 @@ Start with 20–50 real failures. Read transcripts on every failed run. Calibrat
 | **Cursor IDE** | `.cursor/rules/*.mdc` | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |
 
 All three read `AGENTS.md` — natively (Codex), via `@-import` (Claude), or by reference (Cursor). Adapters point at canonical content in `aidlc/` via repo-rooted paths.
+
+Keep root instructions compact and stable. Put detailed method content under `aidlc/`, then let each tool load only its native adapter plus the canonical files it needs.
 
 ---
 
@@ -250,7 +259,10 @@ No MCP servers configured by default — add per project.
 | [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) | `init.sh` + progress file + JSON feature list, get-bearings, one feature at a time |
 | [Anthropic — Harness design for long-running app development](https://www.anthropic.com/engineering/harness-design-long-running-apps) | Generator/evaluator (folded into reviewer), sprint contracts, runtime QA, harness-review cadence |
 | [Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | Tasks/trials/graders, capability vs regression, transcript review, calibrated LLM-as-judge |
-| [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, loop detection as future hook extension |
+| [OpenAI — Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/) | Layered project docs, sandbox/approval context, compact and stable adapter loading |
+| [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, traces as feedback, loop detection as future hook extension |
+| [Martin Fowler — Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) | Feedforward guides, feedback sensors, harness templates, quality-left framing |
+| [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) | Five-subsystem harness shape: instructions, state, verification, scope, lifecycle |
 | [Metaflow](https://github.com/Netflix/metaflow) | Human-centric framing; reproducibility-as-default |
 | [Kedro](https://github.com/kedro-org/kedro) | Modular phase-based structure |
 | [ZenML](https://github.com/zenml-io/zenml) | Stage gates with explicit pass/fail criteria |

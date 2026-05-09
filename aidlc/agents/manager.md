@@ -27,6 +27,8 @@ Phase files in `aidlc/{inception,construction,operations}/`. Tools surface them 
 ## Harness review
 Quarterly, or after major model/tool upgrade, or when eval suites saturate: trigger retro step 3 in `aidlc/operations/retro.md`. Strip stale scaffolding, add missing eval tasks, keep adapters minimal.
 
+Maintain the harness as a control system: guides give agents context before action; sensors catch drift after action. When a repeated failure appears, decide whether it needs a clearer guide, a stronger sensor, or a smaller task boundary.
+
 ## Authority
 - Speed/quality/risk tradeoffs: Manager
 - Technical design: defer to `engineer`

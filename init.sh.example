@@ -9,10 +9,12 @@ cd "$ROOT"
 echo "== AIDLC init =="
 echo "Root: $ROOT"
 echo "Methodology: aidlc/core-workflow.md | Session lifecycle: aidlc/common/session-lifecycle.md"
+echo "Purpose: install deps, verify baseline, and smoke a core path before feature work."
 
 # --- Customize below ---
-# Example: install and smoke (uncomment and adapt)
-# if command -v pnpm >/dev/null 2>&1; then pnpm install && pnpm test --run; fi
+# Example: install and smoke (uncomment and adapt; keep the project runner unchanged)
 # if command -v bun >/dev/null 2>&1; then bun install && bun test; fi
+# if command -v pnpm >/dev/null 2>&1; then pnpm install && pnpm test --run; fi
+# if command -v npm >/dev/null 2>&1; then npm ci && npm test; fi
 
 echo "== Done (add install/test/dev commands for your stack) =="

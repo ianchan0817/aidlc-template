@@ -6,4 +6,4 @@ readonly: false
 is_background: false
 ---
 
-Canonical role: `aidlc/agents/engineer.md`. Read it first, then start work.
+Canonical role: `aidlc/agents/engineer.md`. Read it and `aidlc/common/session-lifecycle.md` first, then start work.

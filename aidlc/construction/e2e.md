@@ -6,7 +6,7 @@ Phase: Construction. End-to-end journey verification and release sign-off.
 1. **Identify affected journeys** from the diff against main
 2. **Run E2E suite** — feature branch: target affected flows. Staging: full regression.
 3. **Write new journey tests** using `aidlc/examples/e2e-test-plan.md` as the format
-4. **Sign off** using the checklist in the example file
+4. **Sign off** using the checklist in the example file; judge user-visible outcomes against the sprint contract
 5. **Log findings** — bugs → `memory/progress.md` Known Issues. Every prod escape gets an E2E test before the fix closes.
 
 ## Test rules

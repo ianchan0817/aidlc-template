@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"$CODEX_TOOL_INPUT\" 2>/dev/null | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "command": "bash -c 'echo \"$CODEX_TOOL_INPUT\" 2>/dev/null | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
             "timeout": 5,
             "statusMessage": "Checking command for dangerous patterns"
           }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"AIDLC: read aidlc/core-workflow.md; get bearings in aidlc/common/session-lifecycle.md; then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present (init.sh.example).\"}}'",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"AIDLC: read aidlc/core-workflow.md; get bearings in aidlc/common/session-lifecycle.md; then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present. Work one slice; record verification evidence; reviewer flips passes.\"}}'",
             "timeout": 5
           }
         ]

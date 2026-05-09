@@ -4,14 +4,16 @@ Phase: Construction. Incremental TDD in thin vertical slices.
 
 ## Process
 0. **Get bearings** — `aidlc/common/session-lifecycle.md` (cwd, progress, feature-list, git log, `./init.sh` smoke).
-1. **Slice** — thin vertical slice: one testable behavior (often one feature-list item), ~5 files max, independently committable. Risk-first.
-2. **Red → Green → Refactor** — failing test → minimal code → clean up.
-3. **Verify** — tests pass, no lint/type errors, 100% coverage on modified files.
-4. **Commit** — one slice = one commit, behavior-descriptive message.
-5. **Handoff** — update `memory/progress.md` (Last Session, Next Session). Leave merge-ready: no half-wired features without a Known Issues note.
-6. **Repeat** — after all slices: full suite green, self-review, run `aidlc/construction/review.md`.
+1. **Health first** — if the smoke path or existing tests are broken, stabilize that before new feature work.
+2. **Slice** — thin vertical slice: one testable behavior (often one feature-list item), ~5 files max, independently committable. Risk-first.
+3. **Red → Green → Refactor** — failing test → minimal code → clean up.
+4. **Verify** — tests pass, no lint/type errors, 100% coverage on modified files; run runtime/E2E proof for changed user journeys.
+5. **Commit** — one slice = one commit, behavior-descriptive message.
+6. **Handoff** — update `memory/progress.md` (Last Session, Next Session, verification evidence). Leave merge-ready: no half-wired features without a Known Issues note.
+7. **Repeat** — after all slices: full suite green, self-review, run `aidlc/construction/review.md`.
 
 ## Operating rules
 - Surface assumptions before acting. Stop when confused.
 - No drive-by refactoring. Simplicity over cleverness.
 - Verify with evidence: passing tests, clean builds, runtime output.
+- Do not mark work done from self-assessment alone; independent review/eval owns sign-off.

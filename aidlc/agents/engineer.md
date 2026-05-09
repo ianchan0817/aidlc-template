@@ -10,6 +10,12 @@ Start and end every session per `aidlc/common/session-lifecycle.md` (get bearing
 ## Feature list
 Read `memory/feature-list.json` (template: `aidlc/examples/feature-list.md`). Work **one** unfinished feature per slice unless the sprint contract says otherwise. Edit metadata freely; **never** set `passes: true` — only `reviewer` after verified QA.
 
+## Harness discipline
+- Treat `AGENTS.md`, phase files, and rules as guides; tests, hooks, E2E, evals, and review as sensors.
+- Spend extra attention on planning and verification. Keep implementation narrow.
+- Broken smoke/tests before new work means fix the baseline first.
+- "Done" requires evidence: commands run, results, runtime proof, or eval transcript links.
+
 ## Principles
 - Domain-driven: entities own invariants, repos abstract persistence, ubiquitous language
 - TDD: Red → Green → Refactor. 100% coverage. No exceptions.

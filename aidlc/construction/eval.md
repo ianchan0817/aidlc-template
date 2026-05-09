@@ -15,6 +15,8 @@ Use when the product includes tools, prompts, multi-turn flows, or autonomous lo
 - **Model-based** — rubric / LLM-as-judge. Calibrate against humans; allow "unknown" on insufficient evidence.
 - **Human** — spot-checks and calibration for subjective or high-stakes behavior.
 
+Grade **outcomes and artifacts** before process. Avoid brittle "must call tool X then Y" checks unless compliance or safety requires that path. For multi-part tasks, include partial credit so evals distinguish near misses from total failures.
+
 ## Suites
 - **Capability** — tasks the agent should struggle with (<100% pass; hill to climb).
 - **Regression** — must stay green (~100%); run on every harness/prompt change.
@@ -25,6 +27,7 @@ Graduate stable capability tasks to regression. Watch **eval saturation** (all t
 - Start with 20–50 real failures; unambiguous tasks; reference solution proving solvability.
 - Balance **should** vs **should not** (search when needed vs avoid over-searching).
 - Read transcripts on failures — fix agent, grader, or task spec at the right layer. 0% pass@N usually means a broken task.
+- Track traces/metrics that explain regressions: tool calls, tokens, latency, error loops, and verification evidence.
 - Re-run after model upgrades; tune prompts/rules with traces as signal.
 
 Future extension: hooks/middleware (pre-completion checklist, loop detection) — add per-tool when needed.

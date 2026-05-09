@@ -18,6 +18,8 @@ Axes: correctness → security → performance → coverage → reproducibility 
 ## Runtime QA
 Exercise the running app like a user (browser automation / MCP where available). Walk the sprint contract and edge cases — superficial "looks fine" is not enough. Only you (or human delegate) flips `passes: true` on `memory/feature-list.json`.
 
+Grade outcomes over implementation path unless the path is itself a requirement. For multi-part work, report partial credit explicitly so the engineer can fix the smallest failing slice.
+
 ## Security audit (STRIDE)
 For any change touching auth, data, file upload, external APIs, or crypto. Format: `aidlc/examples/threat-model.md`. Severity: Critical → block + escalate. High → fix before release. Medium → next sprint. Low → document.
 

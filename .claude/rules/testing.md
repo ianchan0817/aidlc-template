@@ -6,6 +6,8 @@ description: Testing standards — 100% coverage required, TDD discipline
 
 Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 
+Completion requires evidence, not confidence: include command output, runtime checks, or eval transcript links in the handoff.
+
 ## Unit (engineer owns)
 - TDD: test before/alongside code. Co-located: `foo.test.ts` next to `foo.ts`
 - Behavior names, one assertion per test, no I/O, Arrange/Act/Assert

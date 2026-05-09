@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s\\n' 'AIDLC: Read aidlc/common/session-lifecycle.md (get bearings). Then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present (copy from init.sh.example).'",
+            "command": "printf '%s\\n' 'AIDLC: read aidlc/core-workflow.md and aidlc/common/session-lifecycle.md. Then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present. Work one slice; record verification evidence; reviewer flips passes.'",
             "timeout": 5
           }
         ]
@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(rm -rf /|chmod -R 777 /)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
             "timeout": 5
           }
         ]

@@ -40,6 +40,17 @@ Adapters reference canonical content via repo-rooted paths (e.g. `aidlc/agents/e
 
 Inception → Construction → Operations, with a gate between each. Full workflow: `aidlc/core-workflow.md`.
 
+## Harness shape
+
+This repo is the system of record. Keep the harness split into five subsystems:
+- **Instructions** — short entry points that route to focused files; no giant prompt files.
+- **State** — `memory/progress.md`, `memory/feature-list.json`, and git history.
+- **Scope** — one feature/slice at a time, tied to a verifiable sprint contract.
+- **Verification** — tests, lint/type checks, E2E, security review, evals, and transcripts.
+- **Lifecycle** — initialize, work, verify, hand off, commit.
+
+Treat rules and phase files as feedforward guides; treat hooks, tests, E2E, evals, and review as feedback sensors. Prefer deterministic sensors. Grade outcomes, not the exact path an agent took, unless policy requires a path.
+
 ## Roles
 
 | Role | Scope | Definition |

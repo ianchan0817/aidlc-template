@@ -9,6 +9,8 @@ AIDLC project. Canonical methodology in `aidlc/`. Tool-agnostic instructions in 
 - Diff-only output unless full rewrite is requested.
 - Stop within 5 seconds of detecting logic drift — clarify, don't guess.
 - Non-trivial changes: prefer plan mode (explore → plan → implement → commit).
+- When context is stale or compacted, trust repo artifacts (`memory/`, git, `init.sh`) over chat memory.
+- Use independent review/eval for sign-off; do not mark a feature passing from self-review alone.
 - If a user repeats an instruction, suggest editing the previous message instead of stacking corrections.
 
 ## Memory

@@ -42,6 +42,14 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 ## Roles
 See `aidlc/agents/`: `engineer` (build), `reviewer` (quality, security, **runtime QA**, **evals**, E2E), `manager` (orchestrate, **harness review cadence**).
 
+## Harness controls
+The repo is the harness. Keep controls explicit and versioned:
+- **Guides/feedforward:** `AGENTS.md`, tool adapters, rules, phase files, `init.sh.example`, ADRs
+- **State:** `memory/progress.md`, `memory/feature-list.json`, git history
+- **Sensors/feedback:** tests, lint/type checks, security scans, E2E, evals, transcripts, hooks, code review
+
+Use deterministic sensors first. For agent or subjective behavior, use calibrated graders and human review. Evaluate the produced outcome against the sprint contract; avoid brittle checks on exact tool-call order unless compliance requires them.
+
 ## Always-on rules
 Each tool has its own rules directory with format-specific frontmatter:
 - Claude Code → `.claude/rules/*.md` (with `paths:` for path-scoping)
