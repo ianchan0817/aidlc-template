@@ -14,7 +14,8 @@ This template separates **methodology** (workflow, rules, roles) from **wiring**
 
 It also bakes in patterns from long-running-agent research: a structured **session lifecycle**, a JSON **feature backlog**, **sprint contracts** between engineer and reviewer, and a dedicated **eval phase** for AI/agent behavior.
 
-The harness is intentionally five-part:
+Designed around a few simple commitments: **single source of truth** (everything lives once in `aidlc/`), **thin adapters** (tool dirs are pointers, not copies), **scoped work** (one feature/slice at a time), and **sensors over confidence** (tests, hooks, evals, review). The harness is intentionally five-part:
+
 - **Instructions** route agents through focused files instead of one giant prompt.
 - **State** persists progress, backlog, and git history across resets.
 - **Scope** keeps work to one independently committable slice.
@@ -46,26 +47,55 @@ Adapters never use `../../` chains — every reference is repo-rooted (e.g. `aid
 
 ---
 
-## Methodology — three phases
+## Methodology
 
 ```
 Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
        gate                    gate                  gate
 ```
 
-| Phase | Slash commands |
-|-------|----------------|
-| **Inception** | `spec`, `design` |
-| **Construction** | `plan`, `build`, `test`, `eval`, `review`, `security`, `e2e`, `ship` |
-| **Operations** | `operate`, `retro`, `investigate`, `daily-report` |
+Each phase is one canonical file in `aidlc/{inception,construction,operations}/`. Roles and rules below.
 
-Three roles (definitions in `aidlc/agents/`):
+### Phases — what each file is for
+
+| Phase | File | Use it to … |
+|-------|------|-------------|
+| Inception | `aidlc/inception/spec.md` | Define problem, use cases, RICE, acceptance criteria |
+| Inception | `aidlc/inception/design.md` | UI/component specs, mobile, interaction (when UI applies) |
+| Construction | `aidlc/construction/plan.md` | Architecture + task breakdown + sprint contract |
+| Construction | `aidlc/construction/build.md` | Incremental TDD on one feature/slice |
+| Construction | `aidlc/construction/test.md` | Coverage strategy + enforcement (100%) |
+| Construction | `aidlc/construction/eval.md` | Agent/LLM evals when AI features change |
+| Construction | `aidlc/construction/review.md` | Pre-merge two-pass code review |
+| Construction | `aidlc/construction/security.md` | STRIDE threat model + OWASP review |
+| Construction | `aidlc/construction/e2e.md` | End-to-end journey verification |
+| Construction | `aidlc/construction/ship.md` | Land the branch (sync, test, PR) |
+| Operations | `aidlc/operations/operate.md` | Post-deploy stewardship, incidents |
+| Operations | `aidlc/operations/retro.md` | Retrospective + harness review |
+| Operations | `aidlc/operations/investigate.md` | Structured debugging — no fix without root cause |
+| Operations | `aidlc/operations/daily-report.md` | Manager's executive summary |
+
+### How to invoke a phase
+
+| Tool | Mechanism |
+|------|-----------|
+| Claude Code | Slash command — `/spec`, `/build`, `/eval`, etc. (`.claude/skills/X.md` points at `aidlc/<phase>/X.md`) |
+| Cursor IDE | Skill — `/spec`, `/build`, etc. (`.cursor/skills/X.md` points at the same file) |
+| Codex CLI | Plain prose — "Follow `aidlc/construction/build.md`". No slash-command system. |
+
+You can always open the canonical file directly and follow it — slash commands are convenience, not requirement.
+
+### Roles
+
+Three roles, definitions in `aidlc/agents/`:
 
 - **engineer** — implementation, architecture, DB, CI/CD; one feature/slice at a time from the backlog.
 - **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off.
 - **manager** — orchestrate, daily reports, harness-review cadence after model/tool upgrades.
 
-Always-on rules — single source of truth in [`aidlc/rules/*.md`](aidlc/rules/): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. `.claude/rules/*.md` and `.cursor/rules/*.mdc` are thin pointers in each tool's native frontmatter format. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
+### Rules
+
+Always-on, single source of truth in [`aidlc/rules/*.md`](aidlc/rules/): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. `.claude/rules/*.md` and `.cursor/rules/*.mdc` are thin pointers in each tool's native frontmatter format. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
 
 ---
 
@@ -161,24 +191,27 @@ aidlc-template/
 
 ---
 
-## Setup
+## New project — 5 minutes
 
 ```bash
 git clone https://github.com/ianchan0817/aidlc-template.git my-project
 cd my-project && rm -rf .git && git init
 ```
 
-1. **Stack** — edit `aidlc/rules/tech-stack.md` (single source; all three tools point at it).
-2. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Mirror them in `AGENTS.md` `## How to Run`.
-3. **Memory** — `memory/progress.md` and `memory/feature-list.json` ship as empty templates. Set Current Focus once.
-4. **Audit** — `bash scripts/audit.sh`. Expected: ~8–9k words total. Warns if root >1500 or canonical >8000.
-5. **Open** —
+1. **Pick your tool(s).** If you only use one of Claude Code / Codex / Cursor, **delete the other adapter dirs** (`.claude/`, `.codex/`, `.cursor/`). The methodology in `aidlc/` and the entry files (`AGENTS.md`, `memory/`) work standalone.
+2. **Edit your stack** — `aidlc/rules/tech-stack.md` (one place; all kept tools point at it).
+3. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Mirror them in `AGENTS.md` `## How to Run`.
+4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty (your `/spec` will append items).
+5. **Audit** — `bash scripts/audit.sh`. Warns if root >1500 or canonical >8000 words.
+6. **Open in your tool** —
 
    | Tool | Command |
    |------|---------|
    | Claude Code | `claude` (auto-loads `CLAUDE.md`) |
    | Codex CLI | `codex` (auto-loads `AGENTS.md`) |
-   | Cursor | open the directory |
+   | Cursor | open the directory (auto-loads `.cursor/rules/*.mdc`) |
+
+7. **First feature** — `/spec` your first feature, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
 
 ---
 
@@ -190,9 +223,7 @@ spec → design (if UI) → plan (+ sprint contract) → build (one feature/slic
      → operate → retro (+ harness review)
 ```
 
-Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D + `[Answer]:`) when explicit human approval is needed.
-
-In Claude Code and Cursor: invoke as slash commands (`/spec`, `/build`, `/eval`, …). In Codex: reference the phase file directly.
+Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D + `[Answer]:`) when explicit human approval is needed. Invocation per tool is in **Methodology → How to invoke a phase** above.
 
 ---
 
@@ -230,15 +261,22 @@ Project layer dictates *what the codebase requires*. Personal layer dictates *ho
 
 ## Examples (`aidlc/examples/`)
 
-Concrete fill-in templates the workflow phases produce:
+Concrete fill-in templates — reference shapes for what each phase produces. They're documentation, not auto-loaded.
+
+**Always useful** (most projects):
 
 - `feature-spec.md` — `/spec` output (problem, use cases, RICE, acceptance criteria)
 - `feature-list.md` — shape for `memory/feature-list.json`
-- `eval-suite.md` — agent-eval task YAML (`/eval`)
-- `adr.md` — `/plan` output when an architectural decision is involved
-- `threat-model.md` — `/security` (STRIDE table)
-- `e2e-test-plan.md` — `/e2e` (journey table + sign-off checklist)
-- `postmortem.md` — `/operate` (timeline, root cause, action items)
+- `e2e-test-plan.md` — `/e2e` journey table + sign-off checklist
+
+**Conditional** (only when the situation arises):
+
+- `adr.md` — `/plan` when an architectural decision is involved
+- `threat-model.md` — `/security` (STRIDE), only when auth/data/API changes
+- `eval-suite.md` — `/eval` task YAML, only for AI/agent features
+- `postmortem.md` — `/operate` after a Critical/High incident
+
+You don't need to touch any of these to start — phases reference them when relevant.
 
 ---
 
