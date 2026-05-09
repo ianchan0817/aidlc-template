@@ -56,26 +56,26 @@ Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
 
 Each phase is one canonical file in `aidlc/{inception,construction,operations}/`. Roles and rules below.
 
-### Phases — what each file is for
+### Commands — when to use each
 
-| Phase | File | Use it to … |
-|-------|------|-------------|
-| Inception | `aidlc/inception/spec.md` | Define problem, use cases, RICE, acceptance criteria |
-| Inception | `aidlc/inception/design.md` | UI/component specs, mobile, interaction (when UI applies) |
-| Construction | `aidlc/construction/plan.md` | Architecture + task breakdown + sprint contract |
-| Construction | `aidlc/construction/build.md` | Incremental TDD on one feature/slice |
-| Construction | `aidlc/construction/test.md` | Coverage strategy + enforcement (100%) |
-| Construction | `aidlc/construction/eval.md` | Agent/LLM evals when AI features change |
-| Construction | `aidlc/construction/review.md` | Pre-merge two-pass code review |
-| Construction | `aidlc/construction/security.md` | STRIDE threat model + OWASP review |
-| Construction | `aidlc/construction/e2e.md` | End-to-end journey verification |
-| Construction | `aidlc/construction/ship.md` | Land the branch (sync, test, PR) |
-| Operations | `aidlc/operations/operate.md` | Post-deploy stewardship, incidents |
-| Operations | `aidlc/operations/retro.md` | Retrospective + harness review |
-| Operations | `aidlc/operations/investigate.md` | Structured debugging — no fix without root cause |
-| Operations | `aidlc/operations/daily-report.md` | Manager's executive summary |
+| Command | Phase | When to use |
+|---------|-------|-------------|
+| `/spec` | Inception | Starting a new feature or initiative — define problem, use cases, RICE, acceptance criteria |
+| `/design` | Inception | The feature has UI — component specs, mobile, interaction patterns |
+| `/plan` | Construction | Spec is approved — architecture, task breakdown, sprint contract with reviewer |
+| `/build` | Construction | Sprint contract is agreed — incremental TDD on one feature/slice |
+| `/test` | Construction | Build is in progress — coverage strategy, enforce 100% on new/modified |
+| `/eval` | Construction | The change touches AI/agent behavior (tools, prompts, multi-turn flows) |
+| `/review` | Construction | Code is ready for merge — pre-merge two-pass code review |
+| `/security` | Construction | The change touches auth, data, file upload, external APIs, or crypto |
+| `/e2e` | Construction | Before release — end-to-end journey verification, sign-off |
+| `/ship` | Construction | Review + E2E + (security/evals if applicable) all green — land the branch |
+| `/operate` | Operations | Just deployed; or an alert/incident fired; or 24h post-deploy check |
+| `/investigate` | Operations | A bug, test failure, or unexpected behavior — root-cause first, no symptom patches |
+| `/daily-report` | Operations | Manager's daily executive summary (typically morning) |
+| `/retro` | Operations | End of sprint / every 2 weeks; or after a major model/tool upgrade |
 
-### How to invoke a phase
+### How to invoke
 
 | Tool | Mechanism |
 |------|-----------|
@@ -84,6 +84,21 @@ Each phase is one canonical file in `aidlc/{inception,construction,operations}/`
 | Codex CLI | Plain prose — "Follow `aidlc/construction/build.md`". No slash-command system. |
 
 You can always open the canonical file directly and follow it — slash commands are convenience, not requirement.
+
+### Common scenarios
+
+| Situation | Command sequence |
+|-----------|------------------|
+| New feature | `/spec` → `/design` (if UI) → `/plan` → `/build` → `/test` → `/review` → `/e2e` → `/ship` → `/operate` |
+| New **AI/LLM** feature | …same, plus `/eval` between `/test` and `/review` |
+| Auth/data/API change | …same, plus `/security` before `/e2e` |
+| Bug report | `/investigate` → `/build` (fix + regression test) → `/test` → `/review` → `/ship` |
+| Production incident | `/operate` (acknowledge → mitigate) → `/investigate` (root cause) → fix loop → `/operate` (postmortem) |
+| Daily standup | `/daily-report` |
+| End of sprint / 2 weeks | `/retro` |
+| After a major model upgrade | `/retro` (harness review step — strip stale scaffolding) |
+
+Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D + `[Answer]:`) when explicit human approval is needed.
 
 ### Roles
 
@@ -212,18 +227,6 @@ cd my-project && rm -rf .git && git init
    | Cursor | open the directory (auto-loads `.cursor/rules/*.mdc`) |
 
 7. **First feature** — `/spec` your first feature, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
-
----
-
-## Workflow
-
-```
-spec → design (if UI) → plan (+ sprint contract) → build (one feature/slice)
-     → test → eval (if AI features) → review → security → e2e → ship
-     → operate → retro (+ harness review)
-```
-
-Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D + `[Answer]:`) when explicit human approval is needed. Invocation per tool is in **Methodology → How to invoke a phase** above.
 
 ---
 
