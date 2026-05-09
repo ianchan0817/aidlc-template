@@ -62,7 +62,7 @@ Example structure:
 This postmortem closes when:
 - [ ] All Type:Fix items shipped
 - [ ] Tests added and passing in CI
-- [ ] Rule update merged into `aidlc/rules/` (if applicable)
+- [ ] Rule update merged (if applicable, in your tool's rules directory)
 - [ ] Runbook published
 
 Author: [name]   Reviewer: [name]   Date closed: [...]

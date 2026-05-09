@@ -2,7 +2,7 @@
 
 Phase: Construction. Test strategy and coverage enforcement.
 
-Follows `aidlc/rules/testing.md` — do not duplicate those rules here.
+Follows the `testing` rule (in your tool's rules directory) — do not restate it here.
 
 ## Process
 1. **Audit** — run test suite with coverage. Identify gaps.

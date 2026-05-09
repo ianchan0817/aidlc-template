@@ -2,62 +2,12 @@
 
 Phase: Construction. STRIDE threat model + OWASP code review.
 
-## 1. Threat Model (STRIDE)
+Required for any change touching auth, data access, file upload, external APIs, infra, or crypto.
 
-```markdown
-## Threat Model: [Feature]
+## Process
+1. **Threat model** — produce a STRIDE table using `aidlc/examples/threat-model.md` as the format. Cover assets, trust boundaries, and threats per category (Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation of Privilege).
+2. **OWASP review** — auth on every protected route, authorization at the data layer, all input validated, parameterized queries only, no `eval`/dynamic exec, no XSS vectors, secrets out of code/logs, PII minimized, dependencies audited.
+3. **Classify** — Critical: block + escalate. High: fix before release. Medium: next sprint. Low: document.
 
-### Assets — what are we protecting?
-### Trust Boundaries — where does data cross from untrusted to trusted?
-### Threats
-| Category | Threat | Likelihood | Impact | Mitigation |
-|----------|--------|-----------|--------|-----------|
-| Spoofing | | H/M/L | H/M/L | |
-| Tampering | | | | |
-| Repudiation | | | | |
-| Info Disclosure | | | | |
-| Denial of Service | | | | |
-| Elevation of Privilege | | | | |
-```
-
-## 2. Code Review (OWASP categories)
-
-**Auth & Authz**
-- [ ] Auth enforced on all protected routes
-- [ ] Authorization at data layer, not just route
-- [ ] Session tokens with proper expiry and rotation
-- [ ] Password hashing: bcrypt or argon2
-
-**Input Validation**
-- [ ] All user input validated and sanitized
-- [ ] SQL: parameterized queries only
-- [ ] File uploads: MIME by content, size limited, filename sanitized
-- [ ] Output encoded to prevent XSS
-
-**Data Handling**
-- [ ] PII minimized and documented
-- [ ] Encrypted at rest and in transit
-- [ ] No secrets in code, logs, or error messages
-- [ ] No PII in URLs, logs, or analytics
-
-**Client-Side**
-- [ ] No `dangerouslySetInnerHTML` without DOMPurify
-- [ ] No `eval`, `new Function`, dynamic execution
-- [ ] User URLs validated for safe scheme
-- [ ] CSP configured, no `unsafe-eval`
-- [ ] No sensitive data in localStorage
-
-**Dependencies**
-- [ ] `npm audit` / `pip audit` / `cargo audit` — no critical/high CVEs
-- [ ] Versions pinned and reviewed
-
-## 3. Classify Findings
-
-| Severity | Action |
-|----------|--------|
-| Critical | Block release, notify manager immediately |
-| High | Must fix before release |
-| Medium | Fix next sprint |
-| Low | Document and monitor |
-
-Output: findings with severity, file:line, recommended fix. Log to `memory/progress.md`. **Never approve with open Critical/High.**
+## Output
+Findings list with severity, file:line, and recommended fix. Log to `memory/progress.md` under Known Issues. **Never approve a release with open Critical or High items.**

@@ -49,6 +49,15 @@ done < <(find aidlc -name '*.md' -type f 2>/dev/null)
 printf "  %-40s %6d words\n" "aidlc/**/*.md" "$AIDLC_TOTAL"
 echo
 
+echo "Memory (memory/)"
+MEM_TOTAL=0
+while IFS= read -r f; do
+  n=$(wc -w <"$f" | tr -d ' ')
+  MEM_TOTAL=$((MEM_TOTAL + n))
+done < <(find memory -name '*.md' -type f 2>/dev/null)
+printf "  %-40s %6d words\n" "memory/**/*.md" "$MEM_TOTAL"
+echo
+
 echo "Claude adapters (.claude/)"
 CLAUDE_TOTAL=0
 while IFS= read -r f; do
@@ -78,8 +87,8 @@ if [[ $ROOT_TOTAL -gt 1500 ]]; then
   echo "[WARN] Root entry points are heavy ($ROOT_TOTAL words). Target: <1500."
   WARN=$((WARN+1))
 fi
-if [[ $AIDLC_TOTAL -gt 7000 ]]; then
-  echo "[WARN] Canonical content is heavy ($AIDLC_TOTAL words). Target: <7000."
+if [[ $AIDLC_TOTAL -gt 8000 ]]; then
+  echo "[WARN] Canonical content is heavy ($AIDLC_TOTAL words). Target: <8000."
   WARN=$((WARN+1))
 fi
 if [[ $WARN -eq 0 ]]; then

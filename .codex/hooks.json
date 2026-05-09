@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"AIDLC project. Read aidlc/core-workflow.md before starting work.\"}}'",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"AIDLC: read aidlc/core-workflow.md; get bearings in aidlc/common/session-lifecycle.md; then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present (init.sh.example).\"}}'",
             "timeout": 5
           }
         ]

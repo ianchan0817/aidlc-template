@@ -1,6 +1,6 @@
 ---
 description: Engineer — full-stack implementation. Build, test, deploy, architecture, DB, CI/CD.
-model: claude-sonnet-4-6
+model: inherit
 tools:
   - Read
   - Glob

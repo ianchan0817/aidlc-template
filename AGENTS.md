@@ -1,102 +1,90 @@
 # AGENTS.md
 
-Tool-agnostic project instructions for any AI coding agent. Codex CLI reads this natively. Claude Code reads `CLAUDE.md` (which `@-imports` this). Cursor reads `.cursor/rules/*.mdc` (which mirror `aidlc/rules/`).
+Tool-agnostic project instructions for any AI coding agent (works with Claude, GPT, Gemini, GLM, Minimax, etc., across Claude Code, Codex CLI, Cursor IDE, and any tool that respects this file). Canonical methodology lives in `aidlc/`.
 
-## Repository Layout
+## Session lifecycle
+
+At **session start**: read `aidlc/common/session-lifecycle.md` — get bearings (`memory/progress.md`, `memory/feature-list.json`, recent `git log`, `./init.sh` smoke when applicable). At **session end**: commit + update `memory/progress.md` handoff fields.
+
+## Layout
 
 ```
 .
-├── AGENTS.md                 # This file — universal entry point
-├── CLAUDE.md                 # Claude Code entry (imports this + Claude-specific behaviors)
-├── README.md
-├── aidlc/                    # Canonical methodology — read these for the workflow
-│   ├── core-workflow.md      # Master orchestrator (start here)
-│   ├── agents/               # Role definitions: engineer, manager, reviewer
-│   ├── inception/            # spec, design  (WHAT/WHY phase)
-│   ├── construction/         # plan, build, test, review, security, e2e, ship  (HOW phase)
-│   ├── operations/           # operate, retro, investigate, daily-report  (RUN phase)
-│   ├── rules/                # Tool-neutral rule source (mirrored to .claude/rules/ and .cursor/rules/)
-│   ├── common/               # decision-gates.md (structured-question pattern)
-│   └── examples/             # Fill-in templates: feature-spec, adr, threat-model, e2e-test-plan, postmortem
-├── .claude/                  # Claude Code adapters (rules with paths:, agents with model:, skills)
-├── .cursor/                  # Cursor adapters (.mdc rules with globs:, agents, skills)
-├── .codex/                   # Codex config (config.toml, hooks.json) — optional
-├── docs/adr/                 # Architecture Decision Records
-├── memory/                   # Shared progress notes (also see .claude/memory/ auto-memory)
-└── scripts/                  # Utility scripts (audit.sh)
+├── AGENTS.md             Universal entry point (this file)
+├── CLAUDE.md             Claude Code entry — @-imports this
+├── README.md             Human docs
+├── init.sh.example       Copy to init.sh — bootstrap / smoke test for get-bearings
+├── aidlc/                Canonical methodology
+│   ├── core-workflow.md  Master orchestrator — start here
+│   ├── agents/           Roles: engineer, manager, reviewer
+│   ├── inception/        spec, design  (WHAT/WHY)
+│   ├── construction/     plan, build, test, eval, review, security, e2e, ship  (HOW)
+│   ├── operations/       operate, retro, investigate, daily-report  (RUN)
+│   ├── common/           decision-gates.md, session-lifecycle.md
+│   └── examples/         feature-spec, feature-list, eval-suite, adr, threat-model, e2e-test-plan, postmortem
+├── .claude/              Claude Code adapters (rules, agents, skills, settings)
+├── .cursor/              Cursor adapters (rules.mdc, agents, skills, hooks)
+├── .codex/               Codex config (config.toml, hooks.json)
+├── docs/adr/             Architecture Decision Records
+├── memory/               Cross-tool notes: progress.md, feature-list.json
+└── scripts/audit.sh      Token-cost audit
 ```
 
 ## Lifecycle: WHAT → HOW → RUN
 
-```
-Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
-       gate                    gate                  gate
-```
+Inception → Construction → Operations, with a gate between each. Full workflow in `aidlc/core-workflow.md`.
 
-Full workflow: `aidlc/core-workflow.md`. Phase prompts in `aidlc/{inception,construction,operations}/`.
+## Roles
 
-## Roles (Subagents)
-
-When acting in a specialized capacity, read the role file:
-
-| Role | When | File |
-|------|------|------|
+| Role | When to act in this capacity | Definition |
+|------|------------------------------|------------|
 | `engineer` | Build, test, deploy, architecture, DB, CI/CD | `aidlc/agents/engineer.md` |
-| `reviewer` | Code review, security, E2E sign-off, retros | `aidlc/agents/reviewer.md` |
-| `manager` | New initiative, cross-concern coordination, daily reports | `aidlc/agents/manager.md` |
+| `reviewer` | Code review, security, runtime QA, agent evals, E2E sign-off, retros | `aidlc/agents/reviewer.md` |
+| `manager` | New initiative, coordination, daily reports, harness review cadence | `aidlc/agents/manager.md` |
 
-## Engineering Conventions
+## Engineering rules
 
-Always-on rules in `aidlc/rules/` (mirrored per tool):
+Always-on, applied to every change. Each tool has its own rules directory with format-specific frontmatter:
 
-- `code-style.md` — naming, formatting, TypeScript strictness
-- `testing.md` — 100% coverage, TDD, test co-location
-- `security.md` — input validation, secrets, PII, auth/authz
-- `api-conventions.md` — REST naming, response envelope, status codes
-- `ux-guidelines.md` — spacing, typography, mobile, interaction
-- `reproducibility.md` — locked deps, pinned runtime, deterministic builds
-- `tech-stack.md` — your project's stack (fill in before first session)
+- Claude Code → `.claude/rules/*.md` (`paths:` for path-scoping)
+- Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`)
+- Codex → loaded via this AGENTS.md and any subdirectory `AGENTS.override.md`
 
-## Do-Not Rules (Non-Negotiables)
+Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `tech-stack` before the first session.
+
+## Do-not rules (non-negotiables)
 
 - Do not merge without code review
 - Do not ship a release without E2E sign-off
-- Do not skip security review for changes touching auth, data, or external APIs
+- Do not skip security review for changes to auth, data, or external APIs
 - Do not commit secrets, credentials, or `.env` files
-- Do not bypass coverage gates (100% on new/modified code)
+- Do not bypass the 100% coverage gate on new/modified code
 - Do not use floating dependency ranges in production
-- Do not add a fix without a test (every prod incident must produce a fix, a test, or a rule update)
-- Do not write code without a plan for non-trivial changes (use plan mode / two-part code planning)
+- Do not add a fix without a test (every prod incident → fix, test, or rule update)
+- Do not write code without a plan for non-trivial changes
+- Do not mark `passes: true` in `memory/feature-list.json` without reviewer-verified QA
 
-## Success Criteria — How "Done" Is Verified
+## Done is verified
 
 A change is done when:
 - All tests pass with 100% coverage on new/modified files
-- Code reviewed, all critical issues resolved
+- Reviewed, all critical issues resolved
 - E2E journeys signed off for changed flows
+- Agent eval / regression suite green when behavior of AI-facing features changed (`aidlc/construction/eval.md`)
 - Security audit clean if auth/data/API touched
 - Build is reproducible (locked deps, pinned runtime, deploy traceable to commit SHA)
 - 24h post-deploy with green signals (latency, error rate, traffic, saturation)
 
-## Decision Gates
+## Decision gates
 
-When the workflow needs human input, use the structured-question format in `aidlc/common/decision-gates.md` rather than free-form chat. This creates an audit trail and reduces ambiguity.
+When the workflow needs human input, use the structured-question format in `aidlc/common/decision-gates.md` instead of free-form chat. Creates an audit trail.
 
-## Reference Examples
+## Tool-specific entry points
 
-Concrete fill-in templates in `aidlc/examples/`:
-- `feature-spec.md` — produced by `aidlc/inception/spec.md`
-- `adr.md` — produced by `aidlc/construction/plan.md` when an architectural decision is involved
-- `threat-model.md` — produced by `aidlc/construction/security.md`
-- `e2e-test-plan.md` — produced by `aidlc/construction/e2e.md`
-- `postmortem.md` — produced by `aidlc/operations/operate.md`
-
-## Tool-Specific Entry Points
-
-| Tool | Entry | Native Features |
+| Tool | Entry | Native features |
 |------|-------|-----------------|
-| Codex CLI | `AGENTS.md` (this file), hierarchical | `.codex/config.toml` (MCP, profiles), `.codex/hooks.json` (lifecycle hooks) |
-| Claude Code | `CLAUDE.md` (imports this) | `.claude/rules/`, `.claude/agents/`, `.claude/skills/`, `.claude/settings.json` (hooks, permissions) |
-| Cursor IDE | `.cursor/rules/*.mdc` | `.cursor/agents/`, `.cursor/skills/`, `.cursor/hooks.json` |
+| Codex CLI | this `AGENTS.md` (hierarchical: global → repo → subdirs) | `.codex/config.toml`, `.codex/hooks.json` |
+| Claude Code | `CLAUDE.md` (imports this) | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
+| Cursor IDE | `.cursor/rules/*.mdc` | `.cursor/{agents,skills}/`, `.cursor/hooks.json` |
 
-Each tool has its own native location for rules/subagents/skills. Content is duplicated where each tool requires its own format (especially rule frontmatter), but the canonical methodology in `aidlc/` is shared.
+Each tool's adapter directory is the format-specific projection of the canonical content. The methodology in `aidlc/` is shared.

@@ -24,14 +24,14 @@ Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
 | Phase | Slash commands / phase prompts |
 |-------|--------------------------------|
 | **Inception** | `spec`, `design` |
-| **Construction** | `plan`, `build`, `test`, `review`, `security`, `e2e`, `ship` |
+| **Construction** | `plan`, `build`, `test`, `eval`, `review`, `security`, `e2e`, `ship` |
 | **Operations** | `operate`, `retro`, `investigate`, `daily-report` |
 
-Three roles handle the work: `engineer` (build), `reviewer` (quality/security/E2E), `manager` (orchestrate). Definitions in `aidlc/agents/`.
+Three roles handle the work: `engineer` (build), `reviewer` (quality, security, runtime QA, evals, E2E), `manager` (orchestrate, harness review). Definitions in `aidlc/agents/`. Session handoff: `aidlc/common/session-lifecycle.md`; backlog: `memory/feature-list.json`.
 
-Always-on rules in `aidlc/rules/`: code-style, testing, security, api-conventions, ux-guidelines, reproducibility, tech-stack.
+Always-on rules: code-style, testing, security, api-conventions, ux-guidelines, reproducibility, tech-stack. Each tool has its own rules directory with format-specific frontmatter — see `.claude/rules/` and `.cursor/rules/`.
 
-Concrete fill-in templates in `aidlc/examples/`: feature-spec, ADR, threat-model, e2e-test-plan, postmortem.
+Concrete fill-in templates in `aidlc/examples/`: feature-spec, feature-list, eval-suite, ADR, threat-model, e2e-test-plan, postmortem.
 
 Decision gates use the AIDLC structured-question pattern — see `aidlc/common/decision-gates.md`.
 
@@ -56,33 +56,35 @@ aidlc-template/
 ├── AGENTS.md                  # Universal entry — read by Codex natively, imported by CLAUDE.md
 ├── CLAUDE.md                  # Claude entry — @-imports AGENTS.md + Claude-specific behaviors
 ├── README.md                  # This file
+├── init.sh.example            # Copy to init.sh — install/smoke for get-bearings (see session-lifecycle)
 ├── aidlc/                     # ★ Canonical methodology (tool-agnostic)
 │   ├── core-workflow.md       #   Master orchestrator
 │   ├── agents/                #   Role definitions: engineer, manager, reviewer
 │   ├── inception/             #   Phase prompts: spec, design
-│   ├── construction/          #   Phase prompts: plan, build, test, review, security, e2e, ship
+│   ├── construction/          #   Phase prompts: plan, build, test, eval, review, security, e2e, ship
 │   ├── operations/            #   Phase prompts: operate, retro, investigate, daily-report
 │   ├── rules/                 #   Tool-neutral rule source (mirrored to .claude/rules/, .cursor/rules/)
-│   ├── common/                #   decision-gates.md
-│   └── examples/              #   feature-spec, adr, threat-model, e2e-test-plan, postmortem
+│   ├── common/                #   decision-gates.md, session-lifecycle.md
+│   └── examples/              #   feature-spec, feature-list, eval-suite, adr, threat-model, e2e-test-plan, postmortem
 ├── .claude/                   # Claude Code adapters
 │   ├── CLAUDE.md → ../CLAUDE.md (or duplicate)
 │   ├── rules/                 #   7 rules with `paths:` frontmatter (Claude format)
 │   ├── agents/                #   3 subagent adapters with model:/tools: frontmatter, @-import canonical
-│   ├── skills/                #   13 slash-command adapters, @-import canonical phase prompts
+│   ├── skills/                #   Slash-command adapters, @-import canonical phase prompts (incl. eval)
 │   ├── settings.json          #   Permissions + hooks
 │   ├── memory/                #   Project notes (progress.md)
 │   └── docs/adr/              #   ADR storage
 ├── .cursor/                   # Cursor IDE adapters
 │   ├── rules/                 #   7 .mdc files with `globs:` frontmatter (Cursor format)
 │   ├── agents/                #   3 subagent files (Cursor frontmatter: name, description, model, readonly)
-│   ├── skills/                #   13 skill files (SKILL.md format with name, description)
+│   ├── skills/                #   Skill files (SKILL.md format with name, description)
+│   ├── hooks/                 #   Optional hook scripts (e.g. sessionStart)
 │   └── hooks.json             #   Lifecycle hooks
 ├── .codex/                    # Codex CLI adapters
 │   ├── config.toml            #   MCP servers, feature flags, profiles
 │   └── hooks.json             #   PreToolUse/SessionStart hooks
 ├── docs/adr/                  # ADRs (tool-neutral)
-├── memory/                    # Cross-tool progress notes (or use .claude/memory/)
+├── memory/                    # progress.md + feature-list.json (canonical handoff artifacts)
 └── scripts/audit.sh           # Token-cost footprint audit
 ```
 
@@ -102,11 +104,11 @@ rm -rf .git && git init
 
 ### 2. Fill in your stack
 
-Edit `aidlc/rules/tech-stack.md` (mirrored to `.claude/rules/tech-stack.md` and `.cursor/rules/tech-stack.mdc`).
+Edit `.claude/rules/tech-stack.md` and `.cursor/rules/tech-stack.mdc` — keep the two mirrors in sync.
 
 ### 3. Add your build commands
 
-Add a `## How to Run` section to `AGENTS.md` with your install/dev/test/lint/build commands. Codex best-practices recommend keeping these in `AGENTS.md` so any agent reads them at session start.
+Copy `init.sh.example` → `init.sh`, fill in install/dev/test/smoke for your stack. Add a `## How to Run` section to `AGENTS.md` with the same commands. Codex best-practices recommend keeping these in `AGENTS.md` so any agent reads them at session start.
 
 ### 4. Verify the footprint
 
@@ -131,7 +133,7 @@ Expected: ~9k words total (1k root + 5.5k canonical + 1.3k Claude adapters + 1.4
 For any new initiative, follow `aidlc/core-workflow.md`:
 
 ```
-spec → design (if UI) → plan → build → test → review → security → e2e → ship → operate → retro
+spec → design (if UI) → plan → build → test → eval (if agent/LLM features) → review → security → e2e → ship → operate → retro
 ```
 
 Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D questions with `[Answer]:`) when you need explicit human approval.
@@ -161,9 +163,11 @@ For Claude Code specifically: also see `~/.claude/projects/<project>/memory/MEMO
 
 ## Examples
 
-The `aidlc/examples/` directory contains five fill-in templates that the workflow phases produce:
+The `aidlc/examples/` directory contains fill-in templates that the workflow phases produce:
 
 - `feature-spec.md` — output of `/spec` (problem, use cases, RICE, acceptance criteria)
+- `feature-list.md` — shape for `memory/feature-list.json` (incremental backlog)
+- `eval-suite.md` — example agent-eval task YAML (`/eval`)
 - `adr.md` — output of `/plan` when an architectural decision is involved
 - `threat-model.md` — output of `/security` (STRIDE table)
 - `e2e-test-plan.md` — output of `/e2e` (journey table + sign-off checklist)

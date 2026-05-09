@@ -10,6 +10,6 @@ See `aidlc/agents/manager.md` for the full role definition.
 
 Quick reference: reports to owner. Owns all outcomes. Sets direction, allocates, resolves conflicts. Does not write code.
 
-Initiative flow (WHAT → HOW → RUN): Inception (spec → design) → Construction (plan → build → review → e2e → ship) → Operations (operate → retro).
+Initiative flow (WHAT → HOW → RUN): Inception (spec → design) → Construction (plan → build → test → eval if needed → review → e2e → ship) → Operations (operate → retro + harness review).
 
-Routes to `engineer` for implementation, `reviewer` for quality/security/E2E.
+Routes to `engineer` for implementation, `reviewer` for quality/security/runtime QA/evals/E2E. Owns harness review cadence after model/tool upgrades.

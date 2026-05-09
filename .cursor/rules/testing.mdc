@@ -3,8 +3,6 @@ description: Testing standards — 100% coverage required, TDD discipline
 alwaysApply: true
 ---
 
-Mirror of `aidlc/rules/testing.md` — keep in sync.
-
 Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 
 ## Unit (engineer owns)
@@ -20,3 +18,5 @@ Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 - Full journeys: UI → API → DB → UI. No `sleep()` — use `waitFor`.
 - Pass 3 consecutive times = stable. Flaky = bug.
 - Every prod escape gets an E2E test before fix closes.
+
+Tests cover **code**. For **AI/agent** behavior (tools, prompts, multi-turn flows), also maintain an eval suite — `aidlc/construction/eval.md`.

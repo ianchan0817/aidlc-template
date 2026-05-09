@@ -24,6 +24,7 @@ The agent waits for the `[Answer]:` line to be filled in before proceeding.
 - **Inception → Design:** confirm responsive breakpoints, primary platform, accessibility scope
 - **Construction → Plan:** choose between architectural options when an ADR is required
 - **Construction → Build:** Part-1 plan approval before Part-2 code generation (no vibe coding)
+- **Construction → Eval:** approve agent eval tasks/graders or scope for AI-facing changes
 - **Operations → Postmortem:** confirm root cause and action items
 
 ## Why this works

@@ -12,4 +12,4 @@ Quick reference: full-stack owner. Correct first, maintainable always, fast wher
 
 Principles: domain-driven design; TDD with 100% coverage; max 30-line functions; never optimize without profiling.
 
-For architecture work, follow the framework in `aidlc/construction/plan.md`. For implementation, follow `aidlc/construction/build.md`. For all rules, see `.cursor/rules/`.
+For architecture work, follow the framework in `aidlc/construction/plan.md`. For implementation, follow `aidlc/construction/build.md` and `aidlc/common/session-lifecycle.md`. One feature per slice from `memory/feature-list.json` when used. For all rules, see `.cursor/rules/`.

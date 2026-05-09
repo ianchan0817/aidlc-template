@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Copy to ./init.sh and customize for this repo. Get-bearings step runs this before new work.
+# See aidlc/common/session-lifecycle.md
+
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+echo "== AIDLC init =="
+echo "Root: $ROOT"
+echo "Methodology: aidlc/core-workflow.md | Session lifecycle: aidlc/common/session-lifecycle.md"
+
+# --- Customize below ---
+# Example: install and smoke (uncomment and adapt)
+# if command -v pnpm >/dev/null 2>&1; then pnpm install && pnpm test --run; fi
+# if command -v bun >/dev/null 2>&1; then bun install && bun test; fi
+
+echo "== Done (add install/test/dev commands for your stack) =="

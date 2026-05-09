@@ -3,8 +3,6 @@ description: Reproducibility — locked deps, pinned runtime, deterministic buil
 alwaysApply: true
 ---
 
-Mirror of `aidlc/rules/reproducibility.md` — keep in sync.
-
 - Lockfile committed. Builds pinned to exact versions. No floating ranges in production.
 - Runtime version pinned (`.nvmrc`, `.python-version`, container image tag — never `latest`).
 - Config separate from code (12-factor). Env vars for what changes between environments.

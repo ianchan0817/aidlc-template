@@ -4,8 +4,6 @@ description: Testing standards — 100% coverage required, TDD discipline
 
 # Testing
 
-Mirror of `aidlc/rules/testing.md` — keep in sync. Always-on (no `paths:` frontmatter).
-
 Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 
 ## Unit (engineer owns)
@@ -23,3 +21,5 @@ Coverage: 100% statement, branch, function, line. CI blocks merge on drop.
 - Every prod escape gets an E2E test before fix closes.
 
 ## Skip: framework internals, third-party behavior, private functions, trivial getters
+
+Tests cover **code**. For **AI/agent** behavior (tools, prompts, multi-turn flows), also maintain an eval suite — `aidlc/construction/eval.md`.

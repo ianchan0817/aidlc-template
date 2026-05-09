@@ -10,8 +10,6 @@ paths:
 
 # UX Guidelines
 
-Mirror of `aidlc/rules/ux-guidelines.md` — keep in sync.
-
 - Spacing: 4px grid. Tokens: 4/8/12/16/24/32/48px.
 - Type: display 32+/700, h1 28/700, h2 22/600, h3 18/600, body 16/400, small 14/400, micro 12/400. Min 12px. Micro for timestamps only.
 - Color: primary=actions, destructive=irreversible (confirm first), success, warning, muted. Never color-only — pair with icon/label.

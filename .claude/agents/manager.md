@@ -1,6 +1,6 @@
 ---
 description: Manager — orchestrator. New initiatives, cross-concern coordination, daily reports.
-model: claude-opus-4-6
+model: inherit
 tools:
   - Read
   - Glob

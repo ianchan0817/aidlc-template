@@ -1,6 +1,6 @@
 ---
-description: Reviewer — code review, security audit, E2E sign-off, process improvement.
-model: claude-opus-4-6
+description: Reviewer — code review, security, runtime QA, agent evals, E2E sign-off, sprint contracts.
+model: inherit
 tools:
   - Read
   - Write

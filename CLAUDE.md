@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This project follows the AIDLC methodology. Canonical content is in `aidlc/`. Tool-agnostic instructions live in `AGENTS.md`. Always-on rules live in `.claude/rules/`.
+This project follows the AIDLC methodology. Canonical content is in `aidlc/`. Tool-agnostic instructions live in `AGENTS.md`. Always-on rules live in `.claude/rules/`. **Session lifecycle:** `aidlc/common/session-lifecycle.md` (get bearings + handoff).
 
 @AGENTS.md
 
@@ -15,7 +15,7 @@ This project follows the AIDLC methodology. Canonical content is in `aidlc/`. To
 ## Memory
 
 - Auto memory writes to `~/.claude/projects/<project>/memory/` automatically.
-- Project notes live in `memory/progress.md` — what changed, decisions, what's next.
+- Project notes live in `memory/progress.md` — what changed, decisions, what's next. Feature backlog: `memory/feature-list.json` (see `aidlc/examples/feature-list.md`).
 - Detailed status comes from `git log` — don't restate it in memory files.
 - ADRs in `docs/adr/ADR-NNN-title.md`.
 
@@ -27,7 +27,7 @@ Thin adapters with Claude-specific frontmatter (`model:`, `tools:`) that `@-impo
 
 Slash-command workflows that `@-import` phase prompts from `aidlc/{inception,construction,operations}/`.
 
-`/spec` `/design` `/plan` `/build` `/test` `/review` `/security` `/e2e` `/ship` `/operate` `/retro` `/investigate` `/daily-report`
+`/spec` `/design` `/plan` `/build` `/test` `/eval` `/review` `/security` `/e2e` `/ship` `/operate` `/retro` `/investigate` `/daily-report`
 
 ## Rules (`.claude/rules/`)
 
@@ -35,4 +35,4 @@ Path-scoped rules that auto-load when matching files are in context. Cross-cutti
 
 ## Hooks (`.claude/settings.json`)
 
-For deterministic enforcement — actions that must happen every time, not by Claude's judgment. See `.claude/settings.json` `hooks` field for examples (lint after edit, block `.env` reads, etc.).
+For deterministic enforcement — actions that must happen every time, not by Claude's judgment. `SessionStart` reminds agents to run get-bearings (`aidlc/common/session-lifecycle.md`). See `hooks` for other examples (lint after edit, block `.env` reads, etc.).

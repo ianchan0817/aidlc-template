@@ -9,8 +9,6 @@ paths:
 
 # API Conventions
 
-Mirror of `aidlc/rules/api-conventions.md` — keep in sync.
-
 - URLs: plural nouns, kebab-case, no verbs, max 2 nesting levels, versioned `/v1/`, tenant in JWT not URL
 - Success: `{ "data": {...}, "meta": {...} }` — Error: `{ "error": { "code": "SCREAMING_SNAKE", "message": "...", "fields": {...} } }`
 - Status: 200 GET/PATCH/PUT, 201 POST-create, 204 DELETE, 400 malformed, 401 unauthed, 403 forbidden, 404 missing, 409 conflict, 422 validation (not 400), 429 rate limit, 500 server

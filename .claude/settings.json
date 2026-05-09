@@ -45,6 +45,17 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s\\n' 'AIDLC: Read aidlc/common/session-lifecycle.md (get bearings). Then memory/progress.md, memory/feature-list.json, git log -20; run ./init.sh if present (copy from init.sh.example).'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",

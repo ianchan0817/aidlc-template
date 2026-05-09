@@ -1,68 +1,67 @@
 # Core Workflow — AIDLC
 
-The methodology in one page. Tool-agnostic. Adopted from AWS Labs AIDLC and adapted for general SWE.
+Tool-agnostic methodology in one page. Adopted from AWS Labs AIDLC, adapted for general SWE.
 
-## Three Phases
+**Session lifecycle:** `aidlc/common/session-lifecycle.md` — get bearings at start, handoff at end. **Feature backlog:** `memory/feature-list.json` (example: `aidlc/examples/feature-list.md`).
+
+## Three phases
 
 ```
 Inception (WHAT/WHY) → Construction (HOW) → Operations (RUN)
+       gate                 gate                gate
 ```
 
-Every initiative passes through all three. Each phase has a human-approved gate before the next begins.
+Every initiative passes through all three. Each phase has a human-approved gate before the next.
 
-### Inception — determine WHAT and WHY
-- `aidlc/inception/spec.md` — define the problem, use cases, RICE prioritization, acceptance criteria
-- `aidlc/inception/design.md` — UI/component specs, mobile, interaction, accessibility (when UI is involved)
+### Inception
+- `aidlc/inception/spec.md` — define the problem, use cases, RICE, acceptance criteria
+- `aidlc/inception/design.md` — UI/component specs, mobile, interaction (when UI applies)
 
-**Gate:** measurable success metric defined, at least one complete use case, explicit out-of-scope.
+**Gate:** measurable success metric, ≥1 use case with acceptance criteria, explicit out-of-scope.
 
-### Construction — determine HOW and build it
-- `aidlc/construction/plan.md` — architecture + task breakdown, ADR if needed
-- `aidlc/construction/build.md` — incremental TDD in thin vertical slices
+### Construction
+- `aidlc/construction/plan.md` — architecture + task breakdown + **sprint contract** (reviewer-approved verifiable criteria)
+- `aidlc/construction/build.md` — incremental TDD; **one feature/slice** aligned with feature-list when used
 - `aidlc/construction/test.md` — coverage strategy and enforcement
+- `aidlc/construction/eval.md` — **agent/LLM feature** evals (tasks, graders, transcripts) when applicable
 - `aidlc/construction/review.md` — pre-merge two-pass code review
-- `aidlc/construction/security.md` — STRIDE threat model + OWASP audit (when auth/data/API touched)
-- `aidlc/construction/e2e.md` — end-to-end journey verification
+- `aidlc/construction/security.md` — STRIDE + OWASP (when auth/data/API touched)
+- `aidlc/construction/e2e.md` — end-to-end journey verification (runtime QA vs sprint contract)
 - `aidlc/construction/ship.md` — land the branch
 
-**Gate:** all tests passing at 100% coverage, code reviewed, E2E signed off, security cleared if applicable.
+**Gate:** all tests pass at 100% coverage; reviewed; E2E signed off; security cleared if applicable; agent eval suite green when the change touches agent behavior.
 
-### Operations — RUN the system in production
-- `aidlc/operations/operate.md` — post-deploy stewardship: monitoring, incident triage, drift, feedback loop
-- `aidlc/operations/retro.md` — sprint retrospective and agent improvement
-- `aidlc/operations/investigate.md` — structured debugging with root-cause discipline
-- `aidlc/operations/daily-report.md` — manager's daily executive summary
+### Operations
+- `aidlc/operations/operate.md` — post-deploy monitoring, incidents, drift, feedback
+- `aidlc/operations/retro.md` — retrospective, harness review, agent improvement
+- `aidlc/operations/investigate.md` — structured debugging
+- `aidlc/operations/daily-report.md` — manager's daily summary
 
-**Gate:** 24h post-deploy stable signals, every prod incident resolved with a fix/test/rule update.
+**Gate:** 24h stable signals; every prod incident produces a fix, test, or rule update.
 
 ## Roles
+See `aidlc/agents/`: `engineer` (build), `reviewer` (quality, security, **runtime QA**, **evals**, E2E), `manager` (orchestrate, **harness review cadence**).
 
-See `aidlc/agents/`:
-- `engineer` — full-stack implementation
-- `reviewer` — quality, security, E2E sign-off
-- `manager` — orchestration, daily reports, owner-facing decisions
+## Always-on rules
+Each tool has its own rules directory with format-specific frontmatter:
+- Claude Code → `.claude/rules/*.md` (with `paths:` for path-scoping)
+- Cursor → `.cursor/rules/*.mdc` (with `globs:`/`alwaysApply:`)
+- Codex → AGENTS.md hierarchy + `.codex/config.toml`
 
-## Always-On Rules
+Topics: code-style, testing, security, api-conventions, ux-guidelines, reproducibility, tech-stack.
 
-See `aidlc/rules/` — applied across every phase, every agent, every session:
-- `code-style.md`, `testing.md`, `security.md`, `api-conventions.md`, `ux-guidelines.md`, `reproducibility.md`, `tech-stack.md`
-
-## Non-Negotiables
-
+## Non-negotiables
 - 100% test coverage on new/modified code
 - Code review before merge
 - E2E sign-off before release
 - Security review for auth/data/API changes
 - Reproducible builds (locked deps, pinned runtime, CI is truth)
 - Every error logged before fixed
-- Every production incident → a fix, a test, or a rule update
-- Recurring errors (2+ occurrences) → update the relevant agent file
+- Every prod incident → fix, test, or rule update
+- Recurring errors (2+) → update the relevant agent file
 
-## Decision Gates
-
-When a phase needs human approval, use the structured-question format in `aidlc/common/decision-gates.md` rather than asking conversationally. This creates an audit trail and reduces ambiguity.
+## Decision gates
+When a phase needs human approval, use the structured-question format in `aidlc/common/decision-gates.md`.
 
 ## Examples
-
-Concrete fill-in templates the agents produce, in `aidlc/examples/`:
-- `feature-spec.md`, `adr.md`, `threat-model.md`, `e2e-test-plan.md`, `postmortem.md`
+Fill-in templates in `aidlc/examples/`: `feature-spec`, `feature-list`, `eval-suite`, `adr`, `threat-model`, `e2e-test-plan`, `postmortem`.
