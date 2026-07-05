@@ -2,7 +2,7 @@
 
 Tool-agnostic AI Development Lifecycle (AIDLC) template for **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. One canonical methodology, three native adapters, harness patterns for long-running agentic work.
 
-> Inspired by [AWS Labs AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates), [Anthropic harness research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (initializer + coding agent, feature list), [Anthropic evals guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (tasks/graders/transcripts), [Anthropic harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) (generator/evaluator, sprint contracts), [OpenAI Codex loop](https://openai.com/index/unrolling-the-codex-agent-loop/) (instruction layering, sandbox/context handling), [LangChain harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (self-verification, traces), and [Martin Fowler](https://martinfowler.com/articles/harness-engineering.html) / [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) (guides, sensors, lifecycle).
+> Inspired by [AWS Labs AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates), [Anthropic harness research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (initializer + coding agent, feature list), [Anthropic evals guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (tasks/graders/transcripts, pass@k), [Anthropic context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) (session reconciliation, just-in-time retrieval), [Anthropic — writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) (agent-friendly test output), [Anthropic harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) (generator/evaluator, sprint contracts), [OpenAI Codex loop](https://openai.com/index/unrolling-the-codex-agent-loop/) (instruction layering, sandbox/context handling), [LangChain harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (self-verification, traces), and [Martin Fowler](https://martinfowler.com/articles/harness-engineering.html) / [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) (guides, sensors, lifecycle).
 
 ---
 
@@ -130,8 +130,12 @@ Canonical: [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.
 Artifacts:
 
 - [`memory/progress.md`](memory/progress.md) — Current Focus / Last / Next / Decisions / Open Questions / Known Issues
-- [`memory/feature-list.json`](memory/feature-list.json) — incremental backlog (`{id, description, steps, passes}`); only the reviewer flips `passes: true`
-- [`init.sh.example`](init.sh.example) — copy to `init.sh` for env bootstrap + smoke
+- [`memory/feature-list.json`](memory/feature-list.json) — incremental backlog (`{id, description, steps, verify, spec, passes, verified_sha}`). Engineers append; only the reviewer flips `passes: true`, stamping `verified_sha` so a pass goes stale if the code changes underneath it.
+- [`memory/plans/`](memory/plans/) — per-feature execution plans (two-part: plan, then execute with same-turn checkboxes)
+- [`memory/decisions/`](memory/decisions/) — structured `[Answer]:` question files — the audit trail for gated decisions
+- [`init.sh.example`](init.sh.example) — copy to `init.sh` for env bootstrap + smoke. A failing smoke **is** the next session's slice, not a thing to work around.
+
+Session-start self-heals: cross-check `memory/` claims against the repo (files exist, tests pass, git agrees). On mismatch, trust the repo and correct the memory file — see `aidlc/common/session-lifecycle.md`.
 
 ---
 
@@ -185,12 +189,14 @@ aidlc-template/
 │                          adr, threat-model, e2e-test-plan, postmortem
 ├── memory/                Tool-agnostic handoff state
 │   ├── progress.md        Decisions, last/next session, known issues
-│   └── feature-list.json  Incremental feature backlog
+│   ├── feature-list.json  Incremental feature backlog (append-only, verified_sha)
+│   ├── plans/             Two-part execution plans (plan → approve → execute)
+│   └── decisions/         Structured [Answer]: decision-gate files (audit trail)
 ├── .claude/               Claude Code adapters (frontmatter + pointers, no duplicated content)
 │   ├── rules/             7 .md pointers (paths: frontmatter) → aidlc/rules/
 │   ├── agents/            engineer · manager · reviewer → aidlc/agents/
 │   ├── skills/            14 slash commands → aidlc/{inception,construction,operations}/
-│   └── settings.json      Permissions + hooks
+│   └── settings.json      Permissions + hooks (stdin-JSON guard)
 ├── .cursor/               Cursor adapters (frontmatter + pointers, no duplicated content)
 │   ├── rules/             7 .mdc pointers (globs: / alwaysApply:) → aidlc/rules/
 │   ├── agents/            engineer · manager · reviewer → aidlc/agents/
@@ -199,9 +205,10 @@ aidlc-template/
 │   └── hooks.json         Lifecycle hooks (sessionStart, beforeShellExecution)
 ├── .codex/                Codex CLI adapters
 │   ├── config.toml        MCP servers, feature flags
-│   └── hooks.json         PreToolUse safety + SessionStart bearings
+│   └── hooks.json         PreToolUse safety (stdin-JSON guard) + SessionStart bearings
+├── .github/workflows/     CI — audit.sh on every push/PR
 ├── docs/adr/              ADRs (tool-neutral)
-└── scripts/audit.sh       Footprint audit
+└── scripts/audit.sh       Footprint + structural audit (JSON validity, broken refs)
 ```
 
 ---
@@ -217,7 +224,7 @@ cd my-project && rm -rf .git && git init
 2. **Edit your stack** — `aidlc/rules/tech-stack.md` (one place; all kept tools point at it).
 3. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Record verify commands (test/lint/types) in `aidlc/rules/tech-stack.md`.
 4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty (your `/spec` will append items).
-5. **Audit** — `bash scripts/audit.sh`. Warns if root >1500 or canonical >8000 words.
+5. **Audit** — `bash scripts/audit.sh`. Checks word budget (root <1500, canonical <8000) and structure (valid JSON, no broken internal references); exits non-zero on structural failure. Runs automatically in CI on every push/PR.
 6. **Open in your tool** —
 
    | Tool | Command |
@@ -243,9 +250,9 @@ Deterministic enforcement — actions that must happen, not requests.
 Two hooks ship out of the box per tool:
 
 1. **Session-start bearings** — injects the get-bearings reminder pointing at `aidlc/common/session-lifecycle.md`.
-2. **Dangerous-command guard** — rejects `rm -rf /`, `chmod -R 777 /`, `git push --force` to main.
+2. **Dangerous-command guard** — rejects `rm -rf /`, `chmod -R 777 /`, `git push --force` to main/master, `git reset --hard`. Reads the command from the tool's actual hook payload (stdin JSON for Claude Code and Codex, piped JSON for Cursor) — not an environment variable, which never fires.
 
-Extend as needed (format-on-save, pre-completion checklists, loop detection).
+Extend as needed (format-on-save, pre-completion checklists, loop detection). If you add or edit a hook, verify it actually fires — `bash scripts/audit.sh` checks the config is valid JSON, but only a live test confirms the guard blocks what it claims to.
 
 ---
 
@@ -300,7 +307,9 @@ No MCP servers configured by default — add per project.
 | [AWS AIDLC](https://github.com/awslabs/aidlc-workflows) | Three-phase lifecycle, structured `[Answer]:` decision gates, two-part code planning |
 | [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) | `init.sh` + progress file + JSON feature list, get-bearings, one feature at a time |
 | [Anthropic — Harness design for long-running app development](https://www.anthropic.com/engineering/harness-design-long-running-apps) | Generator/evaluator (folded into reviewer), sprint contracts, runtime QA, harness-review cadence |
-| [Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | Tasks/trials/graders, capability vs regression, transcript review, calibrated LLM-as-judge |
+| [Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | Tasks/trials/graders, capability vs regression, pass@k vs pass^k, transcript review, calibrated LLM-as-judge |
+| [Anthropic — Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Session-start reconciliation (trust the repo over stale memory), just-in-time retrieval |
+| [Anthropic — Writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) | Agent-friendly test output (greppable one-line failures) |
 | [OpenAI — Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/) | Layered project docs, sandbox/approval context, compact and stable adapter loading |
 | [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, traces as feedback, loop detection as future hook extension |
 | [Martin Fowler — Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) | Feedforward guides, feedback sensors, harness templates, quality-left framing |
