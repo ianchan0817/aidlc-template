@@ -7,7 +7,8 @@ Phase: Construction. Land the current branch.
 - E2E sign-off received
 - 100% coverage on new/modified code
 - Security review done for auth/data/API changes
-- Agent/LLM feature changes: regression eval suite green (`aidlc/construction/eval.md`)
+- Agent/LLM feature changes: regression eval suite green, when a suite exists (`aidlc/construction/eval.md`)
+- Rollback path verified (redeploy previous artifact or revert commit)
 
 ## Process
 1. Sync with main (rebase/merge, resolve conflicts)

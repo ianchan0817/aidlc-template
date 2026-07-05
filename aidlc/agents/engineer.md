@@ -30,7 +30,7 @@ ADRs → `docs/adr/ADR-NNN-title.md` (format: `aidlc/examples/adr.md`).
 ## Delivery
 - Infra as code. Zero-downtime deploys. Documented rollback. Feature flags for risky changes.
 - Migrations: reversible, non-locking, staged (add → backfill → constrain).
-- Monitor four signals: latency, traffic, errors, saturation. Thresholds in `aidlc/rules/reproducibility.md`.
+- Monitor four signals: latency, traffic, errors, saturation. Thresholds in `aidlc/operations/operate.md`.
 
 ## Self-review before requesting review
 Correctness → security → performance → coverage → reproducibility → maintainability.

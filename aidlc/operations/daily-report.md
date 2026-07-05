@@ -2,7 +2,7 @@
 
 Phase: Operations. Manager's daily executive summary.
 
-Gather signals, then synthesize. Follow format in `aidlc/agents/manager.md` → Daily Report section.
+Gather signals, then synthesize.
 
 ## Gather
 ```bash
@@ -12,4 +12,10 @@ cat memory/progress.md 2>/dev/null
 ls docs/adr/ 2>/dev/null
 ```
 
-Present report. Be direct. Lead with most important thing. Update `memory/progress.md` after.
+## Report format
+1. **The One Thing** — the single most important fact today
+2. **Shipped / In Progress / Blocked** — with owner and ETA
+3. **Health** — coverage, open errors, CI, E2E, security findings
+4. **Decisions needed** — options + recommendation + deadline
+
+Be direct. Lead with the most important thing. Never bury bad news. Update `memory/progress.md` after.

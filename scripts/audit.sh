@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Token-cost audit for the AIDLC template.
-# Reports word counts across canonical content and tool-specific adapters.
+# Template health audit: token footprint + structural integrity.
+# Run in CI and before releases. Exit non-zero on structural failures.
 
 set -euo pipefail
 
@@ -10,22 +10,11 @@ else
   cd "$(dirname "$0")/.."
 fi
 
+FAIL=0
+WARN=0
+
 echo "=== AIDLC Template Footprint Audit ==="
 echo
-
-# Helper: count words in a glob, suppressing missing-file errors
-count() {
-  local label="$1"; shift
-  local total=0
-  for f in "$@"; do
-    [[ -f "$f" ]] || continue
-    local n
-    n=$(wc -w <"$f" | tr -d ' ')
-    total=$((total + n))
-  done
-  printf "  %-40s %6d words\n" "$label" "$total"
-  echo "$total"
-}
 
 echo "Root entry points"
 ROOT_TOTAL=0
@@ -40,69 +29,90 @@ echo "  ----"
 printf "  %-40s %6d words\n" "subtotal" "$ROOT_TOTAL"
 echo
 
-echo "Canonical (aidlc/)"
-AIDLC_TOTAL=0
-while IFS= read -r f; do
-  n=$(wc -w <"$f" | tr -d ' ')
-  AIDLC_TOTAL=$((AIDLC_TOTAL + n))
-done < <(find aidlc -name '*.md' -type f 2>/dev/null)
-printf "  %-40s %6d words\n" "aidlc/**/*.md" "$AIDLC_TOTAL"
-echo
+sum_words() {
+  local total=0 n
+  while IFS= read -r f; do
+    n=$(wc -w <"$f" | tr -d ' ')
+    total=$((total + n))
+  done
+  echo "$total"
+}
 
-echo "Memory (memory/)"
-MEM_TOTAL=0
-while IFS= read -r f; do
-  n=$(wc -w <"$f" | tr -d ' ')
-  MEM_TOTAL=$((MEM_TOTAL + n))
-done < <(find memory -name '*.md' -type f 2>/dev/null)
-printf "  %-40s %6d words\n" "memory/**/*.md" "$MEM_TOTAL"
-echo
+AIDLC_TOTAL=$(find aidlc -name '*.md' -type f 2>/dev/null | sum_words)
+MEM_TOTAL=$(find memory -name '*.md' -type f 2>/dev/null | sum_words)
+CLAUDE_TOTAL=$(find .claude -name '*.md' -type f 2>/dev/null | sum_words)
+CURSOR_TOTAL=$(find .cursor \( -name '*.md' -o -name '*.mdc' \) -type f 2>/dev/null | sum_words)
 
-echo "Claude adapters (.claude/)"
-CLAUDE_TOTAL=0
-while IFS= read -r f; do
-  n=$(wc -w <"$f" | tr -d ' ')
-  CLAUDE_TOTAL=$((CLAUDE_TOTAL + n))
-done < <(find .claude -name '*.md' -type f 2>/dev/null)
-printf "  %-40s %6d words\n" ".claude/**/*.md" "$CLAUDE_TOTAL"
-echo
-
-echo "Cursor adapters (.cursor/)"
-CURSOR_TOTAL=0
-while IFS= read -r f; do
-  n=$(wc -w <"$f" | tr -d ' ')
-  CURSOR_TOTAL=$((CURSOR_TOTAL + n))
-done < <(find .cursor \( -name '*.md' -o -name '*.mdc' \) -type f 2>/dev/null)
-printf "  %-40s %6d words\n" ".cursor/**/*.{md,mdc}" "$CURSOR_TOTAL"
-echo
-
-GRAND=$((ROOT_TOTAL + AIDLC_TOTAL + CLAUDE_TOTAL + CURSOR_TOTAL))
-echo "===================================="
+printf "  %-40s %6d words\n" "aidlc/**/*.md (canonical)" "$AIDLC_TOTAL"
+printf "  %-40s %6d words\n" "memory/**/*.md (project state)" "$MEM_TOTAL"
+printf "  %-40s %6d words\n" ".claude/**/*.md (adapters)" "$CLAUDE_TOTAL"
+printf "  %-40s %6d words\n" ".cursor/**/*.{md,mdc} (adapters)" "$CURSOR_TOTAL"
+echo "  ===================================="
+GRAND=$((ROOT_TOTAL + AIDLC_TOTAL + MEM_TOTAL + CLAUDE_TOTAL + CURSOR_TOTAL))
 printf "  %-40s %6d words\n" "GRAND TOTAL" "$GRAND"
 echo
 
-# Health checks
-WARN=0
 if [[ $ROOT_TOTAL -gt 1500 ]]; then
-  echo "[WARN] Root entry points are heavy ($ROOT_TOTAL words). Target: <1500."
+  echo "[WARN] Root entry points heavy ($ROOT_TOTAL words). Target: <1500."
   WARN=$((WARN+1))
 fi
 if [[ $AIDLC_TOTAL -gt 8000 ]]; then
-  echo "[WARN] Canonical content is heavy ($AIDLC_TOTAL words). Target: <8000."
+  echo "[WARN] Canonical content heavy ($AIDLC_TOTAL words). Target: <8000."
   WARN=$((WARN+1))
 fi
-if [[ $WARN -eq 0 ]]; then
-  echo "[OK] Footprint within budget."
+
+echo "=== Structural checks ==="
+
+# 1. JSON validity (hooks are safety sensors — a syntax error silently disables them)
+if command -v jq >/dev/null 2>&1; then
+  for f in .claude/settings.json .codex/hooks.json .cursor/hooks.json memory/feature-list.json; do
+    if [[ -f "$f" ]]; then
+      if jq empty "$f" 2>/dev/null; then
+        printf "  [ok]   valid JSON: %s\n" "$f"
+      else
+        printf "  [FAIL] invalid JSON: %s\n" "$f"
+        FAIL=$((FAIL+1))
+      fi
+    fi
+  done
+else
+  echo "  [skip] jq not installed — JSON checks skipped"
 fi
 
-# Hook count check
+# 2. Broken internal references: backtick-quoted repo paths in md files must exist.
+#    Only paths rooted at known dirs/files; skip templates ({...}, NNN, *, <).
+while IFS= read -r ref; do
+  case "$ref" in
+    *'{'*|*'*'*|*'<'*|*NNN*) continue ;;
+  esac
+  case "$ref" in
+    aidlc/*|memory/*|docs/*|scripts/*|.claude/*|.cursor/*|.codex/*|AGENTS.md|CLAUDE.md|README.md|init.sh.example)
+      if [[ "$ref" == */ ]]; then
+        [[ -d "$ref" ]] || { printf "  [FAIL] broken dir ref: %s\n" "$ref"; FAIL=$((FAIL+1)); }
+      else
+        [[ -e "$ref" ]] || { printf "  [FAIL] broken file ref: %s\n" "$ref"; FAIL=$((FAIL+1)); }
+      fi
+      ;;
+  esac
+done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor AGENTS.md CLAUDE.md README.md 2>/dev/null | tr -d '`' | sort -u)
+echo "  [ok]   internal reference check complete"
+
+# 3. Hook surface (count registered hooks per tool)
 if command -v jq >/dev/null 2>&1; then
-  echo
-  echo "Hook surface"
   for f in .claude/settings.json .codex/hooks.json .cursor/hooks.json; do
     if [[ -f "$f" ]]; then
       count_hooks=$(jq -r '[.hooks // {} | to_entries[] | .value | length] | add // 0' "$f" 2>/dev/null || echo 0)
-      printf "  %-40s %6d hooks\n" "$f" "$count_hooks"
+      printf "  [info] %-30s %2d hooks\n" "$f" "$count_hooks"
     fi
   done
+fi
+
+echo
+if [[ $FAIL -gt 0 ]]; then
+  echo "[FAIL] $FAIL structural failure(s)."
+  exit 1
+elif [[ $WARN -gt 0 ]]; then
+  echo "[WARN] $WARN warning(s); no structural failures."
+else
+  echo "[OK] Footprint within budget; structure clean."
 fi

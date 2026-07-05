@@ -9,10 +9,10 @@ git diff origin/main --stat 2>/dev/null | head -30
 ```
 
 ## Two-Pass Review
-**Pass 1 (blocks merge):** bugs, security, N+1/unbounded queries, races, trust boundaries, test gaps (<100% coverage)
-**Pass 2 (informational):** naming, structure, duplication, consistency
+**Pass 1 (blocks merge):** bugs, security vulns, N+1/unbounded queries, races, trust-boundary violations, missing indexes, unhandled errors, test gaps (<100% coverage on new/modified)
+**Pass 2 (informational):** naming, structure, duplication, maintainability, consistency
 
-Checklist: correctness → security (per the `security` rule) → performance → coverage (100%) → maintainability.
+Axes: correctness → security (per the `security` rule) → performance → coverage → reproducibility → maintainability.
 
 Review the diff against the sprint contract and actual verification evidence. Do not accept self-reported completion without tests, runtime proof, or eval transcripts as applicable. Findings should point to the observable outcome that fails, not preference for a different valid implementation path.
 

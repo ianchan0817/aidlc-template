@@ -8,6 +8,7 @@
 ## Mobile & interaction
 - 44×44pt min tap, primary CTA above fold, no horizontal overflow, correct input types, bottom sheet > modal.
 - Transitions 200–300ms ease-out; feedback 100–150ms. Skeleton for loads >300ms. Optimistic UI for toggles/likes/saves.
+- Every interactive element: stable `data-testid` (`{component}-{role}`, e.g. `login-form-submit`); never auto-generated; change only when the element's purpose changes.
 
 ## Performance budgets (adjust per stack)
 - Largest Contentful Paint <2.5s; Interaction latency <200ms; layout shift <0.1.

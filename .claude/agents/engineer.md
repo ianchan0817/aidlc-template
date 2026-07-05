@@ -3,6 +3,8 @@ description: Engineer — full-stack implementation. Build, test, deploy, archit
 model: inherit
 tools:
   - Read
+  - Write
+  - Edit
   - Glob
   - Grep
   - Bash

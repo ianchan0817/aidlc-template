@@ -30,14 +30,9 @@
     ],
     "deny": [
       "Bash(rm -rf *)",
-      "Bash(rm -rf /)",
-      "Bash(rm -rf ~)",
       "Bash(git push --force *)",
-      "Bash(cat .secrets.gpg)",
-      "Bash(gpg --decrypt *)",
       "Bash(git reset --hard *)",
-      "Bash(DROP *)",
-      "Bash(truncate *)",
+      "Bash(gpg --decrypt *)",
       "Read(.env)",
       "Read(.env.production)",
       "Read(.env.local)",
@@ -62,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*main|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "command": "bash -c 'cmd=$(jq -r \".tool_input.command // empty\" 2>/dev/null); printf \"%s\" \"$cmd\" | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*(main|master)|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
             "timeout": 5
           }
         ]

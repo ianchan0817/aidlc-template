@@ -15,3 +15,5 @@ tools:
 ---
 
 Canonical role: `aidlc/agents/reviewer.md`. Read it and the active sprint contract first, then start work.
+
+Write access is intentional: the reviewer records verdicts (`passes`, `verified_sha`) in `memory/feature-list.json` and logs findings in `memory/progress.md`.

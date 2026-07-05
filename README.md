@@ -79,8 +79,8 @@ Each phase is one canonical file in `aidlc/{inception,construction,operations}/`
 
 | Tool | Mechanism |
 |------|-----------|
-| Claude Code | Slash command — `/spec`, `/build`, `/eval`, etc. (`.claude/skills/X.md` points at `aidlc/<phase>/X.md`) |
-| Cursor IDE | Skill — `/spec`, `/build`, etc. (`.cursor/skills/X.md` points at the same file) |
+| Claude Code | Slash command — `/spec`, `/build`, `/eval`, etc. (`.claude/skills/<name>.md` points at `aidlc/<phase>/<name>.md`) |
+| Cursor IDE | Skill — `/spec`, `/build`, etc. (`.cursor/skills/<name>.md` points at the same file) |
 | Codex CLI | Plain prose — "Follow `aidlc/construction/build.md`". No slash-command system. |
 
 You can always open the canonical file directly and follow it — slash commands are convenience, not requirement.
@@ -215,7 +215,7 @@ cd my-project && rm -rf .git && git init
 
 1. **Pick your tool(s).** If you only use one of Claude Code / Codex / Cursor, **delete the other adapter dirs** (`.claude/`, `.codex/`, `.cursor/`). The methodology in `aidlc/` and the entry files (`AGENTS.md`, `memory/`) work standalone.
 2. **Edit your stack** — `aidlc/rules/tech-stack.md` (one place; all kept tools point at it).
-3. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Mirror them in `AGENTS.md` `## How to Run`.
+3. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Record verify commands (test/lint/types) in `aidlc/rules/tech-stack.md`.
 4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty (your `/spec` will append items).
 5. **Audit** — `bash scripts/audit.sh`. Warns if root >1500 or canonical >8000 words.
 6. **Open in your tool** —
@@ -236,7 +236,7 @@ Deterministic enforcement — actions that must happen, not requests.
 
 | Tool | File | Events |
 |------|------|--------|
-| Claude Code | [`.claude/settings.json`](.claude/settings.json) | `SessionStart`, `PreToolUse`, `PostToolUse` |
+| Claude Code | [`.claude/settings.json`](.claude/settings.json) | `SessionStart`, `PreToolUse` |
 | Codex CLI | [`.codex/hooks.json`](.codex/hooks.json) | Same names; requires `[features] codex_hooks = true` |
 | Cursor | [`.cursor/hooks.json`](.cursor/hooks.json) | `sessionStart`, `beforeShellExecution`, `afterFileEdit`, … |
 

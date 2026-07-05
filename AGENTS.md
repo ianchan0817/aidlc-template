@@ -44,7 +44,7 @@ aidlc/                  Canonical methodology (single source of truth)
   examples/             feature-spec, feature-list, eval-suite,
                         adr, threat-model, e2e-test-plan,
                         postmortem
-memory/                 progress.md + feature-list.json (handoff)
+memory/                 progress.md · feature-list.json · plans/ · decisions/
 .claude/ .cursor/ .codex/   Tool adapters
 docs/adr/               ADRs
 scripts/audit.sh        Footprint audit
@@ -75,6 +75,8 @@ Rules and phase files are feedforward guides; hooks, tests, E2E, evals, and revi
 | `engineer` | Build, test, deploy, architecture, DB, CI/CD | `aidlc/agents/engineer.md` |
 | `reviewer` | Code review, security, runtime QA, evals, sprint contracts, E2E | `aidlc/agents/reviewer.md` |
 | `manager`  | Initiatives, coordination, daily reports, harness review | `aidlc/agents/manager.md` |
+
+Claude Code and Cursor load roles via agents adapters. Codex has none — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants (only reviewer flips `passes`) hold.
 
 ## Engineering rules
 
