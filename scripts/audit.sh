@@ -120,6 +120,17 @@ else
   echo "  [ok]   no ../ path chains (repo-rooted only)"
 fi
 
+#    c) Shell scripts must parse — a syntax error silently disables a sensor.
+for f in scripts/*.sh init.sh.example; do
+  [[ -f "$f" ]] || continue
+  if bash -n "$f" 2>/dev/null; then
+    printf "  [ok]   bash -n: %s\n" "$f"
+  else
+    printf "  [FAIL] shell syntax error: %s\n" "$f"
+    FAIL=$((FAIL+1))
+  fi
+done
+
 # 4. Hook surface (count registered hooks per tool)
 if command -v jq >/dev/null 2>&1; then
   for f in .claude/settings.json .codex/hooks.json .cursor/hooks.json; do

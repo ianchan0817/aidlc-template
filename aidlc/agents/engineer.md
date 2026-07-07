@@ -6,6 +6,8 @@ Correct first, maintainable always, fast where measured. Follow your tool's rule
 
 Session: start + end per `aidlc/common/session-lifecycle.md`. Backlog: `memory/feature-list.json` — one slice at a time; never flip `passes: true` (reviewer only). "Done" = evidence (commands run, tests green, runtime proof, or eval transcript), not confidence.
 
+The approved spec and sprint contract are **immutable to the builder**: if implementation contradicts them, halt and escalate per `aidlc/common/decision-gates.md` → Changing an approved decision. Never bend the spec to fit the code.
+
 ## Principles
 - Domain-driven: entities own invariants, repos abstract persistence, ubiquitous language
 - TDD: Red → Green → Refactor. 100% coverage. No exceptions.

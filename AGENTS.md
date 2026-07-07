@@ -47,7 +47,7 @@ aidlc/                  Canonical methodology (single source of truth)
 memory/                 progress.md · feature-list.json · plans/ · decisions/
 .claude/ .cursor/ .codex/   Tool adapters
 docs/adr/               ADRs
-scripts/audit.sh        Footprint audit
+scripts/                audit.sh (structure + budget) · agent-test.sh (AI-friendly test sensor)
 ```
 
 Adapters use repo-rooted paths (e.g. `aidlc/agents/engineer.md`) — no `../../` chains.

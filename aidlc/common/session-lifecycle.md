@@ -18,6 +18,11 @@ Get bearings (start) and handoff (end) so work survives context resets. Pattern 
 4. If verification fails, fix and rerun. After 3 failed hypotheses, escalate per `aidlc/operations/investigate.md` — rerunning unchanged commands yields no new information.
 5. Record evidence, not confidence.
 
+## Compact — when context degrades
+Long sessions rot: attention dilutes, early instructions fade. Triggers: ~half the window consumed, repeated corrections on the same point, or the model re-asking answered questions. Then:
+1. **Write state first** — `memory/progress.md` (findings, decisions, next steps), implementation-notes fold-backs, feature-list updates. Anything not in a file is lost.
+2. Compact or clear via your tool, then re-enter through **Get bearings** — the reconcile step is mandatory after compaction.
+
 ## Handoff — session end
 1. **Git** — descriptive commit; leave the branch merge-ready.
 2. **Progress** — update `memory/progress.md`: Last Session, Next Session, Decisions, Open Questions, Known Issues, verification evidence. Sanitize evidence first — no tokens, connection strings, or secrets in committed memory files.

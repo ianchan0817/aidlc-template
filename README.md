@@ -104,7 +104,7 @@ Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (str
 
 Three roles, definitions in `aidlc/agents/`:
 
-- **engineer** — implementation, architecture, DB, CI/CD; one feature/slice at a time from the backlog.
+- **engineer** — implementation, architecture, DB, CI/CD; one feature/slice at a time from the backlog. The approved spec is immutable mid-build: contradiction → halt and escalate, never bend the spec to fit the code.
 - **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off.
 - **manager** — orchestrate, daily reports, harness-review cadence after model/tool upgrades.
 
@@ -150,6 +150,8 @@ Artifacts:
 - [`init.sh.example`](init.sh.example) — copy to `init.sh` for env bootstrap + smoke. A failing smoke **is** the next session's slice, not a thing to work around.
 
 Session-start self-heals: cross-check `memory/` claims against the repo (files exist, tests pass, git agrees). On mismatch, trust the repo and correct the memory file — see `aidlc/common/session-lifecycle.md`.
+
+**Compaction protocol** (same file): when context degrades — half the window gone, repeated corrections, re-asked questions — write durable state to `memory/` *first*, then compact/clear, then re-enter through get-bearings. Anything not in a file is lost.
 
 ---
 
@@ -222,7 +224,9 @@ aidlc-template/
 │   └── hooks.json         PreToolUse safety (stdin-JSON guard) + SessionStart bearings
 ├── .github/workflows/     CI — audit.sh on every push/PR
 ├── docs/adr/              ADRs (tool-neutral)
-└── scripts/audit.sh       Footprint + structural audit (JSON validity, broken refs)
+└── scripts/
+    ├── audit.sh           Footprint + structural audit (JSON validity, broken refs, invariants)
+    └── agent-test.sh      AI-friendly test sensor (ANSI strip, trace truncation, summary-first)
 ```
 
 ---
@@ -267,6 +271,16 @@ Two hooks ship out of the box per tool:
 2. **Dangerous-command guard** — rejects `rm -rf /`, `chmod -R 777 /`, `git push --force` to main/master, `git reset --hard`. Reads the command from the tool's actual hook payload (stdin JSON for Claude Code and Codex, piped JSON for Cursor) — not an environment variable, which never fires.
 
 Extend as needed (format-on-save, pre-completion checklists, loop detection). If you add or edit a hook, verify it actually fires — `bash scripts/audit.sh` checks the config is valid JSON, but only a live test confirms the guard blocks what it claims to.
+
+### AI-friendly test output
+
+Raw terminal output is hostile to model context: ANSI codes fracture tokenization, progress bars flood via `\r`, one exception can emit a 300-line stack trace. [`scripts/agent-test.sh`](scripts/agent-test.sh) wraps any test command:
+
+```bash
+scripts/agent-test.sh bun test        # or pytest, cargo test, go test ...
+```
+
+PASS/FAIL + exit code first, ANSI/OSC stripped, stack traces truncated (default 50 lines, `AGENT_TEST_MAX_TRACE`), total output capped (default 400, `AGENT_TEST_MAX_LINES`), untouched raw log preserved on disk. Exit code passes through, so it works in CI and hooks too.
 
 ---
 

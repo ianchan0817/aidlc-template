@@ -12,9 +12,10 @@ echo "Methodology: aidlc/core-workflow.md | Session lifecycle: aidlc/common/sess
 echo "Purpose: install deps, verify baseline, and smoke a core path before feature work."
 
 # --- Customize below ---
-# Example: install and smoke (uncomment and adapt; keep the project runner unchanged)
-# if command -v bun >/dev/null 2>&1; then bun install && bun test; fi
-# if command -v pnpm >/dev/null 2>&1; then pnpm install && pnpm test --run; fi
-# if command -v npm >/dev/null 2>&1; then npm ci && npm test; fi
+# Example: install and smoke (uncomment and adapt; keep the project runner unchanged).
+# Wrap test commands with scripts/agent-test.sh for agent-parseable output.
+# if command -v bun >/dev/null 2>&1; then bun install && scripts/agent-test.sh bun test; fi
+# if command -v pnpm >/dev/null 2>&1; then pnpm install && scripts/agent-test.sh pnpm test --run; fi
+# if command -v npm >/dev/null 2>&1; then npm ci && scripts/agent-test.sh npm test; fi
 
 echo "== Done (add install/test/dev commands for your stack) =="

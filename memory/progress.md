@@ -3,14 +3,16 @@
 Lean handoff across sessions. Git holds history; this file holds **decisions**, **context**, and **next actions**. Update at end of each substantive session per `aidlc/common/session-lifecycle.md`.
 
 ## Current focus
-<!-- 1–2 sentences: active initiative or slice -->
-"Know Your Unknowns" elicitation layer integrated (Thariq's html-effectiveness collection). Template now covers both sensors-after-action and elicitation-before-action; next work is user-driven.
+<!-- 1–2 sentences: active initiative or slice + lifecycle phase (inception/construction/operations) -->
+Enterprise AI-DLC review round complete: agent-test.sh sensor, compaction protocol, spec-immutability clause. Template stable; next work is user-driven.
 
 ## Last session
 <!-- What changed, commits, blockers resolved -->
-2026-07-07: Added `aidlc/common/unknowns.md` (11 elicitation moves by phase: blindspot pass, interview, design directions, mock-first, intervention brainstorm, semantics map, tweakable plan, implementation notes, buy-in doc, change quiz) + `aidlc/examples/implementation-notes.md` (typed deviation log with fold-back loop). Wired one-line pointers into spec/design/plan/build/review/ship/retro. plan.md now orders by decision volatility. Two new always-true audit sensors: no hardcoded model IDs (model: inherit only), no ../ path chains (repo-rooted only). CLAUDE.md records why adapters use prose pointers, not @-imports. README gained unknowns section + source row.
+2026-07-07 (later): Cross-checked user-supplied enterprise AI-DLC architectural review against current repo. Adopted: `scripts/agent-test.sh` (ANSI/OSC strip, CR-overwrite collapse, stack-trace truncation to 50 lines, 400-line cap with head+tail, raw log preserved, exit-code passthrough — verified with 4 crafted scenarios), Compact section in session-lifecycle.md (write state BEFORE clearing, re-bear after), spec-immutability clause in engineer.md (halt-and-escalate, never bend spec to code), bash -n syntax sensor in audit.sh, wrapper wiring in testing rule + test.md + init.sh.example.
 
-Verification evidence: `bash scripts/audit.sh` exit 0 (both new sensors green, zero broken refs, canonical 7,436w < 8,000 budget).
+Verification evidence: initial 4 scenarios pass, then adversarial workflow (2 agents) reproduced 2 critical bugs — concurrent raw-log clobber (fixed: per-run mktemp + last-symlink) and invalid-UTF-8 aborting BSD sed under UTF-8 locale (fixed: LC_ALL=C pipeline) — plus real-Python-traceback truncation no-op (fixed: trace-block state machine) and MAX_LINES<TAIL cap inversion (fixed: tail clamp). The mktemp fix itself had a BSD flaw (suffix after Xs) caught by rerun. Final regression R1–R6 all green; `bash scripts/audit.sh` exit 0.
+
+Earlier same day: "Know Your Unknowns" elicitation layer (unknowns.md, implementation-notes.md, 8 phase pointers, model-ID + path-chain audit sensors) — commit b756496.
 
 ## Next session
 <!-- First action for the next person/agent -->
@@ -18,6 +20,9 @@ None queued. If extending: consider optional Stop-hook (pre-completion checklist
 
 ## Recent decisions
 <!-- YYYY-MM-DD: decision — rationale (one line each) -->
+2026-07-07: REJECTED 6-file Memory Bank (projectbrief/productContext/systemPatterns/…) — volatility split already exists (low: aidlc/rules + docs/adr; high: memory/); would duplicate and blow token budget.
+2026-07-07: REJECTED audit.md append-only ledger + aidlc-state.md — git is the ledger, decisions/ files carry timestamps, progress.md tracks phase; re-affirms earlier rejection.
+2026-07-07: REJECTED 4th "initializer" agent — triad + append-only feature-list + mid-flight change protocol already provide epistemic closure; added the missing halt-and-escalate clause to engineer.md instead.
 2026-07-07: Adapters use prose pointers, never @-imports — @ resolves relative to the containing file (forces ../../ chains) and doesn't exist in Cursor/Codex; recorded in CLAUDE.md.
 2026-07-07: Model-agnostic + path-rooted are enforced audit sensors, not conventions — `model: inherit` only, no ../ chains; CI fails otherwise.
 2026-07-05: Guard hooks read stdin JSON, not env vars — env-var form never fired (verified no-op); stdin is the documented interface for Claude Code and Codex.

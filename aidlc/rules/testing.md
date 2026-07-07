@@ -8,7 +8,7 @@ Completion requires evidence, not confidence: include command output, runtime ch
 - TDD: test before/alongside code. Co-located: `foo.test.ts` next to `foo.ts`
 - Behavior names, one assertion per test, no I/O, Arrange/Act/Assert
 - Test: every public function, every branch, every error path, every boundary (zero/null/empty/max)
-- Agent-friendly output: summary lines only by default; failures greppable on one line (test name + expected vs actual)
+- Agent-friendly output: run suites via `scripts/agent-test.sh <cmd>` when present — summary-first, ANSI-stripped, traces truncated, raw log preserved. Failures greppable on one line.
 
 ## Integration (engineer owns)
 - Real DB, real cache — no mocks for system under test
