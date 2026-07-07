@@ -1,26 +1,53 @@
 # aidlc-template
 
-Tool-agnostic AI Development Lifecycle (AIDLC) template for **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. One canonical methodology, three native adapters, harness patterns for long-running agentic work.
+Tool-agnostic AI Development Lifecycle (AIDLC) template for **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. One canonical methodology, three thin native adapters, harness patterns for long-running agentic work.
 
-> Inspired by [AWS Labs AIDLC](https://github.com/awslabs/aidlc-workflows) (3-phase lifecycle, decision gates), [Anthropic harness research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (initializer + coding agent, feature list), [Anthropic evals guide](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (tasks/graders/transcripts, pass@k), [Anthropic context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) (session reconciliation, just-in-time retrieval), [Anthropic — writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) (agent-friendly test output), [Anthropic harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) (generator/evaluator, sprint contracts), [OpenAI Codex loop](https://openai.com/index/unrolling-the-codex-agent-loop/) (instruction layering, sandbox/context handling), [LangChain harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) (self-verification, traces), and [Martin Fowler](https://martinfowler.com/articles/harness-engineering.html) / [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) (guides, sensors, lifecycle).
+Built from AWS Labs' AIDLC, Anthropic's harness/evals/context-engineering research, and the harness-engineering literature — full credits in [Sources](#sources).
+
+**Contents:** [Why](#why) · [Quick start](#quick-start--5-minutes) · [Architecture](#architecture) · [Daily workflow](#daily-workflow) · [Guardrails & sensors](#guardrails--sensors) · [Reference](#reference) · [Sources](#sources)
 
 ---
 
 ## Why
 
-Agentic coding templates are usually tool-specific: pick `.claude/` and you can't share with Codex; pick `.cursor/` and Claude Code starts from scratch. The methodology is the same — review code, write tests, deploy carefully — but the wiring isn't portable.
+**Agentic templates are usually tool-locked.** Pick `.claude/` and you can't share with Codex; pick `.cursor/` and Claude Code starts from scratch. The methodology is identical — review code, write tests, deploy carefully — but the wiring isn't portable.
 
-This template separates **methodology** (workflow, rules, roles) from **wiring** (how each tool loads it). Methodology lives in `aidlc/`. Each tool has a thin adapter directory that points at it via repo-rooted paths.
+**This template separates methodology from wiring.** Methodology lives once in `aidlc/`; each tool has a thin adapter directory pointing at it via repo-rooted paths. It also bakes in long-running-agent research: a structured **session lifecycle**, a JSON **feature backlog**, **sprint contracts** between engineer and reviewer, and a dedicated **eval phase** for AI behavior.
 
-It also bakes in patterns from long-running-agent research: a structured **session lifecycle**, a JSON **feature backlog**, **sprint contracts** between engineer and reviewer, and a dedicated **eval phase** for AI/agent behavior.
+**Four commitments**, enforced by CI where possible:
 
-Designed around a few simple commitments: **single source of truth** (everything lives once in `aidlc/`), **thin adapters** (tool dirs are pointers, not copies), **scoped work** (one feature/slice at a time), and **sensors over confidence** (tests, hooks, evals, review). The harness is intentionally five-part:
+| Commitment | Meaning |
+|------------|---------|
+| Single source of truth | Everything lives once in `aidlc/`; adapters are pointers, not copies |
+| Model + tool agnostic | `model: inherit` only, repo-rooted paths only — both are CI-failing audit sensors |
+| Scoped work | One feature/slice per session, tied to a verifiable sprint contract |
+| Sensors over confidence | Tests, hooks, evals, review — never self-reported "done" |
 
-- **Instructions** route agents through focused files instead of one giant prompt.
-- **State** persists progress, backlog, and git history across resets.
-- **Scope** keeps work to one independently committable slice.
-- **Verification** uses tests, hooks, E2E, evals, transcripts, and review as sensors.
-- **Lifecycle** forces initialize → work → verify → handoff → commit.
+The harness is five-part: **Instructions** (focused files, no giant prompt) · **State** (memory + git survive resets) · **Scope** (one committable slice) · **Verification** (tests, hooks, E2E, evals, transcripts, review) · **Lifecycle** (initialize → work → verify → handoff → commit).
+
+---
+
+## Quick start — 5 minutes
+
+```bash
+git clone https://github.com/ianchan0817/aidlc-template.git my-project
+cd my-project && rm -rf .git && git init
+```
+
+1. **Pick your tool(s).** Using only one of Claude Code / Codex / Cursor? Delete the other adapter dirs (`.claude/`, `.codex/`, `.cursor/`) — `aidlc/`, `AGENTS.md`, and `memory/` work standalone.
+2. **Fill in your stack** — `aidlc/rules/tech-stack.md` (one place; every tool points at it).
+3. **Bootstrap** — `cp init.sh.example init.sh`, add install / dev / smoke commands.
+4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty; `/spec` appends items.
+5. **Audit** — `bash scripts/audit.sh` (word budgets + structural checks; also runs in CI on every push).
+6. **Open in your tool:**
+
+   | Tool | Command | Auto-loads |
+   |------|---------|-----------|
+   | Claude Code | `claude` | `CLAUDE.md` (imports `AGENTS.md`) |
+   | Codex CLI | `codex` | `AGENTS.md` (hierarchical) |
+   | Cursor | open the directory | `.cursor/rules/*.mdc` |
+
+7. **First feature** — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
 
 ---
 
@@ -43,94 +70,69 @@ Designed around a few simple commitments: **single source of truth** (everything
             (handoff)                  (backlog)
 ```
 
-Adapters never use `../../` chains — every reference is repo-rooted (e.g. `aidlc/agents/engineer.md`). Renaming or moving an adapter file never breaks references.
+- Adapters never use `../../` chains — every reference is repo-rooted (e.g. `aidlc/agents/engineer.md`), so moving files never breaks references. Enforced by `scripts/audit.sh`.
+- Rules live once in [`aidlc/rules/`](aidlc/rules/); `.claude/rules/*.md` (`paths:` frontmatter) and `.cursor/rules/*.mdc` (`globs:`/`alwaysApply:`) are thin pointers in each tool's native format.
+- Keep root instructions compact and stable; deep methodology stays under `aidlc/` and loads on demand.
 
 ---
 
-## Methodology
+## Daily workflow
 
 ```
 Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
        gate                    gate                  gate
 ```
 
-Each phase is one canonical file in `aidlc/{inception,construction,operations}/`. Roles and rules below.
+Each command is one canonical file in `aidlc/{inception,construction,operations}/`. Claude Code and Cursor expose them as `/slash` commands; in Codex say "Follow `aidlc/construction/build.md`". You can always open the file directly — slash commands are convenience, not requirement.
 
-### Commands — when to use each
+### Commands
 
 | Command | Phase | When to use |
 |---------|-------|-------------|
-| `/spec` | Inception | Starting a new feature or initiative — define problem, use cases, RICE, acceptance criteria |
-| `/design` | Inception | The feature has UI — component specs, mobile, interaction patterns |
-| `/plan` | Construction | Spec is approved — architecture, task breakdown, sprint contract with reviewer |
-| `/build` | Construction | Sprint contract is agreed — incremental TDD on one feature/slice |
-| `/test` | Construction | Build is in progress — coverage strategy, enforce 100% on new/modified |
-| `/eval` | Construction | The change touches AI/agent behavior (tools, prompts, multi-turn flows) |
-| `/review` | Construction | Code is ready for merge — pre-merge two-pass code review |
-| `/security` | Construction | The change touches auth, data, file upload, external APIs, or crypto |
-| `/e2e` | Construction | Before release — end-to-end journey verification, sign-off |
-| `/ship` | Construction | Review + E2E + (security/evals if applicable) all green — land the branch |
-| `/operate` | Operations | Just deployed; or an alert/incident fired; or 24h post-deploy check |
-| `/investigate` | Operations | A bug, test failure, or unexpected behavior — root-cause first, no symptom patches |
-| `/daily-report` | Operations | Manager's daily executive summary (typically morning) |
-| `/retro` | Operations | End of sprint / every 2 weeks; or after a major model/tool upgrade |
-
-### How to invoke
-
-| Tool | Mechanism |
-|------|-----------|
-| Claude Code | Slash command — `/spec`, `/build`, `/eval`, etc. (`.claude/skills/<name>.md` points at `aidlc/<phase>/<name>.md`) |
-| Cursor IDE | Skill — `/spec`, `/build`, etc. (`.cursor/skills/<name>.md` points at the same file) |
-| Codex CLI | Plain prose — "Follow `aidlc/construction/build.md`". No slash-command system. |
-
-You can always open the canonical file directly and follow it — slash commands are convenience, not requirement.
+| `/spec` | Inception | New feature/initiative — problem, use cases, RICE, acceptance criteria |
+| `/design` | Inception | The feature has UI — component specs, mobile, interaction |
+| `/plan` | Construction | Spec approved — architecture, task breakdown, sprint contract |
+| `/build` | Construction | Contract agreed — incremental TDD on one feature/slice |
+| `/test` | Construction | Coverage strategy — 100% on new/modified code |
+| `/eval` | Construction | Change touches AI/agent behavior (tools, prompts, multi-turn) |
+| `/review` | Construction | Ready for merge — two-pass code review |
+| `/security` | Construction | Touches auth, data, file upload, external APIs, or crypto |
+| `/e2e` | Construction | Before release — journey verification + sign-off |
+| `/ship` | Construction | All gates green — land the branch |
+| `/operate` | Operations | Just deployed / incident / 24h post-deploy check |
+| `/investigate` | Operations | Bug or failure — root cause first, no symptom patches |
+| `/daily-report` | Operations | Manager's daily executive summary |
+| `/retro` | Operations | Sprint end, or after a major model/tool upgrade |
 
 ### Common scenarios
 
-| Situation | Command sequence |
-|-----------|------------------|
+| Situation | Sequence |
+|-----------|----------|
 | New feature | `/spec` → `/design` (if UI) → `/plan` → `/build` → `/test` → `/review` → `/e2e` → `/ship` → `/operate` |
 | New **AI/LLM** feature | …same, plus `/eval` between `/test` and `/review` |
 | Auth/data/API change | …same, plus `/security` before `/e2e` |
 | Bug report | `/investigate` → `/build` (fix + regression test) → `/test` → `/review` → `/ship` |
-| Production incident | `/operate` (acknowledge → mitigate) → `/investigate` (root cause) → fix loop → `/operate` (postmortem) |
+| Production incident | `/operate` (mitigate) → `/investigate` (root cause) → fix loop → `/operate` (postmortem) |
 | Daily standup | `/daily-report` |
-| End of sprint / 2 weeks | `/retro` |
-| After a major model upgrade | `/retro` (harness review step — strip stale scaffolding) |
+| Sprint end / model upgrade | `/retro` (harness review — strip stale scaffolding) |
 
-Each phase has a gate before the next. Use `aidlc/common/decision-gates.md` (structured A/B/C/D + `[Answer]:`) when explicit human approval is needed.
+Each phase has a gate. When explicit human approval is needed, use [`aidlc/common/decision-gates.md`](aidlc/common/decision-gates.md) — structured A/B/C/D questions with `[Answer]:` lines, stored in `memory/decisions/` as the audit trail.
 
 ### Roles
 
-Three roles, definitions in `aidlc/agents/`:
+Definitions in [`aidlc/agents/`](aidlc/agents/):
 
-- **engineer** — implementation, architecture, DB, CI/CD; one feature/slice at a time from the backlog. The approved spec is immutable mid-build: contradiction → halt and escalate, never bend the spec to fit the code.
-- **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off.
+- **engineer** — implementation, architecture, DB, CI/CD; one slice at a time. The approved spec is **immutable mid-build**: contradiction → halt and escalate, never bend the spec to fit the code.
+- **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off. Only the reviewer flips `passes: true`.
 - **manager** — orchestrate, daily reports, harness-review cadence after model/tool upgrades.
-
-### Rules
-
-Always-on, single source of truth in [`aidlc/rules/*.md`](aidlc/rules/): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. `.claude/rules/*.md` and `.cursor/rules/*.mdc` are thin pointers in each tool's native frontmatter format. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
-
-### Know your unknowns
-
-The map is not the territory — the gap is your unknowns, and pre-implementation is the cheapest place to find them. [`aidlc/common/unknowns.md`](aidlc/common/unknowns.md) catalogs 11 elicitation moves, each wired into its phase:
-
-| Phase | Moves |
-|-------|-------|
-| `/spec` | **Interview** (agent asks, blast-radius order) · **intervention brainstorm** (S/M/L/XL option space from real code) |
-| `/design` | **Design directions** (react to 3–4 incompatible renders) · **mock before wiring** (fake data, click it first) |
-| `/plan` | **Blindspot pass** (unknown unknowns in unfamiliar code) · **semantics map** (prove reference comprehension before porting) · **tweakable plan** (decisions ordered by volatility, each with a reversal trigger) |
-| `/build` | **Implementation notes** (typed deviation log → fold-back bullets feed the next plan) |
-| `/review` | **Change quiz** (verified comprehension for high-blast-radius merges) |
-| `/ship` | **Buy-in doc** (demo first, pre-answered objections, named sign-offs) |
-| `/retro` | Repeated deviations = guide gap or sensor gap — fix the harness |
 
 ---
 
-## Session lifecycle
+## Guardrails & sensors
 
-Every session uses the same get-bearings → work → handoff loop so context survives resets.
+### Session lifecycle
+
+Every session runs the same loop so work survives context resets — canonical: [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.md), reinforced by each tool's `SessionStart` hook.
 
 | Start | Work | End |
 |-------|------|-----|
@@ -139,52 +141,80 @@ Every session uses the same get-bearings → work → handoff loop so context su
 | `git log --oneline -20` | TDD red→green→refactor | Leave merge-ready |
 | Run `./init.sh` smoke | Runtime QA via reviewer | Reviewer flips `passes` |
 
-Canonical: [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.md). The `SessionStart` hook in each tool injects this reminder.
+Three self-healing rules:
 
-Artifacts:
+- **Reconcile on start** — cross-check `memory/` claims against the repo (files exist, tests pass, git agrees). On mismatch, trust the repo and correct the memory file.
+- **Broken smoke = the slice** — if `./init.sh` fails, fixing the baseline *is* this session's work.
+- **Compact before you lose it** — when context degrades (half the window gone, repeated corrections, re-asked questions): write durable state to `memory/` *first*, then compact/clear, then re-enter through get-bearings. Anything not in a file is lost.
 
-- [`memory/progress.md`](memory/progress.md) — Current Focus / Last / Next / Decisions / Open Questions / Known Issues
-- [`memory/feature-list.json`](memory/feature-list.json) — incremental backlog (`{id, description, steps, verify, spec, passes, verified_sha}`). Engineers append; only the reviewer flips `passes: true`, stamping `verified_sha` so a pass goes stale if the code changes underneath it.
-- [`memory/plans/`](memory/plans/) — per-feature execution plans (two-part: plan, then execute with same-turn checkboxes)
-- [`memory/decisions/`](memory/decisions/) — structured `[Answer]:` question files — the audit trail for gated decisions
-- [`init.sh.example`](init.sh.example) — copy to `init.sh` for env bootstrap + smoke. A failing smoke **is** the next session's slice, not a thing to work around.
+State artifacts:
 
-Session-start self-heals: cross-check `memory/` claims against the repo (files exist, tests pass, git agrees). On mismatch, trust the repo and correct the memory file — see `aidlc/common/session-lifecycle.md`.
+| File | Holds |
+|------|-------|
+| [`memory/progress.md`](memory/progress.md) | Current Focus / Last / Next / Decisions / Open Questions / Known Issues |
+| [`memory/feature-list.json`](memory/feature-list.json) | Backlog `{id, description, steps, verify, spec, passes, verified_sha}` — engineers append; reviewer flips `passes` and stamps `verified_sha`, so a pass goes stale if code changes underneath it |
+| [`memory/plans/`](memory/plans/) | Two-part execution plans (plan → approve → execute with same-turn checkboxes) |
+| [`memory/decisions/`](memory/decisions/) | `[Answer]:` question files — audit trail for gated decisions |
+| [`init.sh.example`](init.sh.example) | Copy to `init.sh` — env bootstrap + smoke |
 
-**Compaction protocol** (same file): when context degrades — half the window gone, repeated corrections, re-asked questions — write durable state to `memory/` *first*, then compact/clear, then re-enter through get-bearings. Anything not in a file is lost.
+### Know your unknowns
 
----
+The map is not the territory — the gap is your unknowns, and pre-implementation is the cheapest place to find them. [`aidlc/common/unknowns.md`](aidlc/common/unknowns.md) catalogs 11 elicitation moves, wired into their phases:
 
-## Agent evals vs code tests
+| Phase | Moves |
+|-------|-------|
+| `/spec` | **Interview** (agent asks, blast-radius order) · **intervention brainstorm** (S/M/L/XL options from real code) |
+| `/design` | **Design directions** (react to 3–4 incompatible renders) · **mock before wiring** (fake data, click it first) |
+| `/plan` | **Blindspot pass** (unknown unknowns in unfamiliar code) · **semantics map** (prove reference comprehension before porting) · **tweakable plan** (decisions ordered by volatility, each with a reversal trigger) |
+| `/build` | **Implementation notes** (typed deviation log → fold-back bullets feed the next plan) |
+| `/review` | **Change quiz** (verified comprehension for high-blast-radius merges) |
+| `/ship` | **Buy-in doc** (demo first, pre-answered objections, named sign-offs) |
+| `/retro` | Repeated deviations = guide gap or sensor gap — fix the harness |
 
-Tests cover code paths. Evals cover agent behavior — different graders, different lifecycle.
+### Agent evals vs code tests
+
+Tests cover code paths; evals cover agent behavior. Details: [`aidlc/construction/eval.md`](aidlc/construction/eval.md) · task format: [`aidlc/examples/eval-suite.md`](aidlc/examples/eval-suite.md).
 
 | Aspect | Tests (`/test`) | Evals (`/eval`) |
 |--------|-----------------|-----------------|
 | Subject | Code paths | Agent transcripts + outcomes |
 | Graders | Deterministic asserts | Code + LLM-judge + human spot-checks |
 | Suites | Unit / integration / E2E | Capability vs regression |
-| When to add | Every change | When AI features ship or change |
+| When | Every change | When AI features ship or change |
 
-Start with 20–50 real failures. Read transcripts on every failed run. Calibrate LLM-as-judge against humans. See [`aidlc/construction/eval.md`](aidlc/construction/eval.md) and [`aidlc/examples/eval-suite.md`](aidlc/examples/eval-suite.md).
+Start with 20–50 real failures. Read transcripts on every failed run. Calibrate LLM-as-judge against humans. Gate releases on pass^k (all k trials), not pass@k.
+
+### Hooks
+
+Deterministic enforcement — actions that must happen, not requests. Two ship per tool: **session-start bearings** (injects the get-bearings reminder) and a **dangerous-command guard** (`rm -rf /`, `chmod -R 777 /`, force-push to main/master, `git reset --hard`). The guard reads the tool's actual hook payload (stdin JSON) — not an environment variable, which never fires.
+
+| Tool | File | Events |
+|------|------|--------|
+| Claude Code | [`.claude/settings.json`](.claude/settings.json) | `SessionStart`, `PreToolUse` |
+| Codex CLI | [`.codex/hooks.json`](.codex/hooks.json) | Same names; needs `[features] codex_hooks = true` |
+| Cursor | [`.cursor/hooks.json`](.cursor/hooks.json) | `sessionStart`, `beforeShellExecution`, … |
+
+Extend as needed (format-on-save, pre-completion checklists, loop detection). If you add a hook, verify it actually fires — the audit checks JSON validity, but only a live test proves the guard blocks.
+
+### AI-friendly test output
+
+Raw terminal output is hostile to model context: ANSI codes fracture tokenization, progress bars flood via `\r`, one exception can emit a 300-line stack trace. [`scripts/agent-test.sh`](scripts/agent-test.sh) wraps any test command:
+
+```bash
+scripts/agent-test.sh bun test        # or pytest, cargo test, go test ...
+```
+
+PASS/FAIL + exit code first · ANSI/OSC stripped · stack traces truncated (default 50, `AGENT_TEST_MAX_TRACE`) · output capped (default 400, `AGENT_TEST_MAX_LINES`) · untouched per-run raw log preserved (parallel-safe) · exit code passes through, so it works in CI and hooks.
+
+### Template CI
+
+`bash scripts/audit.sh` (also on every push/PR via `.github/workflows/`): word budgets (root <1500, canonical <8000), JSON validity of hook configs, broken internal references, **no hardcoded model IDs** (`model: inherit` only), **no `../` path chains**, shell-script syntax. Exits non-zero on structural failure.
 
 ---
 
-## Tool support
+## Reference
 
-| Tool | Entry | Native features |
-|------|-------|-----------------|
-| **Claude Code** | `CLAUDE.md` (imports `AGENTS.md`) | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
-| **Codex CLI** | `AGENTS.md` (hierarchical) | `.codex/config.toml`, `.codex/hooks.json` |
-| **Cursor IDE** | `.cursor/rules/*.mdc` | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |
-
-All three read `AGENTS.md` — natively (Codex), via `@-import` (Claude), or by reference (Cursor). Adapters point at canonical content in `aidlc/` via repo-rooted paths.
-
-Keep root instructions compact and stable. Put detailed method content under `aidlc/`, then let each tool load only its native adapter plus the canonical files it needs.
-
----
-
-## Directory structure
+### Directory structure
 
 ```
 aidlc-template/
@@ -199,133 +229,58 @@ aidlc-template/
 │   ├── construction/      plan, build, test, eval, review,
 │   │                      security, e2e, ship                       (HOW)
 │   ├── operations/        operate, retro, investigate, daily-report (RUN)
-│   ├── rules/             7 canonical rule bodies (single source of truth)
-│   ├── common/            decision-gates.md, session-lifecycle.md
-│   └── examples/          feature-spec, feature-list, eval-suite,
-│                          adr, threat-model, e2e-test-plan, postmortem
+│   ├── rules/             7 canonical rule bodies
+│   ├── common/            decision-gates, session-lifecycle, unknowns
+│   └── examples/          feature-spec, feature-list, eval-suite, adr,
+│                          threat-model, e2e-test-plan, implementation-notes,
+│                          postmortem
 ├── memory/                Tool-agnostic handoff state
 │   ├── progress.md        Decisions, last/next session, known issues
-│   ├── feature-list.json  Incremental feature backlog (append-only, verified_sha)
-│   ├── plans/             Two-part execution plans (plan → approve → execute)
-│   └── decisions/         Structured [Answer]: decision-gate files (audit trail)
-├── .claude/               Claude Code adapters (frontmatter + pointers, no duplicated content)
-│   ├── rules/             7 .md pointers (paths: frontmatter) → aidlc/rules/
-│   ├── agents/            engineer · manager · reviewer → aidlc/agents/
-│   ├── skills/            14 slash commands → aidlc/{inception,construction,operations}/
+│   ├── feature-list.json  Backlog (append-only, verified_sha)
+│   ├── plans/             Two-part execution plans
+│   └── decisions/         [Answer]: decision-gate files (audit trail)
+├── .claude/               Claude Code adapters (pointers, no duplicated content)
+│   ├── rules/  agents/  skills/         → aidlc/
 │   └── settings.json      Permissions + hooks (stdin-JSON guard)
-├── .cursor/               Cursor adapters (frontmatter + pointers, no duplicated content)
-│   ├── rules/             7 .mdc pointers (globs: / alwaysApply:) → aidlc/rules/
-│   ├── agents/            engineer · manager · reviewer → aidlc/agents/
-│   ├── skills/            14 skills → aidlc/{inception,construction,operations}/
-│   ├── hooks/             Hook scripts (e.g. aidlc-session-start.sh)
-│   └── hooks.json         Lifecycle hooks (sessionStart, beforeShellExecution)
+├── .cursor/               Cursor adapters (pointers, no duplicated content)
+│   ├── rules/  agents/  skills/  hooks/ → aidlc/
+│   └── hooks.json         sessionStart + beforeShellExecution
 ├── .codex/                Codex CLI adapters
 │   ├── config.toml        MCP servers, feature flags
-│   └── hooks.json         PreToolUse safety (stdin-JSON guard) + SessionStart bearings
+│   └── hooks.json         PreToolUse guard + SessionStart bearings
 ├── .github/workflows/     CI — audit.sh on every push/PR
 ├── docs/adr/              ADRs (tool-neutral)
 └── scripts/
-    ├── audit.sh           Footprint + structural audit (JSON validity, broken refs, invariants)
-    └── agent-test.sh      AI-friendly test sensor (ANSI strip, trace truncation, summary-first)
+    ├── audit.sh           Footprint + structural audit
+    └── agent-test.sh      AI-friendly test sensor
 ```
 
----
+### Examples (`aidlc/examples/`)
 
-## New project — 5 minutes
+Fill-in templates for what each phase produces — documentation, not auto-loaded.
 
-```bash
-git clone https://github.com/ianchan0817/aidlc-template.git my-project
-cd my-project && rm -rf .git && git init
-```
+**Always useful:** `feature-spec.md` (`/spec` output) · `feature-list.md` (backlog shape) · `e2e-test-plan.md` (journey table + sign-off).
 
-1. **Pick your tool(s).** If you only use one of Claude Code / Codex / Cursor, **delete the other adapter dirs** (`.claude/`, `.codex/`, `.cursor/`). The methodology in `aidlc/` and the entry files (`AGENTS.md`, `memory/`) work standalone.
-2. **Edit your stack** — `aidlc/rules/tech-stack.md` (one place; all kept tools point at it).
-3. **Bootstrap** — `cp init.sh.example init.sh` and fill install / dev / smoke commands. Record verify commands (test/lint/types) in `aidlc/rules/tech-stack.md`.
-4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty (your `/spec` will append items).
-5. **Audit** — `bash scripts/audit.sh`. Checks word budget (root <1500, canonical <8000) and structure (valid JSON, no broken internal references); exits non-zero on structural failure. Runs automatically in CI on every push/PR.
-6. **Open in your tool** —
+**Conditional:** `adr.md` (`/plan`, architectural decisions) · `threat-model.md` (`/security`, STRIDE) · `eval-suite.md` (`/eval`, AI features) · `implementation-notes.md` (`/build` deviation log) · `postmortem.md` (`/operate`, Critical/High incidents).
 
-   | Tool | Command |
-   |------|---------|
-   | Claude Code | `claude` (auto-loads `CLAUDE.md`) |
-   | Codex CLI | `codex` (auto-loads `AGENTS.md`) |
-   | Cursor | open the directory (auto-loads `.cursor/rules/*.mdc`) |
-
-7. **First feature** — `/spec` your first feature, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
-
----
-
-## Hooks
-
-Deterministic enforcement — actions that must happen, not requests.
-
-| Tool | File | Events |
-|------|------|--------|
-| Claude Code | [`.claude/settings.json`](.claude/settings.json) | `SessionStart`, `PreToolUse` |
-| Codex CLI | [`.codex/hooks.json`](.codex/hooks.json) | Same names; requires `[features] codex_hooks = true` |
-| Cursor | [`.cursor/hooks.json`](.cursor/hooks.json) | `sessionStart`, `beforeShellExecution`, `afterFileEdit`, … |
-
-Two hooks ship out of the box per tool:
-
-1. **Session-start bearings** — injects the get-bearings reminder pointing at `aidlc/common/session-lifecycle.md`.
-2. **Dangerous-command guard** — rejects `rm -rf /`, `chmod -R 777 /`, `git push --force` to main/master, `git reset --hard`. Reads the command from the tool's actual hook payload (stdin JSON for Claude Code and Codex, piped JSON for Cursor) — not an environment variable, which never fires.
-
-Extend as needed (format-on-save, pre-completion checklists, loop detection). If you add or edit a hook, verify it actually fires — `bash scripts/audit.sh` checks the config is valid JSON, but only a live test confirms the guard blocks what it claims to.
-
-### AI-friendly test output
-
-Raw terminal output is hostile to model context: ANSI codes fracture tokenization, progress bars flood via `\r`, one exception can emit a 300-line stack trace. [`scripts/agent-test.sh`](scripts/agent-test.sh) wraps any test command:
-
-```bash
-scripts/agent-test.sh bun test        # or pytest, cargo test, go test ...
-```
-
-PASS/FAIL + exit code first, ANSI/OSC stripped, stack traces truncated (default 50 lines, `AGENT_TEST_MAX_TRACE`), total output capped (default 400, `AGENT_TEST_MAX_LINES`), untouched raw log preserved on disk. Exit code passes through, so it works in CI and hooks too.
-
----
-
-## Personal vs project layering
+### Personal vs project layering
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Project** | `./CLAUDE.md`, `./AGENTS.md`, `./.claude/`, `./.cursor/`, `./.codex/`, `./aidlc/`, `./memory/` | Team conventions and methodology — committed |
-| **Personal** | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.cursor/rules/` | Individual preferences across all projects — not committed |
+| **Project** | `./AGENTS.md`, `./CLAUDE.md`, `./aidlc/`, adapter dirs, `./memory/` | Team conventions and methodology — committed |
+| **Personal** | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.cursor/rules/` | Your preferences across all projects — not committed |
 
-Project layer dictates *what the codebase requires*. Personal layer dictates *how you prefer to work*. Tools merge both; project rules win on conflicts.
+Project layer dictates *what the codebase requires*; personal layer dictates *how you prefer to work*. Tools merge both; project wins on conflict.
 
-> **Constitution, not prompts.** Treat each layer as durable infrastructure, not a one-off prompt. Bloating a layer with conversational corrections is anti-pattern — extract them into rules, skills, or hooks. (Framing from [Brij Kishore Pandey](https://www.linkedin.com/pulse/how-claude-code-becomes-full-engineering-team-brij-kishore-pandey-6eqkf/).)
+> **Constitution, not prompts.** Treat each layer as durable infrastructure. Bloating a layer with conversational corrections is the anti-pattern — extract them into rules, skills, or hooks. (Framing: [Brij Kishore Pandey](https://www.linkedin.com/pulse/how-claude-code-becomes-full-engineering-team-brij-kishore-pandey-6eqkf/).)
 
----
-
-## Examples (`aidlc/examples/`)
-
-Concrete fill-in templates — reference shapes for what each phase produces. They're documentation, not auto-loaded.
-
-**Always useful** (most projects):
-
-- `feature-spec.md` — `/spec` output (problem, use cases, RICE, acceptance criteria)
-- `feature-list.md` — shape for `memory/feature-list.json`
-- `e2e-test-plan.md` — `/e2e` journey table + sign-off checklist
-
-**Conditional** (only when the situation arises):
-
-- `adr.md` — `/plan` when an architectural decision is involved
-- `threat-model.md` — `/security` (STRIDE), only when auth/data/API changes
-- `eval-suite.md` — `/eval` task YAML, only for AI/agent features
-- `implementation-notes.md` — `/build` deviation log; fold-back bullets feed the next plan
-- `postmortem.md` — `/operate` after a Critical/High incident
-
-You don't need to touch any of these to start — phases reference them when relevant.
-
----
-
-## MCP (external tools)
+### MCP (external tools)
 
 - **Codex** — `.codex/config.toml` under `[mcp_servers.NAME]`
 - **Claude Code** — `claude mcp add` or edit `.claude/settings.json`
 - **Cursor** — see Cursor's MCP docs
 
-No MCP servers configured by default — add per project.
+None configured by default — add per project.
 
 ---
 
@@ -337,8 +292,8 @@ No MCP servers configured by default — add per project.
 | [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) | `init.sh` + progress file + JSON feature list, get-bearings, one feature at a time |
 | [Anthropic — Harness design for long-running app development](https://www.anthropic.com/engineering/harness-design-long-running-apps) | Generator/evaluator (folded into reviewer), sprint contracts, runtime QA, harness-review cadence |
 | [Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | Tasks/trials/graders, capability vs regression, pass@k vs pass^k, transcript review, calibrated LLM-as-judge |
-| [Anthropic — Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Session-start reconciliation (trust the repo over stale memory), just-in-time retrieval |
-| [Anthropic — Writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) | Agent-friendly test output (greppable one-line failures) |
+| [Anthropic — Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Session-start reconciliation (trust the repo over stale memory), just-in-time retrieval, compaction protocol |
+| [Anthropic — Writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) | Agent-friendly test output (`scripts/agent-test.sh`) |
 | [OpenAI — Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/) | Layered project docs, sandbox/approval context, compact and stable adapter loading |
 | [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, traces as feedback, loop detection as future hook extension |
 | [Martin Fowler — Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) | Feedforward guides, feedback sensors, harness templates, quality-left framing |
