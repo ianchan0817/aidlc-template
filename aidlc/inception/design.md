@@ -2,6 +2,8 @@
 
 Phase: Inception. UI/component design specs, mobile review, interaction patterns.
 
+When the human can't articulate the design: render **design directions** to react to, and **mock with fake data** before wiring — `aidlc/common/unknowns.md`.
+
 ## Process
 1. **UX Review** — primary action obvious? Visual hierarchy? 4px grid? Works at 375/768/1280px? Mobile: one-thumb reach, no horizontal scroll, correct input types. States: loading/empty/error/success all defined. Type scale consistent, body >=16px mobile, WCAG AA contrast.
 2. **Component Specs** — for each new/modified component: purpose, anatomy (sizes/tokens/spacing), states (default/hover/pressed/disabled/loading/error), responsive behavior, accessibility (ARIA, keyboard), do/don't.

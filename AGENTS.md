@@ -40,10 +40,10 @@ aidlc/                  Canonical methodology (single source of truth)
   operations/           operate, retro, investigate,
                         daily-report                            (RUN)
   rules/                7 canonical rules
-  common/               decision-gates, session-lifecycle
+  common/               decision-gates, session-lifecycle, unknowns
   examples/             feature-spec, feature-list, eval-suite,
                         adr, threat-model, e2e-test-plan,
-                        postmortem
+                        implementation-notes, postmortem
 memory/                 progress.md · feature-list.json · plans/ · decisions/
 .claude/ .cursor/ .codex/   Tool adapters
 docs/adr/               ADRs

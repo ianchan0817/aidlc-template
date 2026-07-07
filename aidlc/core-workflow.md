@@ -11,7 +11,7 @@ Inception (WHAT/WHY) → Construction (HOW) → Operations (RUN)
        gate                gate                gate
 ```
 
-Every initiative passes through all three. Each phase has a human-approved gate before the next.
+Every initiative passes through all three. Each phase has a human-approved gate before the next, and opens by surfacing unknowns — elicitation moves in `aidlc/common/unknowns.md`.
 
 ### Inception
 - `aidlc/inception/spec.md` — problem, use cases, RICE, acceptance criteria
@@ -45,5 +45,8 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 ## Decision gates
 Structured `[Answer]:` format in `aidlc/common/decision-gates.md`. Creates an audit trail for anything ambiguous.
 
+## Unknowns
+Elicitation moves per phase (blindspot pass, interview, tweakable plan, change quiz, …) in `aidlc/common/unknowns.md`.
+
 ## Examples
-Fill-in templates in `aidlc/examples/`: `feature-spec`, `feature-list`, `eval-suite`, `adr`, `threat-model`, `e2e-test-plan`, `postmortem`.
+Fill-in templates in `aidlc/examples/`: `feature-spec`, `feature-list`, `eval-suite`, `adr`, `threat-model`, `e2e-test-plan`, `implementation-notes`, `postmortem`.

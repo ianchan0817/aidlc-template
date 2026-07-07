@@ -97,7 +97,30 @@ while IFS= read -r ref; do
 done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor AGENTS.md CLAUDE.md README.md 2>/dev/null | tr -d '`' | sort -u)
 echo "  [ok]   internal reference check complete"
 
-# 3. Hook surface (count registered hooks per tool)
+# 3. Always-true invariants: model-agnostic and path-rooted.
+#    a) No hardcoded model IDs — `model: inherit` is the only allowed form.
+MODEL_HITS=$(grep -rniE 'claude-(sonnet|opus|haiku|fable)|gpt-[45o]|gemini-|glm-|minimax' \
+  --include='*.md' --include='*.mdc' --include='*.json' --include='*.toml' \
+  aidlc .claude .cursor .codex AGENTS.md CLAUDE.md 2>/dev/null || true)
+if [[ -n "$MODEL_HITS" ]]; then
+  printf "  [FAIL] hardcoded model ID(s):\n%s\n" "$MODEL_HITS"
+  FAIL=$((FAIL+1))
+else
+  echo "  [ok]   no hardcoded model IDs (model: inherit only)"
+fi
+
+#    b) No relative path chains in canonical/adapters (root docs may mention the anti-pattern in prose).
+REL_HITS=$(grep -rn '\.\./' \
+  --include='*.md' --include='*.mdc' --include='*.json' --include='*.toml' \
+  aidlc .claude .cursor .codex 2>/dev/null || true)
+if [[ -n "$REL_HITS" ]]; then
+  printf "  [FAIL] relative path chain(s) — use repo-rooted paths:\n%s\n" "$REL_HITS"
+  FAIL=$((FAIL+1))
+else
+  echo "  [ok]   no ../ path chains (repo-rooted only)"
+fi
+
+# 4. Hook surface (count registered hooks per tool)
 if command -v jq >/dev/null 2>&1; then
   for f in .claude/settings.json .codex/hooks.json .cursor/hooks.json; do
     if [[ -f "$f" ]]; then

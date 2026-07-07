@@ -15,5 +15,6 @@ Phase: Construction. Land the current branch.
 2. Run full test suite — all pass
 3. Bump VERSION / CHANGELOG if repo uses them
 4. Commit, push, open/update PR
+5. Multi-stakeholder ship: package a **buy-in doc** — demo first, pre-answered objections, named sign-offs (`aidlc/common/unknowns.md`)
 
 **Do not ship without review and E2E sign-off.**

@@ -112,6 +112,20 @@ Three roles, definitions in `aidlc/agents/`:
 
 Always-on, single source of truth in [`aidlc/rules/*.md`](aidlc/rules/): `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. `.claude/rules/*.md` and `.cursor/rules/*.mdc` are thin pointers in each tool's native frontmatter format. Decision gates use the structured-question pattern in `aidlc/common/decision-gates.md`.
 
+### Know your unknowns
+
+The map is not the territory — the gap is your unknowns, and pre-implementation is the cheapest place to find them. [`aidlc/common/unknowns.md`](aidlc/common/unknowns.md) catalogs 11 elicitation moves, each wired into its phase:
+
+| Phase | Moves |
+|-------|-------|
+| `/spec` | **Interview** (agent asks, blast-radius order) · **intervention brainstorm** (S/M/L/XL option space from real code) |
+| `/design` | **Design directions** (react to 3–4 incompatible renders) · **mock before wiring** (fake data, click it first) |
+| `/plan` | **Blindspot pass** (unknown unknowns in unfamiliar code) · **semantics map** (prove reference comprehension before porting) · **tweakable plan** (decisions ordered by volatility, each with a reversal trigger) |
+| `/build` | **Implementation notes** (typed deviation log → fold-back bullets feed the next plan) |
+| `/review` | **Change quiz** (verified comprehension for high-blast-radius merges) |
+| `/ship` | **Buy-in doc** (demo first, pre-answered objections, named sign-offs) |
+| `/retro` | Repeated deviations = guide gap or sensor gap — fix the harness |
+
 ---
 
 ## Session lifecycle
@@ -284,6 +298,7 @@ Concrete fill-in templates — reference shapes for what each phase produces. Th
 - `adr.md` — `/plan` when an architectural decision is involved
 - `threat-model.md` — `/security` (STRIDE), only when auth/data/API changes
 - `eval-suite.md` — `/eval` task YAML, only for AI/agent features
+- `implementation-notes.md` — `/build` deviation log; fold-back bullets feed the next plan
 - `postmortem.md` — `/operate` after a Critical/High incident
 
 You don't need to touch any of these to start — phases reference them when relevant.
@@ -314,6 +329,7 @@ No MCP servers configured by default — add per project.
 | [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, traces as feedback, loop detection as future hook extension |
 | [Martin Fowler — Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) | Feedforward guides, feedback sensors, harness templates, quality-left framing |
 | [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) | Five-subsystem harness shape: instructions, state, verification, scope, lifecycle |
+| [Know Your Unknowns](https://thariqs.github.io/html-effectiveness/unknowns/) | 11 elicitation moves per phase (`aidlc/common/unknowns.md`): blindspot pass, interview, tweakable plan, implementation notes, change quiz |
 | [Metaflow](https://github.com/Netflix/metaflow) | Human-centric framing; reproducibility-as-default |
 | [Kedro](https://github.com/kedro-org/kedro) | Modular phase-based structure |
 | [ZenML](https://github.com/zenml-io/zenml) | Stage gates with explicit pass/fail criteria |

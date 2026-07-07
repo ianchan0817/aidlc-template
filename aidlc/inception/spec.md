@@ -10,6 +10,8 @@ Phase: Inception. Define what to build and why. Runs before design or plan.
 5. Simplest thing that could work?
 6. What are we explicitly NOT doing?
 
+If ambiguity remains, run the **interview** move (agent asks one question at a time, blast-radius order); for solution space, run the **intervention brainstorm** (S/M/L/XL, grounded in code) — `aidlc/common/unknowns.md`.
+
 ## Outputs
 - **Use cases** — business context, user segments, JTBD, actor/preconditions/flow/postconditions, out of scope
 - **RICE** — Reach × Impact × Confidence / Effort
