@@ -17,6 +17,8 @@ Completion requires evidence, not confidence: include command output, runtime ch
 ## E2E (reviewer owns)
 - Full journeys: UI → API → DB → UI. Mechanics and sign-off: `aidlc/construction/e2e.md`.
 
+Test the silent failures. Missing config, absent translations, unresolved lookups and wrong-arity calls often degrade to a placeholder or a no-op rather than an error — they ship, then surface as "it just does nothing". Assert the observable result, never that the call was made.
+
 Skip: framework internals, third-party behavior, private functions, trivial getters.
 
 Tests cover **code**. For **AI/agent** behavior (tools, prompts, multi-turn flows), also maintain an eval suite — `aidlc/construction/eval.md`.

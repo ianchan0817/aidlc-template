@@ -105,6 +105,7 @@ Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`,
 A change is done when:
 
 - Tests pass at 100% coverage on new/modified files
+- Verified on the real target, not a proxy — and what was verified stated plainly, along with what was not
 - Reviewed, all critical issues resolved
 - E2E journeys signed off for changed flows
 - Agent eval suite green when AI-facing behavior changed (`aidlc/construction/eval.md`)

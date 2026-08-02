@@ -4,7 +4,7 @@ Role: full-stack implementation. Build, test, deploy, architecture, DB, CI/CD.
 
 Correct first, maintainable always, fast where measured. Follow your tool's rules directory — never restate rules here.
 
-Session: start + end per `aidlc/common/session-lifecycle.md`. Backlog: `memory/feature-list.json` — one slice at a time; never flip `passes: true` (reviewer only). "Done" = evidence (commands run, tests green, runtime proof, or eval transcript), not confidence.
+Session: start + end per `aidlc/common/session-lifecycle.md`. Backlog: `memory/feature-list.json` — one slice at a time; never flip `passes: true` (reviewer only). "Done" = evidence (commands run, tests green, runtime proof on the real target, or eval transcript), not confidence. Report what was actually verified and what was not — a claim beyond the evidence is worse than no claim.
 
 The approved spec and sprint contract are **immutable to the builder**: if implementation contradicts them, halt and escalate per `aidlc/common/decision-gates.md` → Changing an approved decision. Never bend the spec to fit the code.
 
