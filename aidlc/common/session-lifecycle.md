@@ -18,8 +18,20 @@ Get bearings (start) and handoff (end) so work survives context resets. Pattern 
 4. If verification fails, fix and rerun. After 3 failed hypotheses, escalate per `aidlc/operations/investigate.md` — rerunning unchanged commands yields no new information.
 5. Record evidence, not confidence.
 
+### Close the loop on "done"
+An agent stops when the work *looks* done. Name the check that decides instead, and pick how hard it gates:
+
+| Tier | Mechanism | Costs |
+|------|-----------|-------|
+| Per-prompt | Name the check in the request ("run the suite and iterate until green") | Nothing; works today |
+| Per-session | A standing goal condition re-evaluated each turn, where the tool supports one | One-time setup |
+| Deterministic | A stop/pre-completion hook that blocks the turn until the check exits 0 | Needs a real command; blocks every turn |
+| Second opinion | Fresh-context `reviewer` sees only the diff and the contract | One extra pass |
+
+Deterministic gates are the strongest and the most brittle: wire one only once the project has a command that reliably passes on a clean tree, and give it a bypass for the session that fixes the check itself. Until then use the first tier plus `reviewer`. Grade the produced outcome, never the tool path taken to it.
+
 ## Compact — when context degrades
-Long sessions rot: attention dilutes, early instructions fade. Triggers: ~half the window consumed, repeated corrections on the same point, or the model re-asking answered questions. Then:
+Long sessions rot: attention dilutes, early instructions fade. Triggers: ~half the window consumed, **two corrections on the same point** (a third rarely lands — the failed approaches are now the context), or the model re-asking answered questions. Then:
 1. **Write state first** — `memory/progress.md` (findings, decisions, next steps), implementation-notes fold-backs, feature-list updates. Anything not in a file is lost.
 2. Compact or clear via your tool, then re-enter through **Get bearings** — the reconcile step is mandatory after compaction.
 

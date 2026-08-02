@@ -42,13 +42,15 @@ AIDLC_TOTAL=$(find aidlc -name '*.md' -type f 2>/dev/null | sum_words)
 MEM_TOTAL=$(find memory -name '*.md' -type f 2>/dev/null | sum_words)
 CLAUDE_TOTAL=$(find .claude -name '*.md' -type f 2>/dev/null | sum_words)
 CURSOR_TOTAL=$(find .cursor \( -name '*.md' -o -name '*.mdc' \) -type f 2>/dev/null | sum_words)
+CODEX_TOTAL=$(find .codex -name '*.md' -type f 2>/dev/null | sum_words)
 
 printf "  %-40s %6d words\n" "aidlc/**/*.md (canonical)" "$AIDLC_TOTAL"
 printf "  %-40s %6d words\n" "memory/**/*.md (project state)" "$MEM_TOTAL"
 printf "  %-40s %6d words\n" ".claude/**/*.md (adapters)" "$CLAUDE_TOTAL"
 printf "  %-40s %6d words\n" ".cursor/**/*.{md,mdc} (adapters)" "$CURSOR_TOTAL"
+printf "  %-40s %6d words\n" ".codex/**/*.md (adapters)" "$CODEX_TOTAL"
 echo "  ===================================="
-GRAND=$((ROOT_TOTAL + AIDLC_TOTAL + MEM_TOTAL + CLAUDE_TOTAL + CURSOR_TOTAL))
+GRAND=$((ROOT_TOTAL + AIDLC_TOTAL + MEM_TOTAL + CLAUDE_TOTAL + CURSOR_TOTAL + CODEX_TOTAL))
 printf "  %-40s %6d words\n" "GRAND TOTAL" "$GRAND"
 echo
 
@@ -94,8 +96,71 @@ while IFS= read -r ref; do
       fi
       ;;
   esac
-done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor AGENTS.md CLAUDE.md README.md 2>/dev/null | tr -d '`' | sort -u)
+done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor .codex AGENTS.md CLAUDE.md README.md 2>/dev/null | tr -d '`' | sort -u)
 echo "  [ok]   internal reference check complete"
+
+# 2b. Adapter loadability: a pointer the tool never reads is worse than no pointer.
+#     Claude Code, Cursor, and Codex all require skills/<name>/SKILL.md — a flat
+#     skills/<name>.md is silently ignored, so the slash command never exists.
+SKILL_REF=""
+SKILL_FAIL=0
+for tool in .claude .cursor .codex; do
+  [[ -d "$tool/skills" ]] || continue
+  while IFS= read -r stray; do
+    printf "  [FAIL] flat skill file (needs %s/skills/<name>/SKILL.md): %s\n" "$tool" "$stray"
+    FAIL=$((FAIL+1)); SKILL_FAIL=$((SKILL_FAIL+1))
+  done < <(find "$tool/skills" -maxdepth 1 -name '*.md' -type f 2>/dev/null)
+
+  names=""
+  while IFS= read -r d; do
+    name=$(basename "$d")
+    if [[ ! -f "$d/SKILL.md" ]]; then
+      printf "  [FAIL] skill dir without SKILL.md: %s\n" "$d"
+      FAIL=$((FAIL+1)); SKILL_FAIL=$((SKILL_FAIL+1))
+      continue
+    fi
+    for field in name description; do
+      grep -qE "^${field}:" "$d/SKILL.md" || {
+        printf "  [FAIL] %s/SKILL.md missing required '%s:' frontmatter\n" "$d" "$field"
+        FAIL=$((FAIL+1)); SKILL_FAIL=$((SKILL_FAIL+1))
+      }
+    done
+    names="$names $name"
+  done < <(find "$tool/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+
+  set_now=$(echo "$names" | tr ' ' '\n' | grep -v '^$' | sort | tr '\n' ' ')
+  if [[ -z "$SKILL_REF" ]]; then
+    SKILL_REF="$set_now"
+  elif [[ "$set_now" != "$SKILL_REF" ]]; then
+    printf "  [FAIL] skill set drift in %s\n         has:      %s\n         expected: %s\n" "$tool" "$set_now" "$SKILL_REF"
+    FAIL=$((FAIL+1)); SKILL_FAIL=$((SKILL_FAIL+1))
+  fi
+done
+if [[ $SKILL_FAIL -eq 0 ]]; then
+  echo "  [ok]   skills load as <tool>/skills/<name>/SKILL.md, identical set per tool"
+fi
+
+# 2c. Subagent frontmatter: `name` and `description` are required by Claude Code
+#     and Cursor. Without `name` the agent silently fails to register.
+for f in .claude/agents/*.md .cursor/agents/*.md; do
+  [[ -f "$f" ]] || continue
+  for field in name description; do
+    grep -qE "^${field}:" "$f" || {
+      printf "  [FAIL] %s missing required '%s:' frontmatter\n" "$f" "$field"
+      FAIL=$((FAIL+1))
+    }
+  done
+done
+echo "  [ok]   subagent frontmatter check complete"
+
+# 2d. Rule parity: every canonical rule needs a pointer in each tool's native format.
+for c in aidlc/rules/*.md; do
+  [[ -f "$c" ]] || continue
+  base=$(basename "$c" .md)
+  [[ -f ".claude/rules/$base.md" ]] || { printf "  [FAIL] no Claude rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
+  [[ -f ".cursor/rules/$base.mdc" ]] || { printf "  [FAIL] no Cursor rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
+done
+echo "  [ok]   rule adapter parity check complete"
 
 # 3. Always-true invariants: model-agnostic and path-rooted.
 #    a) No hardcoded model IDs — `model: inherit` is the only allowed form.

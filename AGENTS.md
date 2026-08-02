@@ -45,7 +45,7 @@ aidlc/                  Canonical methodology (single source of truth)
                         adr, threat-model, e2e-test-plan,
                         implementation-notes, postmortem
 memory/                 progress.md · feature-list.json · plans/ · decisions/
-.claude/ .cursor/ .codex/   Tool adapters
+.claude/ .cursor/ .codex/   Tool adapters (skills/<name>/SKILL.md per tool)
 docs/adr/               ADRs
 scripts/                audit.sh (structure + budget) · agent-test.sh (AI-friendly test sensor)
 ```
@@ -68,6 +68,8 @@ Five subsystems:
 
 Rules and phase files are feedforward guides; hooks, tests, E2E, evals, and review are feedback sensors. Prefer deterministic sensors. Grade **outcomes**, not the path.
 
+Never let "looks done" be the stop signal — name the check that decides, and pick how hard it gates (`aidlc/common/session-lifecycle.md` → Close the loop on "done").
+
 ## Roles
 
 | Role | Scope | Canonical |
@@ -76,7 +78,9 @@ Rules and phase files are feedforward guides; hooks, tests, E2E, evals, and revi
 | `reviewer` | Code review, security, runtime QA, evals, sprint contracts, E2E | `aidlc/agents/reviewer.md` |
 | `manager`  | Initiatives, coordination, daily reports, harness review | `aidlc/agents/manager.md` |
 
-Claude Code and Cursor load roles via agents adapters. Codex has none — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants (only reviewer flips `passes`) hold.
+Claude Code and Cursor load roles via `agents/` adapters (`name` + `description` required, or the role never registers). Codex has no agents dir — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants (only reviewer flips `passes`) hold.
+
+Run `reviewer` in a **fresh context** — its own subagent or session. Reviewing inline, in the context that wrote the code, defeats the split.
 
 ## Engineering rules
 
@@ -121,6 +125,8 @@ Structured-question format in `aidlc/common/decision-gates.md`. Creates an audit
 
 | Tool | Entry | Tool-only files |
 |------|-------|-----------------|
-| Codex CLI | this `AGENTS.md` (hierarchical) | `.codex/config.toml`, `.codex/hooks.json` |
+| Codex CLI | this `AGENTS.md` (hierarchical) | `.codex/skills/`, `.codex/config.toml`, `.codex/hooks.json` |
 | Claude Code | `CLAUDE.md` (imports this) | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
 | Cursor IDE | `.cursor/rules/*.mdc` | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |
+
+All three load skills as `<tool>/skills/<name>/SKILL.md` (the Agent Skills layout) — one directory per phase command, body identical across tools. A flat `skills/<name>.md` is silently ignored by all three; `scripts/audit.sh` fails on it.
