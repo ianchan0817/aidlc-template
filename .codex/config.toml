@@ -5,8 +5,9 @@
 # instructions so long-running sessions and prompt caching stay predictable.
 
 [features]
-# Enable hooks (required for .codex/hooks.json to take effect)
-codex_hooks = true
+# Enable hooks (required for .codex/hooks.json to take effect).
+# Canonical key is `hooks`; `codex_hooks` is a deprecated alias.
+hooks = true
 
 # Example MCP servers — uncomment and configure as needed.
 # Codex auto-discovers tools from these servers and uses them in addition to its built-in tools.

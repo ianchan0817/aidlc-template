@@ -30,13 +30,17 @@
     ],
     "deny": [
       "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -r -f *)",
+      "Bash(rm -f -r *)",
       "Bash(git push --force *)",
+      "Bash(git push -f *)",
       "Bash(git reset --hard *)",
       "Bash(gpg --decrypt *)",
       "Read(.env)",
-      "Read(.env.production)",
-      "Read(.env.local)",
-      "Read(**/.env)"
+      "Read(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)"
     ]
   },
   "hooks": {
@@ -57,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'cmd=$(jq -r \".tool_input.command // empty\" 2>/dev/null); printf \"%s\" \"$cmd\" | grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*(main|master)|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "command": "bash -c 'command -v jq >/dev/null 2>&1 || { echo \"Blocked: command guard unavailable (jq not installed)\" >&2; exit 2; }; cmd=$(jq -r \".tool_input.command // empty\"); exec bash scripts/guard-command.sh \"$cmd\"'",
             "timeout": 5
           }
         ]

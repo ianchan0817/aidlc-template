@@ -1,6 +1,6 @@
 ---
 description: Code style — naming, formatting, TypeScript strictness
-globs: "**/*.{ts,tsx,js,jsx,py,go,rs,java,kt,swift,rb}"
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx, **/*.mjs, **/*.cjs, **/*.py, **/*.go, **/*.rs, **/*.java, **/*.kt, **/*.swift, **/*.rb
 alwaysApply: false
 ---
 

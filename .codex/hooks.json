@@ -1,4 +1,5 @@
 {
+  "description": "AIDLC lifecycle hooks. Requires `hooks = true` under [features] in .codex/config.toml.",
   "hooks": {
     "PreToolUse": [
       {
@@ -6,9 +7,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'grep -qE \"(rm -rf /|chmod -R 777 /|git push --force.*(main|master)|git reset --hard)\" && { echo \"Blocked: dangerous command pattern\" >&2; exit 2; } || exit 0'",
+            "command": "bash -c 'command -v jq >/dev/null 2>&1 || { echo \"Blocked: command guard unavailable (jq not installed)\" >&2; exit 2; }; cmd=$(jq -r \".tool_input.command // empty\"); exec bash scripts/guard-command.sh \"$cmd\"'",
             "timeout": 5,
-            "statusMessage": "Checking command for dangerous patterns"
+            "statusMessage": "Checking command against scripts/guard-command.sh"
           }
         ]
       }

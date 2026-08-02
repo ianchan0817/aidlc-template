@@ -1,6 +1,6 @@
 ---
 description: REST API conventions — URLs, envelope, status codes, pagination
-globs: "**/api/**/*.{ts,tsx,js,py,go,rs}, **/routes/**/*.{ts,tsx,js,py,go,rs}, **/handlers/**/*.{ts,tsx,js,py,go,rs}"
+globs: **/api/**/*.ts, **/api/**/*.tsx, **/api/**/*.js, **/api/**/*.py, **/api/**/*.go, **/api/**/*.rs, **/routes/**/*.ts, **/routes/**/*.tsx, **/routes/**/*.js, **/routes/**/*.py, **/routes/**/*.go, **/routes/**/*.rs, **/handlers/**/*.ts, **/handlers/**/*.tsx, **/handlers/**/*.js, **/handlers/**/*.py, **/handlers/**/*.go, **/handlers/**/*.rs, **/controllers/**/*.ts, **/controllers/**/*.js, **/controllers/**/*.py
 alwaysApply: false
 ---
 

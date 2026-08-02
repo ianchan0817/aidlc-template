@@ -58,10 +58,23 @@ if [[ $ROOT_TOTAL -gt 1500 ]]; then
   echo "[WARN] Root entry points heavy ($ROOT_TOTAL words). Target: <1500."
   WARN=$((WARN+1))
 fi
-if [[ $AIDLC_TOTAL -gt 8000 ]]; then
-  echo "[WARN] Canonical content heavy ($AIDLC_TOTAL words). Target: <8000."
+# Total canonical is a bloat tripwire, not a quality metric: it scales with the
+# number of phases (14), examples (8), roles (3), rules (7) and common docs (3),
+# all of which load on demand rather than every session.
+if [[ $AIDLC_TOTAL -gt 9000 ]]; then
+  echo "[WARN] Canonical content heavy ($AIDLC_TOTAL words). Target: <9000."
   WARN=$((WARN+1))
 fi
+# Per-file size is the metric that actually affects adherence — an agent reads
+# one phase file, not the whole tree. Past ~700 words a file stops being
+# skimmable and its later instructions start getting dropped.
+while IFS= read -r f; do
+  n=$(wc -w <"$f" | tr -d ' ')
+  if [[ $n -gt 700 ]]; then
+    printf "  [WARN] %s is %d words — split it; long files lose their tail instructions\n" "$f" "$n"
+    WARN=$((WARN+1))
+  fi
+done < <(find aidlc -name '*.md' -type f 2>/dev/null | sort)
 
 echo "=== Structural checks ==="
 
@@ -161,6 +174,125 @@ for c in aidlc/rules/*.md; do
   [[ -f ".cursor/rules/$base.mdc" ]] || { printf "  [FAIL] no Cursor rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
 done
 echo "  [ok]   rule adapter parity check complete"
+
+# 2e. Rule ATTACH PATH: a rule with neither alwaysApply:true nor a usable glob
+#     never fires. Cursor splits `globs` on commas, so brace expansion
+#     (`*.{ts,tsx}`) shreds into invalid fragments and matches nothing —
+#     three rules shipped dead this way before this check existed.
+ATTACH_FAIL=0
+for f in .cursor/rules/*.mdc; do
+  [[ -f "$f" ]] || continue
+  globs_line=$(grep -m1 -E '^globs:' "$f" || true)
+  always=$(grep -m1 -E '^alwaysApply:[[:space:]]*true' "$f" || true)
+  globs_val=${globs_line#globs:}
+  globs_val=$(printf '%s' "$globs_val" | tr -d ' "')
+  if [[ "$globs_line" == *'{'* || "$globs_line" == *'}'* ]]; then
+    printf "  [FAIL] %s: brace expansion in globs — Cursor splits on commas, so this matches nothing\n" "$f"
+    FAIL=$((FAIL+1)); ATTACH_FAIL=$((ATTACH_FAIL+1))
+  fi
+  if [[ -z "$always" && -z "$globs_val" ]]; then
+    printf "  [FAIL] %s: no alwaysApply:true and no globs — rule can never attach\n" "$f"
+    FAIL=$((FAIL+1)); ATTACH_FAIL=$((ATTACH_FAIL+1))
+  fi
+done
+for f in .claude/rules/*.md; do
+  [[ -f "$f" ]] || continue
+  # Claude rules without `paths:` load unconditionally, which is valid — only an
+  # empty `paths:` block is a dead rule.
+  if grep -qE '^paths:[[:space:]]*$' "$f" && ! grep -qE '^[[:space:]]+- ' "$f"; then
+    printf "  [FAIL] %s: empty paths: block — rule can never attach\n" "$f"
+    FAIL=$((FAIL+1)); ATTACH_FAIL=$((ATTACH_FAIL+1))
+  fi
+done
+[[ $ATTACH_FAIL -eq 0 ]] && echo "  [ok]   every rule has a working attach path (globs / alwaysApply / paths)"
+
+# 2f. Hook output schemas differ per tool; the wrong key is silently ignored,
+#     which turns a hook into a no-op that still reports success.
+HOOK_FAIL=0
+if [[ -f .cursor/hooks/aidlc-session-start.sh ]]; then
+  grep -q 'additional_context' .cursor/hooks/aidlc-session-start.sh || {
+    printf "  [FAIL] Cursor sessionStart hook must emit additional_context (agent_message is ignored there)\n"
+    FAIL=$((FAIL+1)); HOOK_FAIL=$((HOOK_FAIL+1))
+  }
+fi
+# `reason` is not in Cursor's permission schema — the block lands but the
+# explanation is dropped, so the agent retries blindly. Match the escaped form
+# too (`\"reason\":`), which is how it appears inside a JSON-embedded shell command.
+for f in .cursor/hooks/aidlc-guard.sh .cursor/hooks.json; do
+  [[ -f "$f" ]] || continue
+  grep -qE '\\*"reason\\*"[[:space:]]*:' "$f" && {
+    printf "  [FAIL] %s: Cursor deny payload uses undocumented 'reason' — use user_message/agent_message\n" "$f"
+    FAIL=$((FAIL+1)); HOOK_FAIL=$((HOOK_FAIL+1))
+  }
+done
+if [[ -f .codex/config.toml ]]; then
+  grep -qE '^[[:space:]]*codex_hooks[[:space:]]*=' .codex/config.toml && {
+    printf "  [FAIL] .codex/config.toml uses deprecated 'codex_hooks' alias — canonical key is 'hooks'\n"
+    FAIL=$((FAIL+1)); HOOK_FAIL=$((HOOK_FAIL+1))
+  }
+fi
+# Every Bash guard hook must extract the command, not grep the raw payload.
+for f in .claude/settings.json .codex/hooks.json; do
+  [[ -f "$f" ]] || continue
+  if grep -q 'guard-command.sh' "$f"; then
+    grep -q 'tool_input.command' "$f" || {
+      printf "  [FAIL] %s: guard hook does not extract .tool_input.command (would match the raw JSON payload)\n" "$f"
+      FAIL=$((FAIL+1)); HOOK_FAIL=$((HOOK_FAIL+1))
+    }
+  fi
+done
+[[ $HOOK_FAIL -eq 0 ]] && echo "  [ok]   hook output schemas match each tool's contract"
+
+# 2g. The shared command guard is a safety sensor — prove it still works.
+#     Cases live in a file so the dangerous strings never reach a shell.
+if [[ -x scripts/guard-command.sh ]]; then
+  GUARD_FAIL=0
+  # shellcheck disable=SC2016
+  while IFS=$'\t' read -r want cmd; do
+    [[ -z "${want:-}" ]] && continue
+    set +e; bash scripts/guard-command.sh "$cmd" >/dev/null 2>&1; got=$?; set -e
+    if [[ "$got" != "$want" ]]; then
+      printf "  [FAIL] guard-command.sh: want exit %s, got %s, for: %s\n" "$want" "$got" "$cmd"
+      FAIL=$((FAIL+1)); GUARD_FAIL=$((GUARD_FAIL+1))
+    fi
+  done < scripts/guard-cases.tsv
+  set +e; bash scripts/guard-command.sh >/dev/null 2>&1; noarg=$?; set -e
+  if [[ "$noarg" != 2 ]]; then
+    printf "  [FAIL] guard-command.sh must fail closed with no argument (got %s)\n" "$noarg"
+    FAIL=$((FAIL+1)); GUARD_FAIL=$((GUARD_FAIL+1))
+  fi
+  [[ $GUARD_FAIL -eq 0 ]] && echo "  [ok]   command guard self-test ($(grep -cv '^$' scripts/guard-cases.tsv) cases + fail-closed)"
+fi
+
+# 2h. Docs must render on a phone: markdown tables and code blocks do not wrap,
+#     so an over-wide row forces horizontal scrolling on mobile GitHub.
+if command -v python3 >/dev/null 2>&1; then
+  MOBILE=$(python3 - <<'PY'
+import sys
+bad=[]
+lines=open('README.md',encoding='utf-8').read().split('\n')
+inblk=False;mx=0;start=0
+for i,l in enumerate(lines,1):
+    if l.startswith('```'):
+        if not inblk: inblk=True;mx=0;start=i
+        else:
+            inblk=False
+            if mx>80: bad.append(f"code block at line {start} is {mx} chars (max 80)")
+        continue
+    if inblk: mx=max(mx,len(l)); continue
+    if l.startswith('|') and len(l)>90:
+        bad.append(f"table row {i} is {len(l)} chars (max 90)")
+print('\n'.join(bad))
+PY
+)
+  if [[ -n "$MOBILE" ]]; then
+    printf "  [FAIL] README will need horizontal scrolling on mobile:\n"
+    printf "         %s\n" "$MOBILE"
+    FAIL=$((FAIL+1))
+  else
+    echo "  [ok]   README renders without horizontal scroll (tables <=90, code <=80)"
+  fi
+fi
 
 # 3. Always-true invariants: model-agnostic and path-rooted.
 #    a) No hardcoded model IDs — `model: inherit` is the only allowed form.

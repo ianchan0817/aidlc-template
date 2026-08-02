@@ -1,0 +1,45 @@
+2	rm -rf /
+2	rm -fr /
+2	rm -r -f /
+2	rm --recursive --force /
+2	sudo rm -rf "/"
+2	rm -rf ~
+2	rm -rf $HOME
+2	rm -rf /*
+2	cd /tmp && rm -rf /
+2	git push --force origin main
+2	git push -f origin main
+2	git push --force
+2	chmod -R 777 /
+2	git reset --hard HEAD~3
+2	git status && git push -f origin main
+2	psql -c "DROP TABLE users"
+2	psql -c "TRUNCATE TABLE sessions"
+2	psql -c "DELETE FROM users;"
+2	cat .env
+2	cat .env.production
+2	source .env && deploy
+0	git status
+0	ls -la
+0	ls /etc
+0	rm -rf node_modules
+0	rm -rf ./build
+0	rm -rf dist && ls /usr/local
+0	rm file.txt
+0	rm -rf /tmp/scratch-dir/inner
+0	bun test
+0	pytest -q
+0	git push origin feature-branch
+0	git push --force-with-lease origin my-branch
+0	git reset --soft HEAD~1
+0	chmod +x scripts/foo.sh
+0	chmod 755 scripts/foo.sh
+0	cp .env.example .env.example.bak
+0	cat .env.sample
+0	psql -c "SELECT * FROM users LIMIT 10"
+0	psql -c "DELETE FROM users WHERE id = 3"
+0	grep -r pattern src/
+0	bash scripts/audit.sh
+0	npm run build
+0	docker compose up -d
+0	find . -name '*.log' -delete

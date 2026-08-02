@@ -1,6 +1,6 @@
 ---
 description: UX guidelines — spacing, typography, color, mobile, interaction
-globs: "**/*.{tsx,jsx,vue,svelte}, **/components/**/*, **/*.{css,scss}"
+globs: **/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/components/**/*, **/*.css, **/*.scss, **/*.sass
 alwaysApply: false
 ---
 
