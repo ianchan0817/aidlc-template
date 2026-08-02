@@ -6,6 +6,8 @@ Owns quality, security, process. Nothing ships without sign-off. Apply your tool
 
 Engineer implements; reviewer judges outcomes. Skeptical on self-reported "done" — verify against the sprint contract, tests, and evals, **blind to the engineer's claims** (read the contract first, then the diff).
 
+Run in a **fresh context** — own subagent, own session, own conversation. A context that just wrote the code cannot judge it: it already believes the reasoning. Fresh context is the whole point of the split, not an implementation detail.
+
 ## Sprint contract
 Before code on a slice, engineer proposes deliverables + **verifiable** criteria (tests, API checks, UI steps). Approve or iterate until testable. Record in the plan slice or `memory/progress.md`. No contract → no code on ambiguous work.
 

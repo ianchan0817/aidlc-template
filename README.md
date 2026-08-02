@@ -20,8 +20,10 @@ Built from AWS Labs' AIDLC, Anthropic's harness/evals/context-engineering resear
 |------------|---------|
 | Single source of truth | Everything lives once in `aidlc/`; adapters are pointers, not copies |
 | Model + tool agnostic | `model: inherit` only, repo-rooted paths only — both are CI-failing audit sensors |
+| Adapters that actually load | Every skill, agent, and rule pointer is checked against its tool's real loader format, in CI |
 | Scoped work | One feature/slice per session, tied to a verifiable sprint contract |
 | Sensors over confidence | Tests, hooks, evals, review — never self-reported "done" |
+| Human in the loop | Gated decisions are written questions with recorded answers, not chat that scrolls away |
 
 The harness is five-part: **Instructions** (focused files, no giant prompt) · **State** (memory + git survive resets) · **Scope** (one committable slice) · **Verification** (tests, hooks, E2E, evals, transcripts, review) · **Lifecycle** (initialize → work → verify → handoff → commit).
 
@@ -62,8 +64,8 @@ cd my-project && rm -rf .git && git init
             ┌────────────────────┼────────────────────┐
             ▼                    ▼                    ▼
        .claude/             .cursor/              .codex/
-   rules · agents       rules · agents        config · hooks
-   skills · settings    skills · hooks
+   rules · agents       rules · agents        skills · config
+   skills · settings    skills · hooks        hooks
    (Claude Code)        (Cursor IDE)          (Codex CLI)
 
        memory/progress.md        memory/feature-list.json
@@ -72,7 +74,10 @@ cd my-project && rm -rf .git && git init
 
 - Adapters never use `../../` chains — every reference is repo-rooted (e.g. `aidlc/agents/engineer.md`), so moving files never breaks references. Enforced by `scripts/audit.sh`.
 - Rules live once in [`aidlc/rules/`](aidlc/rules/); `.claude/rules/*.md` (`paths:` frontmatter) and `.cursor/rules/*.mdc` (`globs:`/`alwaysApply:`) are thin pointers in each tool's native format.
+- Commands live once in `aidlc/{inception,construction,operations}/`; each tool gets a `skills/<name>/SKILL.md` pointer. All three tools converged on the same [Agent Skills](https://agentskills.io) directory layout, so the pointer bodies are byte-identical — only the parent directory differs.
 - Keep root instructions compact and stable; deep methodology stays under `aidlc/` and loads on demand.
+
+> **Adapters are only real if the tool loads them.** Every tool silently ignores a malformed adapter — a flat `skills/spec.md` produces no `/spec` and no error, an agent file without `name:` never registers. The audit checks adapter *shape*, not just existence, so a dead pointer fails CI instead of failing quietly at 2am.
 
 ---
 
@@ -83,7 +88,7 @@ Inception (WHAT/WHY)  →  Construction (HOW)  →  Operations (RUN)
        gate                    gate                  gate
 ```
 
-Each command is one canonical file in `aidlc/{inception,construction,operations}/`. Claude Code and Cursor expose them as `/slash` commands; in Codex say "Follow `aidlc/construction/build.md`". You can always open the file directly — slash commands are convenience, not requirement.
+Each command is one canonical file in `aidlc/{inception,construction,operations}/`, surfaced in all three tools as `/slash` commands via `<tool>/skills/<name>/SKILL.md`. You can always open the canonical file directly — slash commands are convenience, not requirement.
 
 ### Commands
 
@@ -123,7 +128,7 @@ Each phase has a gate. When explicit human approval is needed, use [`aidlc/commo
 Definitions in [`aidlc/agents/`](aidlc/agents/):
 
 - **engineer** — implementation, architecture, DB, CI/CD; one slice at a time. The approved spec is **immutable mid-build**: contradiction → halt and escalate, never bend the spec to fit the code.
-- **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off. Only the reviewer flips `passes: true`.
+- **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off. Only the reviewer flips `passes: true`. Runs in a **fresh context** (own subagent or session): a context that just wrote the code already believes its own reasoning.
 - **manager** — orchestrate, daily reports, harness-review cadence after model/tool upgrades.
 
 ---
@@ -141,11 +146,12 @@ Every session runs the same loop so work survives context resets — canonical: 
 | `git log --oneline -20` | TDD red→green→refactor | Leave merge-ready |
 | Run `./init.sh` smoke | Runtime QA via reviewer | Reviewer flips `passes` |
 
-Three self-healing rules:
+Four self-healing rules:
 
 - **Reconcile on start** — cross-check `memory/` claims against the repo (files exist, tests pass, git agrees). On mismatch, trust the repo and correct the memory file.
 - **Broken smoke = the slice** — if `./init.sh` fails, fixing the baseline *is* this session's work.
-- **Compact before you lose it** — when context degrades (half the window gone, repeated corrections, re-asked questions): write durable state to `memory/` *first*, then compact/clear, then re-enter through get-bearings. Anything not in a file is lost.
+- **Compact before you lose it** — when context degrades (half the window gone, **two corrections on the same point**, re-asked questions): write durable state to `memory/` *first*, then compact/clear, then re-enter through get-bearings. Anything not in a file is lost. A third correction almost never lands — by then the failed approaches *are* the context.
+- **Name the check that says "done"** — an agent stops when the work looks finished, so decide in advance what produces the pass/fail and how hard it gates. Four tiers, weakest to strongest, in [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.md).
 
 State artifacts:
 
@@ -194,7 +200,9 @@ Deterministic enforcement — actions that must happen, not requests. Two ship p
 | Codex CLI | [`.codex/hooks.json`](.codex/hooks.json) | Same names; needs `[features] codex_hooks = true` |
 | Cursor | [`.cursor/hooks.json`](.cursor/hooks.json) | `sessionStart`, `beforeShellExecution`, … |
 
-Extend as needed (format-on-save, pre-completion checklists, loop detection). If you add a hook, verify it actually fires — the audit checks JSON validity, but only a live test proves the guard blocks.
+**No completion gate ships on purpose.** A `Stop`/pre-completion hook that blocks the turn until tests pass is the strongest sensor available — and the one thing a template cannot ship, because it would fire on every turn of a repo that has no test command yet. Wire it per project once `./init.sh` reliably passes on a clean tree, and give it a bypass for the session that fixes the check itself. The four gating tiers, weakest to strongest, are in [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.md) → *Close the loop on "done"*.
+
+Extend as needed (format-on-save, loop detection). If you add a hook, verify it actually fires — the audit checks JSON validity, but only a live test proves the guard blocks.
 
 ### AI-friendly test output
 
@@ -208,7 +216,19 @@ PASS/FAIL + exit code first · ANSI/OSC stripped · stack traces truncated (defa
 
 ### Template CI
 
-`bash scripts/audit.sh` (also on every push/PR via `.github/workflows/`): word budgets (root <1500, canonical <8000), JSON validity of hook configs, broken internal references, **no hardcoded model IDs** (`model: inherit` only), **no `../` path chains**, shell-script syntax. Exits non-zero on structural failure.
+`bash scripts/audit.sh` (also on every push/PR via `.github/workflows/`). Exits non-zero on structural failure.
+
+| Check | Catches |
+|-------|---------|
+| Word budgets (root <1500, canonical <8000) | Instruction bloat, which degrades adherence |
+| JSON validity of hook configs | A syntax error that silently disables a safety hook |
+| Broken internal references | Pointers to files that moved or never existed |
+| No hardcoded model IDs (`model: inherit` only) | Adapters pinned to a model that will be deprecated |
+| No `../` path chains | References that break when a file moves |
+| Shell-script syntax (`bash -n`) | A sensor script that can't run |
+| **Skill shape** — `<tool>/skills/<name>/SKILL.md`, `name`+`description`, identical set across tools | Flat `skills/foo.md` files no tool loads; a command that exists in one tool only |
+| **Agent shape** — `name`+`description` in every agent file | A subagent that never registers |
+| **Rule parity** — every `aidlc/rules/*.md` has a pointer per tool | A rule enforced in Cursor but invisible in Claude Code |
 
 ---
 
@@ -240,12 +260,15 @@ aidlc-template/
 │   ├── plans/             Two-part execution plans
 │   └── decisions/         [Answer]: decision-gate files (audit trail)
 ├── .claude/               Claude Code adapters (pointers, no duplicated content)
-│   ├── rules/  agents/  skills/         → aidlc/
+│   ├── rules/  agents/                  → aidlc/
+│   ├── skills/<name>/SKILL.md           → aidlc/<phase>/<name>.md
 │   └── settings.json      Permissions + hooks (stdin-JSON guard)
 ├── .cursor/               Cursor adapters (pointers, no duplicated content)
-│   ├── rules/  agents/  skills/  hooks/ → aidlc/
+│   ├── rules/  agents/  hooks/          → aidlc/
+│   ├── skills/<name>/SKILL.md           → aidlc/<phase>/<name>.md
 │   └── hooks.json         sessionStart + beforeShellExecution
 ├── .codex/                Codex CLI adapters
+│   ├── skills/<name>/SKILL.md           → aidlc/<phase>/<name>.md
 │   ├── config.toml        MCP servers, feature flags
 │   └── hooks.json         PreToolUse guard + SessionStart bearings
 ├── .github/workflows/     CI — audit.sh on every push/PR
@@ -288,7 +311,10 @@ None configured by default — add per project.
 
 | Source | Concept folded in |
 |--------|------------------|
-| [AWS AIDLC](https://github.com/awslabs/aidlc-workflows) | Three-phase lifecycle, structured `[Answer]:` decision gates, two-part code planning |
+| [AWS AIDLC](https://github.com/awslabs/aidlc-workflows) (incl. 2.0 GA) | Three-phase lifecycle, structured `[Answer]:` decision gates, two-part code planning, adaptive stage selection (run/skip with rationale), human-in-the-loop tenet |
+| [Anthropic — Claude Code best practices](https://code.claude.com/docs/en/best-practices) | Give the agent a check it can run; four gating tiers for "done"; fresh-context adversarial review and its over-reporting caveat; two-corrections-then-clear |
+| [Agent Skills standard](https://agentskills.io) | `skills/<name>/SKILL.md` as the one adapter layout all three tools load |
+| [OpenAI — Harness engineering](https://openai.com/index/harness-engineering/) | Agent-first harness framing behind the guide/sensor split |
 | [Anthropic — Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) | `init.sh` + progress file + JSON feature list, get-bearings, one feature at a time |
 | [Anthropic — Harness design for long-running app development](https://www.anthropic.com/engineering/harness-design-long-running-apps) | Generator/evaluator (folded into reviewer), sprint contracts, runtime QA, harness-review cadence |
 | [Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | Tasks/trials/graders, capability vs regression, pass@k vs pass^k, transcript review, calibrated LLM-as-judge |
@@ -297,7 +323,7 @@ None configured by default — add per project.
 | [OpenAI — Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/) | Layered project docs, sandbox/approval context, compact and stable adapter loading |
 | [LangChain — Harness engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) | Build-verify loop, context onboarding, traces as feedback, loop detection as future hook extension |
 | [Martin Fowler — Harness engineering for coding agent users](https://martinfowler.com/articles/harness-engineering.html) | Feedforward guides, feedback sensors, harness templates, quality-left framing |
-| [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) | Five-subsystem harness shape: instructions, state, verification, scope, lifecycle |
+| [Learn Harness Engineering](https://github.com/walkinglabs/learn-harness-engineering) | Five-subsystem harness shape: instructions, state, verification, scope, lifecycle; loop engineering (generator/evaluator split, goal loops) |
 | [Know Your Unknowns](https://thariqs.github.io/html-effectiveness/unknowns/) | 11 elicitation moves per phase (`aidlc/common/unknowns.md`): blindspot pass, interview, tweakable plan, implementation notes, change quiz |
 | [Metaflow](https://github.com/Netflix/metaflow) | Human-centric framing; reproducibility-as-default |
 | [Kedro](https://github.com/kedro-org/kedro) | Modular phase-based structure |
