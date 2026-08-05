@@ -8,6 +8,8 @@ Tool-agnostic AI Development Lifecycle template for **Claude Code**, **OpenAI Co
 
 **Jump to:** [Why](#why) · [Quick start](#quick-start) · [Architecture](#architecture) · [Workflow](#daily-workflow) · [Guardrails](#guardrails--sensors) · [Reference](#reference) · [Sources](#sources)
 
+[Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Repo setup: security & quality](docs/repo-setup.md)
+
 ---
 
 ## Why
@@ -43,8 +45,9 @@ cd my-project && rm -rf .git && git init
 3. **Bootstrap** — `cp init.sh.example init.sh`, add install / dev / smoke commands.
 4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty; `/spec` appends items.
 5. **Audit** — `bash scripts/audit.sh` (budgets + structure; also runs in CI).
-6. **Open it** — `claude` loads `CLAUDE.md`; `codex` loads `AGENTS.md`; Cursor loads `.cursor/rules/*.mdc`.
-7. **First feature** — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
+6. **Turn on the repo-side switches** — private vulnerability reporting, Dependabot alerts, secret-scanning push protection, and a ruleset requiring the `audit` check. These can't be committed; exact paths in [`docs/repo-setup.md`](docs/repo-setup.md).
+7. **Open it** — `claude` loads `CLAUDE.md`; `codex` loads `AGENTS.md`; Cursor loads `.cursor/rules/*.mdc`.
+8. **First feature** — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
 
 ---
 

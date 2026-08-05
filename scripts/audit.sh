@@ -122,7 +122,7 @@ while IFS= read -r ref; do
       fi
       ;;
   esac
-done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor .codex AGENTS.md CLAUDE.md README.md 2>/dev/null | tr -d '`' | sort -u)
+done < <(grep -rhoE '`[A-Za-z0-9_./{}<>*-]+`' --include='*.md' --include='*.mdc' aidlc .claude .cursor .codex AGENTS.md CLAUDE.md README.md SECURITY.md CONTRIBUTING.md docs 2>/dev/null | tr -d '`' | sort -u)
 echo "  [ok]   internal reference check complete"
 
 # 2b. Adapter loadability: a pointer the tool never reads is worse than no pointer.
@@ -218,6 +218,24 @@ for f in .claude/rules/*.md; do
   fi
 done
 [[ $ATTACH_FAIL -eq 0 ]] && echo "  [ok]   every rule has a working attach path (globs / alwaysApply / paths)"
+
+# 2e2. Repository hygiene files. A security policy that points at a Report
+#      button, or a PR template encoding the gates, only works if it exists.
+REPO_FAIL=0
+for f in SECURITY.md CONTRIBUTING.md LICENSE docs/repo-setup.md \
+         .github/dependabot.yml .github/PULL_REQUEST_TEMPLATE.md \
+         .github/ISSUE_TEMPLATE/config.yml \
+         .github/workflows/audit.yml .github/workflows/code-quality.yml; do
+  [[ -e "$f" ]] || { printf "  [FAIL] missing repository file: %s\n" "$f"; FAIL=$((FAIL+1)); REPO_FAIL=$((REPO_FAIL+1)); }
+done
+# codeql must stay inactive: an active CodeQL run on a markdown-only repo fails
+# every time and trains people to ignore a red X.
+if [[ -f .github/workflows/codeql.yml ]] && ! git ls-files --error-unmatch \
+     -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.rb' '*.rs' '*.java' >/dev/null 2>&1; then
+  printf "  [FAIL] codeql.yml is active but the repo has no scannable source — keep it as codeql.yml.example\n"
+  FAIL=$((FAIL+1)); REPO_FAIL=$((REPO_FAIL+1))
+fi
+[[ $REPO_FAIL -eq 0 ]] && echo "  [ok]   repository hygiene files present (policy, CI, PR/issue templates)"
 
 # 2f. Hook output schemas differ per tool; the wrong key is silently ignored,
 #     which turns a hook into a no-op that still reports success.

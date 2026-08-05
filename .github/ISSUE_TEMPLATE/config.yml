@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ianchan0817/aidlc-template/security/advisories/new
+    about: >-
+      Never file security issues publicly. Use private vulnerability reporting.
+      Scope and out-of-scope cases are in SECURITY.md.
+  - name: Ask a question / discuss the methodology
+    url: https://github.com/ianchan0817/aidlc-template/discussions
+    about: Open-ended questions, workflow experience reports, and proposals.

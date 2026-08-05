@@ -1,0 +1,45 @@
+version: 2
+
+updates:
+  # The template's own only dependency surface: pinned action versions in
+  # .github/workflows/. Keeping these current is what stops a supply-chain
+  # regression from sitting in CI unnoticed.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # --- Uncomment the ecosystem your project actually uses -------------------
+  # Grouping minor+patch keeps the PR volume survivable; majors stay separate
+  # so a breaking change never rides in on a routine bump.
+  #
+  # - package-ecosystem: npm          # or pnpm / bun via npm ecosystem
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   versioning-strategy: increase   # respects a committed lockfile
+  #   groups:
+  #     minor-and-patch:
+  #       patterns: ["*"]
+  #       update-types: [minor, patch]
+  #
+  # - package-ecosystem: pip
+  #   directory: /
+  #   schedule: { interval: weekly }
+  #
+  # - package-ecosystem: cargo
+  #   directory: /
+  #   schedule: { interval: weekly }
+  #
+  # - package-ecosystem: gomod
+  #   directory: /
+  #   schedule: { interval: weekly }
+  #
+  # - package-ecosystem: docker
+  #   directory: /
+  #   schedule: { interval: weekly }

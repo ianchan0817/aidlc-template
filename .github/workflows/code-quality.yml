@@ -1,0 +1,45 @@
+name: code-quality
+
+# Static analysis of what this template actually ships: shell. The safety
+# controls are shell scripts, so a shell bug here is a security bug — see
+# SECURITY.md. Results are uploaded as SARIF so they land in the repository's
+# Code scanning tab rather than only in the job log.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "31 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck (SARIF for Code scanning)
+        run: |
+          shellcheck --version
+          mapfile -t files < <(git ls-files '*.sh' 'init.sh.example')
+          printf 'checking: %s\n' "${files[@]}"
+          # -S warning: style nits shouldn't fail CI; real bugs should.
+          shellcheck -S warning -f json1 "${files[@]}" > sc.json || true
+          python3 .github/scripts/shellcheck-to-sarif.py sc.json sarif.json
+
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif.json
+          category: shellcheck
+
+      - name: Fail on error-level findings
+        run: |
+          n=$(python3 -c "import json;d=json.load(open('sc.json'));print(sum(1 for c in d['comments'] if c['level']=='error'))")
+          echo "error-level findings: $n"
+          [ "$n" -eq 0 ] || { echo "::error::ShellCheck reported $n error(s)"; exit 1; }

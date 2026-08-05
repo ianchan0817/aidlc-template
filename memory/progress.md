@@ -4,7 +4,15 @@ Lean handoff across sessions. Git holds history; this file holds **decisions**, 
 
 ## Current focus
 <!-- 1–2 sentences: active initiative or slice + lifecycle phase (inception/construction/operations) -->
-Design-system round complete: design-tokens rule added (8 rules now), ux-guidelines refocused on behavior, /design phase rewritten as a designer's process. Template stable; next work is user-driven.
+Repo-hygiene round complete: SECURITY.md, CONTRIBUTING.md, dependabot, ShellCheck→SARIF code scanning, PR/issue templates, docs/repo-setup.md. Template stable; next work is user-driven.
+
+## Blocked on the owner (cannot be committed)
+GitHub account-side toggles — `SECURITY.md` points at a Report button that does
+not exist until #1 is on. Paths in `docs/repo-setup.md`:
+1. Security → **Private vulnerability reporting** → Enable
+2. **Dependabot alerts** + security updates → Enable (separate from `dependabot.yml`, which only opens *update* PRs)
+3. **Secret scanning** → Enable, plus **push protection** (the only one that prevents rather than reports)
+4. Rules → Ruleset on `main` requiring the `audit` and `shellcheck` checks — the local guard blocks force-push as advice; a ruleset is enforcement
 
 ## Deferred (evaluated, worth doing, not yet done)
 From the mcpmarket skills evaluation — each closes a real gap but was cut for budget this round:
@@ -16,6 +24,12 @@ From the mcpmarket skills evaluation — each closes a real gap but was cut for 
 
 ## Last session
 <!-- What changed, commits, blockers resolved -->
+2026-08-05 (later): Repo hygiene — the GitHub "Security and quality" surface had every file-based item missing. Added `SECURITY.md` (scoped to what this repo actually ships: guard bypass, fail-open control, false protection, silent no-op are in scope; `permissions.allow` interpreter escapes and "a model didn't follow a rule" explicitly out, since both are documented trade-offs), `CONTRIBUTING.md` (the audit is the one gate; negative-test any new sensor), `.github/dependabot.yml` (github-actions active, other ecosystems commented), `.github/workflows/code-quality.yml` (ShellCheck → SARIF → Code scanning tab, via a local 60-line converter rather than an unpinned third-party action — the workflow's whole point is supply-chain hygiene), `codeql.yml.example` (inactive on purpose: active CodeQL on a markdown repo fails every run and trains people to ignore red), PR template encoding the AIDLC gates, issue templates routing security to private advisories, and `docs/repo-setup.md` for the toggles no commit can set.
+
+New sensor: repository hygiene files present, including a check that `codeql.yml` stays inactive while the repo has no scannable source. Negative-tested 4/4. SARIF converter unit-tested (level mapping, `./`-stripping, rule dedupe, empty-input case). Caveat: shellcheck is not installed locally, so our 4 scripts are unverified against it — the gate only fails on `error` level (parse-class, already covered by `bash -n`), so first CI run is the real test.
+
+Wiki: recommended *against* mirroring docs into it — the wiki is a separate repo that is not copied on clone/fork, so anything an adopter needs must stay in `README.md`/`aidlc/`, and duplicating would break single-source-of-truth. Reserved for maintainer meta (roadmap, methodology changelog incl. rejected ideas, FAQ, migration notes). Rationale in `docs/repo-setup.md`.
+
 2026-08-05: Design-system round. Split UI guidance by the question it answers: new `aidlc/rules/design-tokens.md` (color named by role not hue, every used fg/bg pair named with a measured ratio, dark mode as a second role set not inverted lightness, type scale with inverse line-height + 45–75ch measure, spacing/radius/elevation/motion steps) vs refocused `ux-guidelines.md` (hierarchy & position, five states, interaction — undo over confirm, prevent-not-report, forgiving input, never lose typed work — responsive, WCAG AA incl. 3-flash seizure threshold and terminology consistency). Rewrote `/design` as a designer's process: job before drawing, hierarchy in greyscale, every branch is a state, tokens not raw values, self-critique as a stranger. Adapter pointers added for both tools (audit enforces parity).
 
 Evaluated 4 mcpmarket skills + the catalog (5 agents). **The marketplace is not a source** — every `/tools/skills/` page is an SEO wrapper with no skill body; real content sits in linked repos at 2–24 stars. `aidlc-design-architect` (7,477w) has *zero* UI/UX content despite the name and hard-depends on Atlassian/Linear MCP; `react-code-fix-linter` is 12 lines hardcoding two React-monorepo yarn scripts — full reject. Nothing installed or executed. Adopted 4 items, all fixing real gaps in our own files: **pinned review base SHA** (`review.md` ran `git diff origin/main` with no fetch and no pinned SHA — a fresh-context reviewer could judge a stale range), **untrusted-ref execution** (`security.md` covered prompt injection but not running contributor-controlled code with credentials in scope), the **3-flash seizure threshold**, and an **option-articulation contract** in decision-gates (name each option, state what it gives up; if you can't, collapse it — kills padded three-option gates).

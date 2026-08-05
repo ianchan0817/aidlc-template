@@ -1,0 +1,62 @@
+# CodeQL — copy to codeql.yml once this repo contains application code.
+#
+# Deliberately shipped inactive (`.yml.example`, which Actions ignores, same
+# idiom as init.sh.example): the template itself holds only markdown, config,
+# and shell. CodeQL supports none of those, so an active workflow here would
+# fail on every run with "no source code found" and train you to ignore a red X.
+#
+# Setup:
+#   1. cp .github/workflows/codeql.yml.example .github/workflows/codeql.yml
+#   2. Set `language:` below to your stack.
+#   3. Compiled languages (java-kotlin, c-cpp, csharp, swift) usually need a
+#      real build — replace the autobuild step with your build command.
+
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Pick what applies. Remove the rest.
+        language: [javascript-typescript]
+        # language: [python]
+        # language: [go]
+        # language: [ruby]
+        # language: [rust]
+        # language: [java-kotlin]   # needs a build
+        # language: [c-cpp]         # needs a build
+        # language: [csharp]        # needs a build
+        # language: [actions]       # scans workflow files themselves
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-and-quality is the widest query pack: security alerts plus
+          # maintainability. Use security-extended for security-only.
+          queries: security-and-quality
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
