@@ -39,7 +39,7 @@ aidlc/                  Canonical methodology (single source of truth)
                         security, e2e, ship                     (HOW)
   operations/           operate, retro, investigate,
                         daily-report                            (RUN)
-  rules/                7 canonical rules
+  rules/                8 canonical rules
   common/               decision-gates, session-lifecycle, unknowns
   examples/             feature-spec, feature-list, eval-suite,
                         adr, threat-model, e2e-test-plan,
@@ -92,7 +92,9 @@ Canonical bodies in `aidlc/rules/*.md` — one source of truth. Tool adapters ar
 - Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`)
 - Codex → reads `aidlc/rules/*.md` directly via AGENTS.md context
 
-Topics: `code-style`, `testing`, `security`, `api-conventions`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `aidlc/rules/tech-stack.md` before the first session.
+Topics: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `aidlc/rules/tech-stack.md` before the first session.
+
+UI work reads two of these: `design-tokens` for the vocabulary (color roles, type scale, spacing, motion) and `ux-guidelines` for behavior (hierarchy, states, interaction, accessibility).
 
 ## Non-negotiables
 

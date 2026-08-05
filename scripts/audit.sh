@@ -38,13 +38,21 @@ sum_words() {
   echo "$total"
 }
 
-AIDLC_TOTAL=$(find aidlc -name '*.md' -type f 2>/dev/null | sum_words)
+# Split the canonical tree by how it actually reaches a context window:
+#   methodology — roles, rules, phases, common: loaded on demand while working
+#   examples    — fill-in artifact templates, read only when producing that
+#                 artifact (README: "documentation, not auto-loaded")
+# Budgeting them as one number measures the wrong thing.
+METHOD_TOTAL=$(find aidlc -name '*.md' -type f -not -path 'aidlc/examples/*' 2>/dev/null | sum_words)
+EXAMPLES_TOTAL=$(find aidlc/examples -name '*.md' -type f 2>/dev/null | sum_words)
+AIDLC_TOTAL=$((METHOD_TOTAL + EXAMPLES_TOTAL))
 MEM_TOTAL=$(find memory -name '*.md' -type f 2>/dev/null | sum_words)
 CLAUDE_TOTAL=$(find .claude -name '*.md' -type f 2>/dev/null | sum_words)
 CURSOR_TOTAL=$(find .cursor \( -name '*.md' -o -name '*.mdc' \) -type f 2>/dev/null | sum_words)
 CODEX_TOTAL=$(find .codex -name '*.md' -type f 2>/dev/null | sum_words)
 
-printf "  %-40s %6d words\n" "aidlc/**/*.md (canonical)" "$AIDLC_TOTAL"
+printf "  %-40s %6d words\n" "aidlc/ methodology (loads on demand)" "$METHOD_TOTAL"
+printf "  %-40s %6d words\n" "aidlc/examples/ (artifact templates)" "$EXAMPLES_TOTAL"
 printf "  %-40s %6d words\n" "memory/**/*.md (project state)" "$MEM_TOTAL"
 printf "  %-40s %6d words\n" ".claude/**/*.md (adapters)" "$CLAUDE_TOTAL"
 printf "  %-40s %6d words\n" ".cursor/**/*.{md,mdc} (adapters)" "$CURSOR_TOTAL"
@@ -58,11 +66,16 @@ if [[ $ROOT_TOTAL -gt 1500 ]]; then
   echo "[WARN] Root entry points heavy ($ROOT_TOTAL words). Target: <1500."
   WARN=$((WARN+1))
 fi
-# Total canonical is a bloat tripwire, not a quality metric: it scales with the
-# number of phases (14), examples (8), roles (3), rules (7) and common docs (3),
-# all of which load on demand rather than every session.
-if [[ $AIDLC_TOTAL -gt 9000 ]]; then
-  echo "[WARN] Canonical content heavy ($AIDLC_TOTAL words). Target: <9000."
+# Bloat tripwires, not quality metrics. Methodology is the number that matters:
+# it scales with phases (14), roles (3), rules (8) and common docs (3), any of
+# which an agent may load while working. Examples get a looser cap because only
+# one is ever read at a time, when that artifact is being produced.
+if [[ $METHOD_TOTAL -gt 8000 ]]; then
+  echo "[WARN] Methodology heavy ($METHOD_TOTAL words). Target: <8000."
+  WARN=$((WARN+1))
+fi
+if [[ $EXAMPLES_TOTAL -gt 2500 ]]; then
+  echo "[WARN] Artifact templates heavy ($EXAMPLES_TOTAL words). Target: <2500."
   WARN=$((WARN+1))
 fi
 # Per-file size is the metric that actually affects adherence — an agent reads

@@ -3,9 +3,11 @@
 Phase: Construction. Pre-merge code review, two-pass.
 
 ## Context
+Pin the range before reading it — a fresh-context reviewer that resolves the base itself judges against whatever stale ref it inherited.
 ```bash
-git branch --show-current
-git diff origin/main --stat 2>/dev/null | head -30
+git fetch --prune
+BASE=$(git rev-parse origin/main)          # record this SHA in the verdict
+git diff "$BASE"...HEAD --stat | head -30
 ```
 
 ## Two-Pass Review

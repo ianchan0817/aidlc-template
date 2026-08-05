@@ -3,67 +3,50 @@
 Fill-in template produced by `aidlc/operations/operate.md`. Required within 48h of any Critical or High incident. Blameless.
 
 ```markdown
-# Postmortem: [Incident Name] — [YYYY-MM-DD]
+# Postmortem: [Incident] — [YYYY-MM-DD]
 
 ## Summary
-[2–3 sentences. What happened, who was affected, how long.]
-
-## Severity
-[Critical / High / Medium / Low] — see triage criteria in `aidlc/agents/reviewer.md`.
+[2–3 sentences: what happened, who was affected, how long.]
 
 ## Impact
-- **Users affected:** [count or %]
-- **Duration:** [start → end timestamps in UTC]
-- **Symptoms:** [what users saw / experienced]
-- **Revenue / SLO impact:** [if measurable]
+- **Severity:** [Critical/High/Medium/Low — criteria in aidlc/agents/reviewer.md]
+- **Users affected:** [count or %]   **Duration:** [start → end, UTC]
+- **Symptoms:** [what users saw]    **SLO/revenue:** [if measurable]
 
 ## Timeline (UTC)
-
 | Time | Event |
 |------|-------|
-| HH:MM | [trigger — e.g. deploy of v1.2.3] |
+| HH:MM | Trigger (e.g. deploy of v1.2.3) |
 | HH:MM | First alert fires |
 | HH:MM | On-call acknowledges |
-| HH:MM | Mitigation applied (rollback / feature flag / manual fix) |
-| HH:MM | Symptoms resolved |
-| HH:MM | All-clear declared |
+| HH:MM | Mitigation applied (rollback / flag / manual) |
+| HH:MM | Symptoms resolved → all-clear |
 
-## Root Cause
+## Root cause
+The actual cause, not the symptom — keep asking "why" until it stops
+being about code and starts being about the process that let it through:
 
-[The actual cause, not the symptom. Trace it back as far as it goes — usually 3+ "why?"s.]
-
-Example structure:
-- Symptom: 5xx rate spiked to 12%
+- Symptom: 5xx rate hit 12%
 - Why: connection pool exhausted
-- Why: query held connection across an external HTTP call
-- Why: pattern was added in PR #1234 without code review catching it
-- **Root cause:** missing review checklist item for "no I/O while holding DB connection"
+- Why: a query held its connection across an external HTTP call
+- Why: added in PR #1234, review had no checklist item for it
+- **Root cause:** missing review rule — "no I/O while holding a DB connection"
 
-## What Went Well
-- [Detection time was short because alert X was tuned]
-- [Rollback was clean because deploy artifact was reproducible]
+## What went well / what didn't
+- Well: [detection was fast because alert X was tuned]
+- Not: [on-call paged 7 min late — threshold too lax; no rollback runbook]
 
-## What Didn't Go Well
-- [On-call paged 7 minutes after symptoms started — alert threshold too lax]
-- [Rollback procedure was not documented for this service]
-
-## Action Items
-
-| ID | Type | Action | Owner | Due |
-|----|------|--------|-------|-----|
-| 1 | Fix | [the actual code fix] | | |
+## Action items
+| # | Type | Action | Owner | Due |
+|---|------|--------|-------|-----|
+| 1 | Fix | [the code fix] | | |
 | 2 | Test | [test that would have caught this] | | |
-| 3 | Detection | [tighter alert / new dashboard] | | |
-| 4 | Prevention | [process / rule / agent update] | | |
-| 5 | Runbook | [document the response procedure] | | |
+| 3 | Detection | [tighter alert / dashboard] | | |
+| 4 | Prevention | [process or rule update] | | |
+| 5 | Runbook | [document the response] | | |
 
-## Closing the Loop
+## Closes when
+- [ ] Fixes shipped · tests green in CI · rule updated (if applicable) · runbook published
 
-This postmortem closes when:
-- [ ] All Type:Fix items shipped
-- [ ] Tests added and passing in CI
-- [ ] Rule update merged (if applicable, in your tool's rules directory)
-- [ ] Runbook published
-
-Author: [name]   Reviewer: [name]   Date closed: [...]
+Author: [name]   Reviewer: [name]   Closed: [date]
 ```

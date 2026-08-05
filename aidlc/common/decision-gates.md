@@ -26,6 +26,7 @@ The agent waits for the `[Answer]:` line to be filled in before proceeding.
 2. Vague answers ("depends", "maybe", "not sure") count as unanswered.
 3. Check answers against each other for contradictions (e.g. "bug fix" scope + "breaking changes" risk).
 4. Any failure → write a follow-up question file referencing the conflict. Never proceed on assumptions.
+5. Options must be distinguishable. Name each for its essence ("Content-First Rail", not "Option B") and give it one line each of: the bet it makes, what it's good for, what it gives up. If you can't say what an option gives up, it isn't distinct — collapse it. Two real options beat three padded ones.
 
 ## Where to use
 

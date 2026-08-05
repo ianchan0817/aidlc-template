@@ -1,0 +1,7 @@
+---
+description: Design tokens — color roles, type scale, spacing, elevation, motion
+globs: **/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/components/**/*, **/*.css, **/*.scss, **/*.sass, **/*.less, **/tailwind.config.*, **/theme.*, **/tokens.*
+alwaysApply: false
+---
+
+Apply rules in `aidlc/rules/design-tokens.md`.

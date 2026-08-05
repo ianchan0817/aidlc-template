@@ -133,6 +133,16 @@ Definitions in [`aidlc/agents/`](aidlc/agents/):
 - **reviewer** — code review, security (STRIDE), runtime QA, agent evals, sprint-contract approval, E2E sign-off. Only the reviewer flips `passes: true`. Runs in a **fresh context** (own subagent or session): a context that just wrote the code already believes its own reasoning.
 - **manager** — orchestration, daily reports, harness-review cadence after model or tool upgrades.
 
+### Design & UX
+
+Two rules, split by the question they answer.
+
+[`design-tokens.md`](aidlc/rules/design-tokens.md) is the **vocabulary**: color named by *role*, never by hue (`--color-primary`, not `blue-500`, which is a leak that won't survive a rebrand); every foreground/background pair the product uses named with a measured contrast ratio, because an unnamed pair is an unchecked pair; dark mode as a second set of role values rather than inverted lightness; a type scale with line-height inverse to size and a 45–75 character measure; and spacing, radius, elevation and motion as fixed steps.
+
+[`ux-guidelines.md`](aidlc/rules/ux-guidelines.md) is the **behavior**: hierarchy and position (one primary action per view; proximity *is* grouping; primary actions in the thumb zone and destructive ones never), all five states designed (loading, empty, partial, error, success), interaction (undo over confirm, prevent errors rather than report them, forgiving on input and strict on storage, never lose typed work), responsive rules, and a WCAG 2.1 AA floor — including the three-flashes-per-second seizure threshold, which is a legal limit rather than a preference and which `prefers-reduced-motion` does not cover.
+
+`/design` ([`aidlc/inception/design.md`](aidlc/inception/design.md)) is the process: name the job before drawing anything, get hierarchy right in greyscale (if it doesn't work without color, color won't save it), design every branch as a state, express it in existing tokens, then self-critique as a stranger before handoff.
+
 ---
 
 ## Guardrails & sensors
@@ -219,7 +229,7 @@ PASS/FAIL and exit code first · ANSI/OSC stripped · stack traces truncated (de
 
 `bash scripts/audit.sh`, also on every push/PR. Exits non-zero on structural failure.
 
-- **Word budgets** — total canonical as a bloat tripwire, plus a per-file limit, since an agent loads one phase file and long files lose their tail instructions.
+- **Word budgets** — three numbers, each measuring what actually reaches a context window: root entry points (load every session), methodology (loads on demand), artifact templates (read one at a time). Plus a per-file limit, because an agent loads *one* phase file and long files lose their tail instructions.
 - **JSON validity** of hook configs — a syntax error silently disables a safety hook.
 - **Broken internal references** — pointers to files that moved or never existed.
 - **No hardcoded model IDs** (`model: inherit` only) — adapters pinned to a model that will be deprecated.
@@ -256,7 +266,7 @@ aidlc-template/
 │   │                      review, security, e2e, ship
 │   ├── operations/        operate, retro, investigate,
 │   │                      daily-report
-│   ├── rules/             7 canonical rule bodies
+│   ├── rules/             8 canonical rule bodies
 │   ├── common/            decision-gates, unknowns,
 │   │                      session-lifecycle
 │   └── examples/          8 fill-in artifact templates
