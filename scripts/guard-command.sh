@@ -30,12 +30,14 @@ fi
 
 cmd="$1"
 block() { echo "Blocked by scripts/guard-command.sh: $1" >&2; exit 2; }
-whole() { printf '%s' "$cmd" | grep -qE "$1"; }
+# `-e` is required, not stylistic: a pattern starting with `-` (e.g. one
+# matching `--env-file`) is otherwise parsed by grep as an option.
+whole() { printf '%s' "$cmd" | grep -qE -e "$1"; }
 
 # --- Per-segment checks (flag/target proximity matters) ----------------------
 while IFS= read -r seg; do
   [ -z "$seg" ] && continue
-  seg_has() { printf '%s' "$seg" | grep -qE "$1"; }
+  seg_has() { printf '%s' "$seg" | grep -qE -e "$1"; }
 
   # Recursive force-delete of a root-level path. All four must hold in this segment.
   if seg_has '(^|[[:space:]])rm([[:space:]]|$)' &&
@@ -66,11 +68,24 @@ whole 'DELETE[[:space:]]+FROM[[:space:]]+[[:alnum:]_."]+[[:space:]]*(;|"|$)' && 
 
 # Secret files. A Bash allow-list cannot protect .env — `python -c "open('.env')"`
 # sidesteps any Read() deny rule — so the boundary has to live here.
-# .env.example/.sample/.template/.dist are scaffolding and stay usable; block
-# those and people disable the guard on day one.
-if whole '(^|[^[:alnum:]_.-])\.env' &&
-   ! whole '\.env\.(example|sample|template|dist)([^[:alnum:]]|$)'; then
-  block "touches a .env file — read secrets from your secrets manager, not the shell"
+#
+# Match .env only in a file-consuming POSITION, not anywhere in the string.
+# Matching anywhere blocks `git commit -m "fix .env handling"`, and a guard that
+# blocks committing is a guard people delete — which protects nothing. The
+# trade-off is deliberate: an exotic reader outside this list slips through,
+# while Read()/Edit() denies and secret scanning still cover that case.
+# .env.example/.sample/.template/.dist stay usable as scaffolding.
+READERS='cat|less|more|head|tail|nl|od|xxd|strings|base64|openssl|source|\.|cp|mv|ln|install|scp|rsync|tar|zip|curl|wget|grep|rg|ack|awk|sed|jq|xargs|dotenv'
+INTERP='python3?|node|deno|bun|ruby|perl|php|osascript'
+Q='["'"'"']?'
+
+if whole "(^|[^[:alnum:]_.-])\.env" &&
+   ! whole '\.env\.(example|sample|template|dist)([^[:alnum:]]|$)' &&
+   { whole "(^|[[:space:];|&(])($READERS)[[:space:]]([^;|&]*[[:space:]])?${Q}\.env" ||
+     whole "[<>][[:space:]]*${Q}\.env" ||
+     whole "--env-file[[:space:]=]${Q}\.env" ||
+     whole "($INTERP)[[:space:]][^;|&]*(-c|-e|-p)[[:space:]][^;|&]*\.env"; }; then
+  block "reads or copies a .env file — take secrets from your secrets manager, not the shell"
 fi
 
 exit 0
