@@ -1,34 +1,23 @@
 # Project memory — cross-session state
 
-Only state that **outlives a session** lives here: known issues, blockers, open
-questions. It is re-read every session, so a long log costs context on every turn
-and buys nothing `git log` does not already give you.
+Only state that **outlives a session** belongs here: known issues, blockers, open
+questions. This file is re-read every session, so a long log costs context on
+every turn and buys nothing `git log` does not already give you.
 
-Per-session handoff — what changed, evidence, decisions, next action — is one
-file per session in `memory/sessions/`, because a field every session rewrites is
-a line every concurrent session collides on. Read the newest handoff at session
-start (`memory/sessions/README.md`). Backlog records are one file per feature in
-`memory/features/` (`memory/features/README.md`). Architectural rationale belongs
-in an ADR under `docs/adr/`; finished narrative in `docs/history.md`.
+Everything else has a home with a matching lifetime. One session's handoff —
+what changed, the evidence, the next action — goes in `memory/sessions/`, because
+a field every session rewrites is a line every concurrent session collides on.
+Backlog records are one file per feature in `memory/features/`. Architectural
+rationale becomes an ADR under `docs/adr/`.
 
 ## Blocked on the owner (cannot be committed)
-<!-- Anything only a human with repo/account access can do -->
-GitHub toggles, verified 2026-08-10 and detailed in `docs/repo-setup.md`: private
-vulnerability reporting is **off** (so `SECURITY.md` points at a Report button
-that is not rendered), Dependabot **security** updates are **off**, and there are
-**no branch rulesets**, so `audit` and `shellcheck` report without blocking a
-merge.
+<!-- Only a human with repo or account access can action these. Delete when done. -->
+None.
 
 ## Open questions
-<!-- One owner per item -->
+<!-- One named owner per item, or it is not a question, it is a wish. -->
 None.
 
 ## Known issues
-<!-- Active bugs or debt; delete the line when it is resolved -->
-- **Scope limits are now disclosed to adopters** in README.md ("What this is
-  proven to fit, and what it is not") rather than only here. The limits stand:
-  no `library` surface, `release.*` are scalars so a monorepo cannot declare
-  per-surface levers, ML model quality has no gate, a fourth tool gets no guard.
-- **`guard-mutate.sh` cannot find a missing case class** — it permutes spellings
-  of rows it was given. It generated 1,511 cases and found none of the five
-  false-positive mechanisms fixed on 2026-08-10.
+<!-- Active bugs or debt. Delete the line when it is resolved, not when it is noticed. -->
+None.

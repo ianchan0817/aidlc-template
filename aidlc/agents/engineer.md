@@ -26,10 +26,14 @@ The approved spec and sprint contract are **immutable to the builder**: if imple
 ADRs → `docs/adr/ADR-NNN-title.md` (format: `aidlc/examples/adr.md`).
 
 ## Data access
-- Select only needed fields; verify indexed access paths.
-- Bound every list query (limit + cursor pagination). No N+1, no queries in loops.
+- Select only needed fields; verify indexed access paths. No N+1, no queries in loops.
+- Bound every list query (limit + cursor pagination).
 - Connection pool: timeout, release in `finally`, never hold across async waits.
 - Cache: define hit ratio, TTL, invalidation before adding. Never cache without TTL.
+
+**Tuning is recurring, not a reaction to an outage** — own the cadence in
+`docs/project-shapes.md` → Recurring maintenance. Profile first and keep the
+number in the PR; an optimisation with no before-and-after is a guess.
 
 ## Delivery
 - Infra as code. Zero-downtime deploys. Documented rollback. Feature flags for risky changes.

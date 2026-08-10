@@ -791,6 +791,28 @@ if [[ $TEMPLATE -eq 0 ]]; then
 echo
 echo "=== Adopter checks ==="
 
+# 3b-0. No template-maintenance state in an adopted copy. This repo is both a
+#       template and a project, and the two kinds of state were mixed: an adopter
+#       inherited this template's own changelog and session handoffs about fixing
+#       its command guard as their project's starting memory. Every one of those
+#       reads as project history to the next session, and a model has no way to
+#       tell somebody else's narrative from its own.
+#       Deleting `.maintainer/` is an adoption step, so its presence here is the
+#       tell that the step was skipped.
+MAINT_FAIL=0
+if [[ -d .maintainer ]]; then
+  printf "  [FAIL] .maintainer/ is present in an adopted copy — delete it; it holds the TEMPLATE's own history, not your project's\n"
+  FAIL=$((FAIL+1)); MAINT_FAIL=1
+fi
+# A stale handoff is the same defect one level down: session records describe one
+# session's work, so any that predate adoption belong to whoever wrote them.
+while IFS= read -r stale; do
+  [[ -z $stale ]] && continue
+  printf "  [FAIL] %s ships with the template — a handoff describes one session's work and cannot describe yours\n" "$stale"
+  FAIL=$((FAIL+1)); MAINT_FAIL=1
+done < <(git ls-files 'memory/sessions/*.md' 2>/dev/null | grep -v 'README.md' || true)
+[[ $MAINT_FAIL -eq 0 ]] && echo "  [ok]   no template-maintenance state inherited (memory/ describes this project only)"
+
 # 3b-1. The declaration. Every surface-conditional gate reads project.yml. If it
 #       is missing or half-filled, those gates evaluate to "not declared" and
 #       stop applying — the project ships with the gates quietly switched off,

@@ -37,16 +37,17 @@ The harness is five-part: **Instructions** (focused files, no giant prompt) · *
 
 **Start here:** GitHub → **Use this template** → *Create a new repository*. This repo is marked as a template, so that button exists. It buys a clean history — `git clone` would drag the template's commits into your project's log.
 
-Then six steps, in order. Each says what it buys.
+Then seven steps, in order. Each says what it buys.
 
-1. **Delete `aidlc/.template`.** That marker is what tells `scripts/audit.sh` this repo *is* the template. Removing it drops the maintainer-only sensors (word budgets, three-tool parity, README mobile render, upstream-URL check, hygiene file list) and starts the adopter checks instead. The safety sensors — guard self-test, secrets, broken references, shell syntax — run in **both** modes.
-2. **Fill in `project.yml`.** The one file you must edit: `surfaces`, `stateful`, `multi_tenant`, `release`, `verify`. Every conditional gate reads it, and it loads on every session. See [Adaptation model](#adaptation-model).
-3. **Delete the adapter dirs you do not use** — `.claude/`, `.codex/`, `.cursor/`. `aidlc/`, `AGENTS.md`, `project.yml`, and `memory/` work standalone; parity is checked only for the tools still present.
-4. **Replace `OWNER/REPO`** in `.github/ISSUE_TEMPLATE/config.yml`. Left as a placeholder, your reporters' "Report a vulnerability" link opens an advisory on a stranger's repository.
-5. **Copy the two `.example` files** — `init.sh.example` → `init.sh` (session-start smoke) and `.github/workflows/verify.yml.example` → `.github/workflows/verify.yml` (the same checks in CI). Both read `verify:` from `project.yml`, so your shell and your PR run one contract instead of two that drift.
-6. **Uncomment your ecosystem in `.github/dependabot.yml`** — its header maps manifest file → ecosystem name (`go.mod` → `gomod`, `package.json` → `npm`). The `github-actions` block already ships active, which is what keeps the workflow SHA pins current; nothing watches your *application* dependencies until you uncomment their block.
+1. **Delete `aidlc/.template` and `.maintainer/`.** That marker is what tells `scripts/audit.sh` this repo *is* the template. Removing the marker drops the maintainer-only sensors (word budgets, three-tool parity, README mobile render, upstream-URL check, hygiene file list) and starts the adopter checks instead. The safety sensors — guard self-test, secrets, broken references, shell syntax — run in **both** modes. `.maintainer/` holds this template's own changelog and owner notes; inherited, it reads as *your* project's history to the next session, and a model cannot tell somebody else's narrative from its own. The adopter audit fails while either is still present.
+2. **Start `memory/` from empty.** `progress.md` ships as a stub and `memory/{features,sessions}/` hold only their READMEs, so the first session writes your project's first record rather than reading someone else's. The audit fails on any session handoff that shipped with the template.
+3. **Fill in `project.yml`.** The one file you must edit: `surfaces`, `stateful`, `multi_tenant`, `release`, `verify`. Every conditional gate reads it, and it loads on every session. See [Adaptation model](#adaptation-model).
+4. **Delete the adapter dirs you do not use** — `.claude/`, `.codex/`, `.cursor/`. `aidlc/`, `AGENTS.md`, `project.yml`, and `memory/` work standalone; parity is checked only for the tools still present.
+5. **Replace `OWNER/REPO`** in `.github/ISSUE_TEMPLATE/config.yml`. Left as a placeholder, your reporters' "Report a vulnerability" link opens an advisory on a stranger's repository.
+6. **Copy the two `.example` files** — `init.sh.example` → `init.sh` (session-start smoke) and `.github/workflows/verify.yml.example` → `.github/workflows/verify.yml` (the same checks in CI). Both read `verify:` from `project.yml`, so your shell and your PR run one contract instead of two that drift.
+7. **Uncomment your ecosystem in `.github/dependabot.yml`** — its header maps manifest file → ecosystem name (`go.mod` → `gomod`, `package.json` → `npm`). The `github-actions` block already ships active, which is what keeps the workflow SHA pins current; nothing watches your *application* dependencies until you uncomment their block.
 
-Then set `Current Focus` in `memory/progress.md`, run `bash scripts/audit.sh`, and turn on the repo-side switches no commit can set ([`docs/repo-setup.md`](docs/repo-setup.md)).
+Then run `bash scripts/audit.sh`, and turn on the repo-side switches no commit can set ([`docs/repo-setup.md`](docs/repo-setup.md)).
 
 Open it: `claude` loads `CLAUDE.md`; `codex` loads `AGENTS.md`; Cursor loads `.cursor/rules/*.mdc`. First feature — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
 
@@ -60,7 +61,7 @@ Deleting methodology files is *not* how you adapt, and it breaks the build. Drop
 
 One tree serves a Go API, a React Native app and a Next.js site because the methodology names **invariants**, not spellings — "address every element by a stable, purpose-named identifier", not "use `data-testid`". [`docs/project-shapes.md`](docs/project-shapes.md) holds the spelling per surface: E2E identity, health signals, rollback lever, and the coverage equivalent for code that cannot be line-instrumented.
 
-The two deletions adoption *does* want are `aidlc/.template` (step 1) and the tool dirs you skipped (step 3). Both are sensed: the audit switches modes on the first and checks parity only for tools present.
+The deletions adoption *does* want are `aidlc/.template` plus `.maintainer/` (step 1) and the tool dirs you skipped (step 4). Both are sensed: the audit switches modes on the first and checks parity only for tools present.
 
 ### What this is proven to fit, and what it is not
 

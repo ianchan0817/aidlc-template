@@ -2,7 +2,7 @@
 
 Tool-agnostic phase index. AGENTS.md holds the harness rules and non-negotiables; this file lists phases and gates.
 
-Session lifecycle: `aidlc/common/session-lifecycle.md`. Backlog: `memory/feature-list.json`.
+Session lifecycle: `aidlc/common/session-lifecycle.md`. Backlog: `memory/features/`.
 
 ## Three phases
 
@@ -42,11 +42,6 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 
 **Gate:** signals green through the declared `release.window`; every prod incident produces a fix, test, or rule update.
 
-## Roles
-`aidlc/agents/`: `engineer` (build), `reviewer` (quality/security/QA/E2E), `manager` (orchestrate).
-
-## Decision gates & unknowns
-`aidlc/common/decision-gates.md` — structured `[Answer]:` audit trail. `aidlc/common/unknowns.md` — elicitation moves per phase.
-
-## Examples
-Fill-in templates in `aidlc/examples/`.
+## Roles, gates, templates
+Roles: `aidlc/agents/`. Decision gates: `aidlc/common/decision-gates.md`.
+Elicitation: `aidlc/common/unknowns.md`. Artifact templates: `aidlc/examples/`.

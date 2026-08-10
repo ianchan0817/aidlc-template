@@ -52,5 +52,5 @@ ISO dates sort chronologically, so lexical order is chronological order. The
 `[0-9]` prefix is not decoration: a plain `*.md` puts this README in every tail,
 because `R` sorts after any date. Old
 handoffs cost nothing because nobody reads them; when a stretch of them becomes
-project narrative worth keeping, fold it into `docs/history.md` and delete the
+project narrative worth keeping, fold it into `.maintainer/history.md` and delete the
 files.

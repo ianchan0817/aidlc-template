@@ -92,3 +92,45 @@ verify the kill switch rather than pretending a redeploy exists.
 An **empty** `verify` value declares that the project has no such check, which
 leaves the gate explicitly unnamed rather than silently passed. Where `coverage`
 is empty, `aidlc/rules/testing.md` requires a named coverage equivalent instead.
+
+## Recurring maintenance — the work that has no ticket
+
+Every item here degrades silently and shows up as an incident months later, so
+each one names an owner and a cadence. `aidlc/operations/operate.md` step 4 is the
+gate; this table is the schedule. Skip a row only when `project.yml` does not
+declare the capability it needs — a stateless service has no database to tune.
+
+| What | Cadence | Owner | Applies when |
+|---|---|---|---|
+| Slowest queries reviewed; missing indexes added; N+1 hunted | Monthly | engineer | `stateful: true` |
+| Latency percentiles compared to the last period, not to the threshold | Weekly | engineer | any runtime surface |
+| Dependency patches applied; CVE alerts triaged | Weekly | reviewer | always |
+| Build and test wall-clock checked for creep | Monthly | engineer | always |
+| Error-budget burn and cost anomalies | Weekly | manager | any runtime surface |
+| Flaky-test list reviewed and either fixed or deleted | Monthly | reviewer | always |
+| Store rejection and crash-free trend | Per release | engineer | `mobile` surface |
+| Backup restore actually exercised, not just configured | Quarterly | engineer | `stateful: true` |
+
+### Performance work has a rule: measure, then change
+
+Profile before optimising, and keep the measurement in the PR. An optimisation
+with no before-and-after number is a guess that now costs maintenance. Fix the
+access path before the query, the query before the cache, and the cache before
+the machine — a cache over an unindexed query hides the defect and doubles the
+failure modes.
+
+### Dependency patches
+
+Patch and minor updates land continuously; a bot proposing them is the mechanism,
+but a bot merging them unread is not review. Triage on severity: a Critical or
+High CVE in a production path is an unplanned slice this week, everything else
+batches into the next one. A major version is a planned change with its own
+slice, never an auto-merge. `.github/dependabot.yml` ships with the ecosystems
+commented out — uncomment yours, and add the manifest paths, or none of this runs.
+
+### Automatic test execution
+
+Tests that run when someone remembers to run them are not a gate. Everything in
+`project.yml`'s `verify` block runs in CI on every pull request, unprompted, and
+a red run blocks the merge — that is what `.github/workflows/verify.yml.example`
+wires up. A suite you have to ask for measures intent, not the code.

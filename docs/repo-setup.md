@@ -100,7 +100,7 @@ single-source-of-truth rule the template is built on.
 
 Use it for maintainer-side material that should *not* ship in the template:
 
-- Roadmap and what's deliberately deferred (currently in `docs/history.md`)
+- Roadmap and what's deliberately deferred (currently in `.maintainer/history.md`)
 - Methodology changelog — which reference each rule came from, and why rejected
   ideas were rejected
 - FAQ and adoption notes ("we tried this on a Rails repo, here's what changed")

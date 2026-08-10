@@ -1,5 +1,7 @@
 # Testing
 
+Every `verify` check runs in CI on every pull request, unprompted — a suite run on request measures intent, not code.
+
 Coverage: 100% statement, branch, function, line **on new and modified code** (diff-based). CI blocks merge below that. Legacy code improves opportunistically, not as a gate.
 
 Code that cannot be line-instrumented — SQL, dbt models, notebooks, generated bindings, declarative infra — owes a **coverage equivalent**: one named contract test per changed unit, in the sprint contract (`docs/project-shapes.md`). Absence of a coverage number is never absence of a gate.
