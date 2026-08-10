@@ -1,4 +1,6 @@
 {
-  "version": 1,
-  "features": []
+  "schema": 2,
+  "records": "memory/features/*.json",
+  "features": [],
+  "_note": "Manifest only. Schema 2 keeps one feature per file at records, so two sessions never write the same path; features stays empty by design and a non-empty array is a sensor failure. Schema, ordering and recipes: memory/features/README.md"
 }

@@ -52,7 +52,8 @@ memory/                 progress.md · feature-list.json · plans/ · decisions/
 .claude/ .cursor/ .codex/   Tool adapters (skills/<name>/SKILL.md per tool)
 docs/                   adr/ · project-shapes.md · repo-setup.md · history.md
 scripts/                audit.sh · agent-test.sh · guard-command.sh
-                        (+ guard-cases.tsv) — sensors shared by all three tools
+                        (+ guard-cases.tsv, guard-mutate.sh which mutates it)
+                        — sensors shared by all three tools
 ```
 
 Adapters use repo-rooted paths (e.g. `aidlc/agents/engineer.md`) — no `../../` chains.

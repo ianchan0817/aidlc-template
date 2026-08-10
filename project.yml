@@ -71,7 +71,9 @@ verify:
   test: bash scripts/audit.sh
   lint: bash -n scripts/audit.sh
   types: ""       # no typed source in this repo
-  coverage: ""    # equivalent: scripts/guard-cases.tsv, one case per guard branch
+  coverage: ""    # equivalent: guard-cases.tsv (one blocking case + one
+                  # near-miss per guard branch) plus guard-mutate.sh, which
+                  # derives the spellings the hand-written rows do not cover
   dep_audit: ""   # no package manifest; Dependabot watches the GitHub Actions
   # Eval runner and task directory for AI-facing behavior.
   # Gate switched: the eval pre-condition in aidlc/construction/ship.md and the

@@ -224,7 +224,13 @@ Deterministic enforcement — actions that must happen, not requests. Two ship p
 
 The matching logic lives in one place — [`scripts/guard-command.sh`](scripts/guard-command.sh) — and each tool's hook only extracts the command and forwards the exit code. It previously lived inline in all three configs and **drifted**: the Codex copy lost its `jq` extraction and started matching the raw JSON payload, blocking benign commands whose working directory happened to contain a match. One file, self-tested against [`scripts/guard-cases.tsv`](scripts/guard-cases.tsv) on every audit run, cannot drift.
 
-It blocks recursive force-deletes of root paths (every flag spelling: `-rf`, `-fr`, `-r -f`, `--recursive --force`), force-push (`--force` and `-f`, while allowing `--force-with-lease`), `chmod -R 777`, `git reset --hard`, `DROP`/`TRUNCATE`/unbounded `DELETE`, and reads of `.env` — while leaving `.env.example` usable, because a guard that blocks day-one setup is a guard people delete. Flags and targets are matched **per command segment**, so `rm -rf ./build && ls /usr/local` is allowed while `cd /tmp && rm -rf /` is not. It fails **closed**: if `jq` is missing or the payload shape changes, the command is blocked rather than waved through.
+It blocks recursive force-deletes of root-anchored paths (any depth, every flag spelling), force-push (while allowing `--force-with-lease`), recursive world-writable `chmod`, `git reset --hard`, `git clean -f`, `DROP`/`TRUNCATE`/unbounded `DELETE`, reads of `.env` and of private keys, writes to agent policy files (`.claude/`, `.cursor/`, `.codex/`, `.git/hooks/` — a session that can write those grants itself capability in the next one), package publish and app-store submission, `terraform destroy`, `helm uninstall`, `kubectl delete namespace`, `redis-cli FLUSHALL`, `docker prune -a --volumes`, printing a credential, and piping a download into an interpreter. `.env.example` stays usable, because a guard that blocks day-one setup is a guard people delete.
+
+**The guard is a tokenizer, not a list of greps**, because both of its failure modes came from the same missing abstraction — position. Matching a dangerous string *anywhere* blocked `git commit -m "block chmod -R 777 in the guard"` and `echo "test case: git reset --hard"`; matching one literal spelling let `rm -rf /etc`, `cat ./.env` and `bash -c "cat .env"` through while the docs claimed otherwise. So the command is split quote-aware into segments, the command word is found by skipping `VAR=value` and wrapper words (`sudo`, `env -i`, `{`), and arguments are classified by what the command does with them: `echo` args and `git` commit messages are **data**, a `grep` pattern is data but its file operand is not, a `bash -c` payload **re-enters as a command**, and a `sed`/`python -c` payload is foreign code checked only for secret paths. Targets are matched by **shape** (anything anchored at `/`, `~`, `$HOME`; any `id_*` under `.ssh`), never by enumerated spelling.
+
+That claim is enforced by a second sensor. [`scripts/guard-cases.tsv`](scripts/guard-cases.tsv) is an enumeration, and an enumeration proves only that its members work — every bypass this guard shipped lived in the complement of one. So [`scripts/guard-mutate.sh`](scripts/guard-mutate.sh) mutates every hand-written case mechanically (`sudo` prefix, subshell, `bash -c` wrapping, quoted target, path prefix, split flag groups, lowercased SQL) and asserts the verdict is unchanged, then re-emits every blocked case inside `echo`, a commit message and a comment and asserts it is **allowed**. Mutations that would not preserve the verdict are skipped with a printed reason rather than quietly dropped. Both arms run in `scripts/audit.sh`; run against the pre-rewrite guard, the generated corpus fails 115 of 782 cases that the 87-row hand-written table passed clean.
+
+It fails **closed**: if `jq` is missing or the payload shape changes, the command is blocked rather than waved through.
 
 > **A Bash allow-list is a convenience boundary, not a security boundary.** `permissions.allow` entries like `Bash(python *)` permit arbitrary code, so no `Read(.env)` deny can stop `python -c "open('.env')"`. That is why the secret-file check lives in the guard hook, which sees the actual command. Treat the allow-list as "don't prompt me for this", and the hook as the enforcement layer.
 
@@ -311,7 +317,8 @@ aidlc-template/
     ├── audit.sh         Footprint + structural audit
     ├── agent-test.sh    AI-friendly test sensor
     ├── guard-command.sh Shared dangerous-command matcher
-    └── guard-cases.tsv  Guard self-test table
+    ├── guard-cases.tsv  Hand-written guard corpus
+    └── guard-mutate.sh  Mutates that corpus; both run in audit
 ```
 
 </details>

@@ -10,7 +10,7 @@ The approved spec and sprint contract are **immutable to the builder**: if imple
 
 ## Principles
 - Domain-driven: entities own invariants, repos abstract persistence, ubiquitous language
-- TDD: Red → Green → Refactor. 100% coverage. No exceptions.
+- TDD: Red → Green → Refactor. Coverage per the `testing` rule.
 - Functions ≤30 lines; dependencies injected; no magic numbers
 
 ## Architecture (when designing)

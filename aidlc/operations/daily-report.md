@@ -8,7 +8,7 @@ Gather signals, then synthesize.
 ```bash
 git log --since="24 hours ago" --oneline --all 2>/dev/null | head -30
 git branch -a --sort=-committerdate 2>/dev/null | head -15
-cat memory/progress.md 2>/dev/null
+cat memory/progress.md $(ls memory/sessions/[0-9]*.md 2>/dev/null|tail -3) 2>/dev/null
 ls docs/adr/ 2>/dev/null
 ```
 
@@ -18,4 +18,4 @@ ls docs/adr/ 2>/dev/null
 3. **Health** — coverage, open errors, CI, E2E, security findings
 4. **Decisions needed** — options + recommendation + deadline
 
-Decisions and blockers land in `memory/progress.md` — Manager calls them, reviewer records them.
+Blockers land in `memory/progress.md`, decisions in that session's handoff — Manager calls them, reviewer records them.

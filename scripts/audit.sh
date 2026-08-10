@@ -321,6 +321,47 @@ for c in aidlc/rules/*.md; do
   [[ ! -d .cursor/rules ]] || [[ -f ".cursor/rules/$base.mdc" ]] || { printf "  [FAIL] no Cursor rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
 done
 echo "  [ok]   rule adapter parity check complete"
+
+# 2d2. SINGLE SOURCE OF TRUTH: an adapter POINTS at canonical prose, it never
+#      restates it. Parity above proves a pointer EXISTS; it says nothing about
+#      whether the body is a pointer or a copy, so a pasted rule body passed.
+#      Two arms, both DERIVED rather than enumerated:
+#        (a) every adapter body names the canonical file it defers to;
+#        (b) no adapter body repeats a long run of prose from that file.
+#      The canonical target is read from the adapter itself, so this needs no
+#      table of adapter->source pairs to keep in sync.
+#      Threshold is 8+ words: shorter overlaps are ordinary shared vocabulary
+#      ("Apply rules in"), and a copied sentence is always longer. Honest limit:
+#      this catches copy-paste, not paraphrase. Paraphrase is a review concern.
+SOT_FAIL=0
+norm() { # collapse whitespace, drop list/heading markers, lowercase
+  sed -E 's/^[[:space:]]*[-*0-9.]+[[:space:]]*//; s/^#+[[:space:]]*//' \
+    | tr -s '[:space:]' ' ' | tr '[:upper:]' '[:lower:]'
+}
+body() { # adapter body = everything after the closing frontmatter fence
+  awk 'BEGIN{f=0;n=0} /^---[[:space:]]*$/{n++; if(n<=2){f=(n==2);next}} n>=2{print}' "$1"
+}
+for a in .claude/agents/*.md .cursor/agents/*.md .claude/rules/*.md .cursor/rules/*.mdc; do
+  [[ -f "$a" ]] || continue
+  src=$(grep -oE 'aidlc/(agents|rules|common|construction|inception|operations)/[a-z-]+\.md|project\.yml' "$a" | head -1 || true)
+  if [[ -z "$src" ]]; then
+    printf "  [FAIL] %s names no canonical source — an adapter must defer, not define\n" "$a"
+    FAIL=$((FAIL+1)); SOT_FAIL=$((SOT_FAIL+1)); continue
+  fi
+  [[ -f "$src" ]] || continue          # broken-ref arm above already reports this
+  [[ "$src" == *.yml ]] && continue    # a declaration has no prose to duplicate
+  CANON=$(norm <"$src")
+  while IFS= read -r line; do
+    [[ $(printf '%s' "$line" | wc -w) -ge 8 ]] || continue
+    if printf '%s' "$CANON" | grep -qF -- "$line"; then
+      printf "  [FAIL] %s duplicates canonical prose from %s — point at it instead:\n         \"%s\"\n" \
+        "$a" "$src" "$(printf '%s' "$line" | cut -c1-70)"
+      FAIL=$((FAIL+1)); SOT_FAIL=$((SOT_FAIL+1))
+      break
+    fi
+  done < <(body "$a" | norm | tr '.' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$')
+done
+[[ $SOT_FAIL -eq 0 ]] && echo "  [ok]   every adapter names a canonical source and repeats no 8-word run of its prose"
 else
   echo "  [skip] rule adapter parity — template-only sensor"
 fi
@@ -558,6 +599,31 @@ if [[ -x scripts/guard-command.sh ]]; then
     FAIL=$((FAIL+1)); GUARD_FAIL=$((GUARD_FAIL+1))
   fi
   [[ $GUARD_FAIL -eq 0 ]] && echo "  [ok]   command guard self-test ($(grep -cv '^$' scripts/guard-cases.tsv) cases + fail-closed)"
+fi
+
+# 2g2. The hand-written corpus above is an ENUMERATION, and an enumeration proves
+#      only that its members work. Every bypass this guard shipped lived in the
+#      complement of one — `rm -rf /etc` vs `rm -rf /`, `cat ./.env` vs `cat .env`,
+#      `bash -c "cat .env"` vs `cat .env` — so the corpus is also mutated
+#      mechanically (prefixes, quoting, subshells, interpreter wrapping, keyword
+#      case) and each mutation carries an expected verdict. Over-firing is checked
+#      by the same generator: every blocked case is re-emitted inside `echo`, a
+#      commit message and a comment, where it must be ALLOWED.
+#      Gated on -f, not -x, and bound to the guard's own presence: if the guard
+#      ships without its derived arm the corpus silently reverts to a bare
+#      enumeration, which is the failure this whole arm exists to prevent. A
+#      dropped executable bit must not be able to switch a sensor off.
+if [[ -f scripts/guard-command.sh && ! -f scripts/guard-mutate.sh ]]; then
+  printf "  [FAIL] scripts/guard-mutate.sh is missing — the guard corpus would be a bare enumeration again\n"
+  FAIL=$((FAIL+1))
+elif [[ -f scripts/guard-mutate.sh ]]; then
+  set +e; MUT_OUT=$(bash scripts/guard-mutate.sh 2>&1); MUT_RC=$?; set -e
+  if [[ $MUT_RC -ne 0 ]]; then
+    printf "  [FAIL] metamorphic guard corpus disagrees with scripts/guard-command.sh:\n%s\n" "$MUT_OUT"
+    FAIL=$((FAIL+1))
+  else
+    printf "  [ok]   %s\n" "$(printf '%s' "$MUT_OUT" | tail -1)"
+  fi
 fi
 
 # 2h. Docs must render on a phone: markdown tables and code blocks do not wrap,
@@ -802,8 +868,37 @@ else
   decl_enum release.channel continuous store-staged registry scheduled < <(decl_get release.channel)
   decl_enum release.rollback revert-commit previous-artifact forward-fix-only halt-rollout+kill-switch \
     < <(decl_get release.rollback)
+
+  # DERIVED, not declared: cross-check the declaration against what is actually
+  # tracked. The declaration is written once at adoption and never rechecked, so
+  # a service that grows a web console keeps `surfaces: [http-api]` and every
+  # surface-conditional gate stays wrong — silently, because an undeclared
+  # surface "does not apply" by contract. This is the one sensor standing between
+  # that contract and a lie.
+  #
+  # Thresholds are deliberately loose, because a false positive here gets the
+  # whole workflow disabled. UI needs 3+ component files, so one vendored fixture
+  # or a single landing page does not trip it, and generated/vendored/test trees
+  # are excluded. Paraphrase of the same idea: enough evidence that a human would
+  # agree the surface exists.
+  drift_count() { # extension globs -> count outside vendor/generated/test trees
+    git ls-files -- "$@" 2>/dev/null \
+      | grep -vE '(^|/)(node_modules|vendor|third_party|testdata|fixtures|__fixtures__|\.next|dist|build)/' \
+      | grep -cvE '(^|/)[^/]*\.(test|spec)\.' || true
+  }
+  SURF_DECL=" $(decl_list surfaces | tr '\n' ' ') "
+  UI_N=$(drift_count '*.tsx' '*.jsx' '*.vue' '*.svelte')
+  if [[ ${UI_N:-0} -ge 3 && $SURF_DECL != *" web "* && $SURF_DECL != *" mobile "* ]]; then
+    printf "  [FAIL] %s tracked UI component files but surfaces declares neither web nor mobile — the UI gates are switched off\n" "$UI_N"
+    FAIL=$((FAIL+1)); DECL_FAIL=$((DECL_FAIL+1))
+  fi
+  PROTO_N=$(drift_count '*.proto')
+  if [[ ${PROTO_N:-0} -ge 1 && $SURF_DECL != *" grpc "* ]]; then
+    printf "  [FAIL] %s tracked .proto file(s) but surfaces does not declare grpc — the interface gate has no contract axis\n" "$PROTO_N"
+    FAIL=$((FAIL+1)); DECL_FAIL=$((DECL_FAIL+1))
+  fi
 fi
-[[ $DECL_FAIL -eq 0 ]] && echo "  [ok]   project.yml declares surfaces, release.rollback, verify.test"
+[[ $DECL_FAIL -eq 0 ]] && echo "  [ok]   project.yml declares surfaces/rollback/verify and matches the tracked source"
 
 # 3b-2. The backlog carries the only sign-off record in the harness. A
 #       `passes: true` whose verified_sha does not resolve is an unfalsifiable

@@ -5,7 +5,7 @@ Phase: Construction. Land the current branch.
 ## Pre-conditions (all must be true)
 - Code review done, criticals resolved
 - E2E sign-off received
-- 100% coverage on new/modified code
+- Coverage gate met per `aidlc/rules/testing.md`
 - Security review done for auth/data/API changes
 - Agent/LLM feature changes: regression eval suite green, when a suite exists (`aidlc/construction/eval.md`)
 - Rollback verified for the lever declared in `project.yml` → `release.rollback`. A shipped binary or applied migration cannot be un-shipped, so `forward-fix-only` and `halt-rollout+kill-switch` are first-class — each verifies a kill switch instead.

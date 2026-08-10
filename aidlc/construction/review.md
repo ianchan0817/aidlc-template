@@ -11,7 +11,7 @@ git diff "$BASE"...HEAD --stat | head -30
 ```
 
 ## Two-Pass Review
-**Pass 1 (blocks merge):** bugs, security vulns, N+1/unbounded queries, races, trust-boundary violations, missing indexes, unhandled errors, test gaps (<100% coverage on new/modified), unpinned or newly-added dependencies, Critical/High CVEs in the lockfile diff, new secrets, new outbound hosts
+**Pass 1 (blocks merge):** bugs, security vulns, N+1/unbounded queries, races, trust-boundary violations, missing indexes, unhandled errors, test gaps (below the `testing` rule's gate), unpinned or newly-added dependencies, Critical/High CVEs in the lockfile diff, new secrets, new outbound hosts
 **Pass 2 (informational):** naming, structure, duplication, maintainability, consistency
 
 Axes: correctness → security (per the `security` rule) → performance → coverage → reproducibility → maintainability.

@@ -32,7 +32,7 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 - `aidlc/construction/e2e.md` — end-to-end verification vs sprint contract
 - `aidlc/construction/ship.md` — land the branch
 
-**Gate:** tests + 100% coverage pass; reviewed; E2E signed off; security cleared if applicable; eval suite green when agent behavior changed.
+**Gate:** tests and the `testing` rule's coverage gate pass; reviewed; E2E signed off; security cleared if applicable; eval suite green when agent behavior changed.
 
 ### Operations
 - `aidlc/operations/operate.md` — post-deploy monitoring, incidents, drift, feedback

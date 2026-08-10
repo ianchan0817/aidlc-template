@@ -7,6 +7,57 @@ someone else's backlog. Durable architectural decisions are promoted to
 
 Nothing here is required reading to use the template. Start at `README.md`.
 
+## 2026-08-10 — The guard stops enumerating
+
+Every bypass this guard had shipped was one defect: the rule was a prose
+quantifier ("root paths", "reads of `.env`") while the sensor was a
+hand-authored enumeration, and nothing bound them. `guard-cases.tsv` was the
+only oracle and every expect-2 row spelled its target exactly one way, so the
+gate was green the day `rm -rf /etc`, `cat ./.env` and `bash -c "cat .env"` all
+exited 0. Negative-testing an enumeration proves its members work and says
+nothing about the complement, which is where all three lived.
+
+The mirror-image defect cost as much. Matching a dangerous string anywhere
+blocked `git commit -m "block chmod -R 777 in the guard"`,
+`echo "test case: git reset --hard"` and a `gh pr create --body` describing the
+fix — measured at 6 of 92 realistic benign commands. Per the README's own
+principle, a guard that blocks ordinary work gets deleted, taking the rules that
+do work with it.
+
+Both are the same missing abstraction: **position**. Rewrote the matcher as a
+quote-aware tokenizer — segments split on separators outside quotes, command
+substitution and `bash -c` payloads re-entered as commands, the command word
+found by skipping `VAR=value` and wrapper words, and arguments classified by
+what the command does with them (`echo` args and commit messages are data, a
+`grep` pattern is data but its file operand is not, a `sed`/`python -c` payload
+is foreign code checked only for secret paths). Targets match by shape, never by
+spelling. Where an enumeration survives it is on the side that fails closed, or
+on the exemption side where the claim is closed and checkable — `ls publish` and
+`npm publish` are the same shape, so something must know which commands take a
+path; enumerating those fails open only for them, while enumerating package
+managers would fail open for every tool invented later.
+
+Added the rules that were missing entirely (publish, store submission,
+`terraform destroy`, `helm uninstall`, `kubectl delete namespace`, redis flush,
+`docker prune -a --volumes`, `git clean -f`, private-key reads, credential
+printing, `curl | sh`, and writes to agent policy files, which grant capability
+to the next session). Each carries a blocking case and a near-miss.
+
+The structural fix is `scripts/guard-mutate.sh`: it mutates every hand-written
+case (privilege prefix, subshell, `bash -c` wrapping, quoted target, path
+prefix, split flag group, lowercased SQL) asserting the verdict is unchanged,
+and re-emits every blocked case inside `echo`, a commit message and a comment
+asserting it is allowed. Mutations that would not preserve the verdict are
+skipped with a printed reason — the flag-split mutation is capped at four
+letters because a longer single-dash token is a long option (`-destroy`), and
+splitting it would assert a falsehood. The generator found that in itself on its
+first run. Run against the pre-rewrite guard, it fails 115 of 782 generated
+cases the 87-row table passed clean.
+
+Result: 182 hand-written rows plus 1483 generated, 0 of 92 benign commands
+blocked (was 6), and the guard is ~10x faster per invocation because a pure-bash
+tokenizer forks nothing where the old version forked ~25 greps.
+
 ## 2026-08-10 — Surfaces declaration
 
 Made the template serve a headless Go API, a React Native app and a Next.js site

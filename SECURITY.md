@@ -79,7 +79,13 @@ bash scripts/audit.sh        # structural sensors, incl. the guard self-test
 ```
 
 The guard's behaviour is pinned by `scripts/guard-cases.tsv`; the audit runs
-every case plus a fail-closed check on each invocation.
+every case plus a fail-closed check on each invocation. That table is an
+enumeration, so a second arm derives from it: `scripts/guard-mutate.sh` mutates
+every case (privilege prefix, subshell, `bash -c` wrapping, quoted target, path
+prefix, split flag group, keyword case) and asserts each blocked case still
+blocks, then re-emits it in a data position (`echo`, a commit message, a
+comment) and asserts it is allowed. A bypass report is most useful as a
+mutation the generator does not yet produce.
 
 ## Response
 
@@ -99,8 +105,9 @@ Day-one checklist for a project that adopted it:
 - Narrow `permissions.allow` in `.claude/settings.json` from the broad
   interpreter globs to the entry points you actually run.
 - Keep `scripts/guard-command.sh` wired into all three hook configs. If you
-  extend the patterns, add cases to `guard-cases.tsv` — an untested guard rule
-  is a guess.
+  extend the patterns, add one blocking case AND one near-miss to
+  `guard-cases.tsv` — an untested guard rule is a guess, and a rule tested only
+  on the spelling you thought of is a guess about the complement.
 - Verify a hook actually fires. The audit proves the config is valid JSON and
   matches each tool's output schema; only a live test proves it blocks.
 - Replace `OWNER/REPO` in `.github/ISSUE_TEMPLATE/config.yml`. Left unreplaced,
