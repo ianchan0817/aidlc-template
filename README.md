@@ -62,6 +62,18 @@ One tree serves a Go API, a React Native app and a Next.js site because the meth
 
 The two deletions adoption *does* want are `aidlc/.template` (step 1) and the tool dirs you skipped (step 3). Both are sensed: the audit switches modes on the first and checks parity only for tools present.
 
+### What this is proven to fit, and what it is not
+
+Stated plainly, because an overstated capability claim wastes your time worse than a missing feature. **Proven:** the seven declarable surfaces — `web` `mobile` `http-api` `grpc` `events` `cli` `batch` — on **one** release train, under Claude Code, Cursor, or Codex. Three of those shapes have been built end-to-end from this tree and audit clean with zero deletions from `aidlc/`.
+
+**Not expressible today**, so expect to add your own gate:
+
+- **Published libraries and SDKs.** There is no `library` surface, `release.*` has no yank/deprecate lever, and semver compatibility — the gate that actually matters for a library — has no methodology here.
+- **A monorepo needing different release levers per surface.** `release.channel`, `rollback` and `window` are scalars, so a repo shipping a web app *and* a mobile app cannot declare both `revert-commit` and `halt-rollout+kill-switch`. Declare the strictest and note the exception in your plan.
+- **ML model quality.** `batch` covers scheduled deterministic transforms. `aidlc/construction/eval.md` is scoped to *agent* behavior — there is no gate for accuracy regression, dataset versioning, or lineage.
+- **A fourth tool.** Windsurf, Zed, Aider or a plain API loop get the methodology as prose, but no slash commands, no role registration, and **no command guard** — its wiring lives only in the three adapter dirs.
+- **Languages outside the style adapters' extensions.** The `code-style` globs cover thirteen; `.sql`, `.tf`, `.scala` and `.cs` are not among them.
+
 ---
 
 ## Architecture
@@ -80,7 +92,7 @@ The two deletions adoption *does* want are `aidlc/.template` (step 1) and the to
   skills          skills          hooks
   settings        hooks
 
-  memory/progress.md   memory/feature-list.json
+  memory/progress.md   memory/features/   memory/sessions/
       (handoff)             (backlog)
 ```
 
@@ -168,7 +180,7 @@ Two rules, split by the question they answer. Both open by stating they apply on
 
 Every session runs the same loop so work survives context resets. Canonical: [`aidlc/common/session-lifecycle.md`](aidlc/common/session-lifecycle.md), reinforced by each tool's `SessionStart` hook.
 
-- **Start** — read `memory/progress.md`, read `memory/feature-list.json`, `git log --oneline -20`, run the `./init.sh` smoke.
+- **Start** — read `memory/progress.md`, the newest handoff in `memory/sessions/`, the backlog in `memory/features/`, `git log --oneline -20`, run the `./init.sh` smoke.
 - **Work** — agree the sprint contract with the reviewer, take one slice, TDD red/green/refactor, runtime QA.
 - **End** — commit, update `memory/progress.md`, leave merge-ready; the reviewer flips `passes`.
 
@@ -182,7 +194,7 @@ Four self-healing rules:
 State artifacts:
 
 - [`memory/progress.md`](memory/progress.md) — Current Focus, Last/Next session, Decisions, Open Questions, Known Issues.
-- [`memory/feature-list.json`](memory/feature-list.json) — backlog of `{id, description, steps, verify, spec, passes, verified_sha}`. Engineers append; the reviewer flips `passes` and stamps `verified_sha`, so a pass goes stale if code changes underneath it.
+- [`memory/features/`](memory/features/) — one record per feature: `{id, description, steps, verify, spec, passes, verified_sha}`. One file per feature so concurrent sessions never write the same path, and `feature-list.json` is only the manifest. The reviewer flips `passes` and stamps `verified_sha` with a real 40-char commit, so a pass goes stale if code changes underneath it.
 - [`memory/plans/`](memory/plans/) — two-part execution plans: plan, approve, then execute with same-turn checkboxes.
 - [`memory/decisions/`](memory/decisions/) — `[Answer]:` question files; the audit trail for gated decisions.
 - [`init.sh.example`](init.sh.example) — copy to `init.sh` for env bootstrap and smoke test.
@@ -254,7 +266,7 @@ PASS/FAIL and exit code first · ANSI/OSC stripped · stack traces truncated (de
 
 **Universal**, because they are true of any repo: JSON validity of every hook config (a syntax error silently disables a safety hook) · broken internal references · no hardcoded model IDs (`model: inherit` only) · no `../` path chains · shell syntax (`bash -n`) · agent frontmatter, since a file without `name:` never registers as a subagent · skill *shape*, `<tool>/skills/<name>/SKILL.md`, because a flat file produces no slash command and no error · every rule has a working attach path · hook output schemas per tool, where the wrong key is *ignored* rather than rejected · the command guard's own self-test · `.gitignore` covers secrets and none is tracked · **anti-explosion**: a surface name in an `aidlc/` gate must name the `project.yml` field that switches it.
 
-**Maintainer-only**, dropped the moment you delete the marker: word budgets · three-tool parity · README mobile render · upstream-URL check · this template's hygiene file list. **Adopter-only**, which start once it is gone: `project.yml` parses and declares real values · `memory/feature-list.json` is well-formed and every `passes: true` resolves to a real commit · `init.sh` exists and is not a byte-identical copy of the example · every workflow declares `permissions:`.
+**Maintainer-only**, dropped the moment you delete the marker: word budgets · three-tool parity · README mobile render · upstream-URL check · this template's hygiene file list. **Adopter-only**, which start once it is gone: `project.yml` parses and declares real values · every backlog record in `memory/features/` is well-formed and every `passes: true` carries a resolvable 40-char commit SHA · `init.sh` exists and is not a byte-identical copy of the example · every workflow declares `permissions:`.
 
 Every one of these is negative-tested: regressing the invariant on a scratch copy must make the audit exit non-zero. A sensor that cannot fail is theater.
 
@@ -287,7 +299,9 @@ aidlc-template/
 │   └── examples/          Fill-in artifact templates
 ├── memory/              Tool-agnostic handoff state
 │   ├── progress.md        Decisions, last/next, issues
-│   ├── feature-list.json  Backlog (append-only)
+│   ├── feature-list.json  Manifest — points at features/
+│   ├── features/          One record per feature
+│   ├── sessions/          One handoff per session
 │   ├── plans/             Two-part execution plans
 │   └── decisions/         [Answer]: gate files
 ├── .claude/             Claude Code adapters
@@ -299,8 +313,9 @@ aidlc-template/
 │   ├── skills/<name>/SKILL.md  → aidlc/<phase>/
 │   ├── hooks/                  Bearings + guard wrappers
 │   └── hooks.json              Lifecycle hooks
-├── .codex/              Codex CLI adapters
-│   ├── skills/<name>/SKILL.md  → aidlc/<phase>/
+├── .agents/skills/      Codex skills (documented path)
+│   └── <name>/SKILL.md         → aidlc/<phase>/
+├── .codex/              Codex CLI config
 │   ├── config.toml             MCP, feature flags
 │   └── hooks.json              Guard + bearings
 ├── .github/

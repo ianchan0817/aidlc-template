@@ -1,5 +1,9 @@
 ---
-description: Testing — 100% coverage, TDD, evidence over confidence
+description: Testing — coverage gate, TDD, evidence over confidence
+paths:
+  - "**/*.{ts,tsx,js,jsx,mjs,cjs,py,go,rs,java,kt,swift,rb,scala,cs,php,sh,sql}"
+  - "**/*.{test,spec}.*"
+  - "**/{test,tests,spec,__tests__}/**"
 ---
 
 Apply rules in `aidlc/rules/testing.md`.

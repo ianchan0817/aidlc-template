@@ -401,6 +401,44 @@ for f in .claude/rules/*.md; do
 done
 [[ $ATTACH_FAIL -eq 0 ]] && echo "  [ok]   every rule has a working attach path (globs / alwaysApply / paths)"
 
+# 2e2b. The UNCONDITIONAL set is per-session cost, so it is a budget, not a
+#       detail. An unscoped pointer also forces a read of its canonical body on
+#       every session. This drifted silently once: four rules loaded
+#       unconditionally while CLAUDE.md documented one, costing ~745 tokens a
+#       session in reads nobody asked for. Assert the exact set, not a count —
+#       a count passes when one rule is swapped for another.
+UNCOND_EXPECT="project security"
+if [[ -d .claude/rules ]]; then
+  got=""
+  for f in .claude/rules/*.md; do
+    [[ -f "$f" ]] || continue
+    grep -qE '^paths:' "$f" || got="$got $(basename "$f" .md)"
+  done
+  got=$(printf '%s' "$got" | tr ' ' '\n' | grep -v '^$' | sort | tr '\n' ' ' | sed 's/ $//')
+  want=$(printf '%s' "$UNCOND_EXPECT" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')
+  if [[ "$got" != "$want" ]]; then
+    printf "  [FAIL] Claude unconditional rules are '%s', expected '%s' — every unscoped rule is paid for on every session\n" "$got" "$want"
+    FAIL=$((FAIL+1))
+  else
+    printf "  [ok]   exactly the intended rules load unconditionally on Claude (%s)\n" "$want"
+  fi
+fi
+if [[ -d .cursor/rules ]]; then
+  cgot=""
+  for f in .cursor/rules/*.mdc; do
+    [[ -f "$f" ]] || continue
+    grep -qE '^alwaysApply:[[:space:]]*true' "$f" && cgot="$cgot $(basename "$f" .mdc)"
+  done
+  cgot=$(printf '%s' "$cgot" | tr ' ' '\n' | grep -v '^$' | sort | tr '\n' ' ' | sed 's/ $//')
+  cwant=$(printf '%s' "$UNCOND_EXPECT" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')
+  if [[ "$cgot" != "$cwant" ]]; then
+    printf "  [FAIL] Cursor alwaysApply rules are '%s', expected '%s'\n" "$cgot" "$cwant"
+    FAIL=$((FAIL+1))
+  else
+    printf "  [ok]   exactly the intended rules set alwaysApply on Cursor (%s)\n" "$cwant"
+  fi
+fi
+
 # 2e2. Repository hygiene files. A security policy that points at a Report
 #      button, or a PR template encoding the gates, only works if it exists.
 #      The FILE LIST is template-only: it asserts this template ships its own

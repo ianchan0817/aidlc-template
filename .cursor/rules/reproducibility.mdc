@@ -1,6 +1,7 @@
 ---
-description: Reproducibility — locked deps, pinned runtime, deterministic builds
-alwaysApply: true
+alwaysApply: false
+description: Reproducibility — locked deps, pinned runtime, deterministic builds, deploy traceable to a SHA
+globs: **/package.json, **/composer.json, **/deno.json, **/*.lock, **/package-lock.json, **/npm-shrinkwrap.json, **/Gemfile, **/Pipfile, **/pyproject.toml, **/requirements*.txt, **/go.mod, **/go.sum, **/Cargo.toml, **/pom.xml, **/build.gradle*, **/Dockerfile, **/Containerfile, **/docker-compose*.yml, **/*.tfvars, **/*.tf, .github/workflows/**
 ---
 
 Apply rules in `aidlc/rules/reproducibility.md`.

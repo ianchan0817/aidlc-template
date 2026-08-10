@@ -11,3 +11,9 @@ editing `project.yml` — never by deleting methodology files.
 
 Concrete per-surface reference (e2e identity, health signals, rollback lever,
 coverage equivalent): `docs/project-shapes.md`.
+
+Two gates hold regardless of which files this session touches, because a
+path-scoped rule only loads once a matching file is read — and a file written
+from scratch is never read first: **new or modified code carries the coverage
+gate in `aidlc/rules/testing.md`**, and **production dependencies are pinned to
+exact versions** (`aidlc/rules/reproducibility.md`).
