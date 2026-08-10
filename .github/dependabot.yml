@@ -1,9 +1,37 @@
 version: 2
 
+# HOW TO USE THIS FILE
+#   1. Leave the `github-actions` block active — it is the only dependency
+#      surface the template itself has, and it keeps the SHA pins in
+#      .github/workflows/ current (a pin is only safe while someone bumps it).
+#   2. Uncomment exactly ONE block per manifest your repo actually contains.
+#      Match by the file in your repo root, not by what you call your stack:
+#
+#        package.json          → npm      (also covers pnpm, yarn, and bun)
+#        package.json in app/  → npm, with `directory: /app` (React Native)
+#        go.mod                → gomod    (headless Go API)
+#        requirements.txt,
+#          pyproject.toml       → pip      (also covers uv and poetry)
+#        Cargo.toml            → cargo
+#        Gemfile               → bundler
+#        composer.json         → composer
+#        Dockerfile            → docker
+#        *.tf                  → terraform
+#        pubspec.yaml          → pub
+#        Podfile / *.xcodeproj → swift (SPM) or cocoapods
+#        build.gradle(.kts)    → gradle
+#
+#   3. A monorepo needs one block per manifest directory — Dependabot does not
+#      recurse. Set `directory:` to each one (e.g. /, /web, /mobile, /services/api).
+#   4. Commit the lockfile. `versioning-strategy: increase` and the
+#      "no floating ranges in production" non-negotiable both assume one exists.
+
 updates:
-  # The template's own only dependency surface: pinned action versions in
-  # .github/workflows/. Keeping these current is what stops a supply-chain
-  # regression from sitting in CI unnoticed.
+  # --- Always on: the template's own dependency surface ----------------------
+  # Pinned action SHAs in .github/workflows/. Dependabot reads the trailing
+  # `# vX.Y.Z` comment on each pin and updates the SHA and the comment together.
+  # Keeping these current is what stops a supply-chain regression from sitting
+  # in CI unnoticed.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -14,11 +42,13 @@ updates:
       actions:
         patterns: ["*"]
 
-  # --- Uncomment the ecosystem your project actually uses -------------------
+  # --- Uncomment the ecosystem your project actually uses --------------------
   # Grouping minor+patch keeps the PR volume survivable; majors stay separate
-  # so a breaking change never rides in on a routine bump.
+  # so a breaking change never rides in on a routine bump. Every bump still has
+  # to pass the verify pipeline before merge.
   #
-  # - package-ecosystem: npm          # or pnpm / bun via npm ecosystem
+  # npm — Next.js site, or any package.json (pnpm/yarn/bun read here too)
+  # - package-ecosystem: npm
   #   directory: /
   #   schedule:
   #     interval: weekly
@@ -28,18 +58,44 @@ updates:
   #       patterns: ["*"]
   #       update-types: [minor, patch]
   #
+  # gomod — headless Go API (go.mod)
+  # - package-ecosystem: gomod
+  #   directory: /
+  #   schedule: { interval: weekly }
+  #   groups:
+  #     minor-and-patch:
+  #       patterns: ["*"]
+  #       update-types: [minor, patch]
+  #
+  # React Native — the JS deps plus the two native package managers.
+  # Native blocks only pay off once those lockfiles are committed.
+  # - package-ecosystem: npm
+  #   directory: /
+  #   schedule: { interval: weekly }
+  # - package-ecosystem: gradle          # android/
+  #   directory: /android
+  #   schedule: { interval: monthly }
+  # - package-ecosystem: cocoapods       # ios/Podfile.lock
+  #   directory: /ios
+  #   schedule: { interval: monthly }
+  #
+  # pip — requirements.txt or pyproject.toml (uv/poetry read here too)
   # - package-ecosystem: pip
   #   directory: /
   #   schedule: { interval: weekly }
   #
+  # cargo — Cargo.toml
   # - package-ecosystem: cargo
   #   directory: /
   #   schedule: { interval: weekly }
   #
-  # - package-ecosystem: gomod
+  # docker — Dockerfile base images. Digest-pin the base image, or this bumps
+  # a tag that was already moving under you.
+  # - package-ecosystem: docker
   #   directory: /
   #   schedule: { interval: weekly }
   #
-  # - package-ecosystem: docker
+  # terraform — *.tf provider and module versions
+  # - package-ecosystem: terraform
   #   directory: /
   #   schedule: { interval: weekly }

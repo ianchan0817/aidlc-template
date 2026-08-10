@@ -62,3 +62,26 @@
 0	git log --grep=.env --oneline
 0	echo "see the .env section of SECURITY.md"
 0	gh pr create --body "documents .env scope"
+2	rm -rf /etc
+2	rm -rf /usr /lib
+2	rm -rf ~/Documents
+2	rm -rf $HOME/Github
+2	sudo rm -rf /var
+2	rm -rf "/etc"
+0	rm -rf ./tmp
+0	rm -rf build/
+0	rm -rf node_modules
+0	rm -rf /tmp/scratch-123
+2	cat ./.env
+2	cat ../.env
+2	cat /srv/app/.env
+2	source ./.env
+2	cp ./.env /tmp/x
+2	cat .env.local
+2	cat .env.example && cat .env
+2	cp .env.example ok.txt; cat .env
+2	head ~/.env
+0	cat ./.env.example
+0	cp ./.env.example ./.env.sample
+0	cat .environment
+0	cat env.ts

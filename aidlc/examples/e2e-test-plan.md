@@ -2,6 +2,8 @@
 
 Fill-in template produced by `aidlc/construction/e2e.md`. One per feature.
 
+The Selector column holds the surface's stable identifier — the sample below is a `web` plan. Other surfaces spell it differently: React Native `testID` and iOS `accessibilityIdentifier` for `mobile`; method + path + named response fields for `http-api`; service + method + message fields for `grpc`; topic + event type + payload fields for `events`; argv + exit code + stdout schema for `cli`; named input fixture → asserted output rows for `batch`. Full table: `docs/project-shapes.md`.
+
 ```markdown
 # E2E Test Plan: [Feature]
 

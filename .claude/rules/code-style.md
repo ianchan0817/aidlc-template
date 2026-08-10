@@ -1,8 +1,11 @@
 ---
-description: Code style — naming, formatting, TypeScript strictness
+description: Code style (language-neutral) — canonical formatter, function size, boolean naming, import grouping, comments. Applies to every language. TypeScript-only strictness lives in the code-style-ts rule, which attaches to .ts/.tsx/.js/.jsx/.mjs/.cjs only.
 paths:
   - "**/*.{ts,tsx,js,jsx,mjs,cjs}"
   - "**/*.{py,go,rs,java,kt,swift,rb}"
 ---
 
-Apply rules in `aidlc/rules/code-style.md`.
+Apply rules in `aidlc/rules/code-style.md`, excluding its `## TypeScript`
+section — that section is attached separately by the `code-style-ts` rule and
+must not be applied to Python, Go, Rust, Java, Kotlin, Swift, or Ruby. Use each
+language's own idioms and its canonical formatter there.

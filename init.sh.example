@@ -1,21 +1,90 @@
 #!/usr/bin/env bash
-# Copy to ./init.sh and customize for this repo. Get-bearings step runs this before new work.
+# Copy to ./init.sh. The get-bearings step runs this before new work.
 # See aidlc/common/session-lifecycle.md
+#
+# This script does NOT guess your stack. It reads the `verify:` block of
+# project.yml — the same declaration CI reads (.github/workflows/verify.yml.example)
+# and the same one the phase files point at. Guessing (try bun, then pnpm, then
+# npm) picks a runner the repo may not use and silently succeeds on the wrong
+# one; a declaration that is wrong is visible and editable in one place.
+#
+# Customize: set INSTALL_CMD below. Everything else comes from project.yml.
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+# The one thing project.yml does not declare: how to install dependencies.
+# It is not a gate — no phase branches on it — so it stays here.
+INSTALL_CMD=""   # e.g. "npm ci" · "go mod download" · "uv sync" · "bundle install"
+
 echo "== AIDLC init =="
 echo "Root: $ROOT"
 echo "Methodology: aidlc/core-workflow.md | Session lifecycle: aidlc/common/session-lifecycle.md"
-echo "Purpose: install deps, verify baseline, and smoke a core path before feature work."
 
-# --- Customize below ---
-# Example: install and smoke (uncomment and adapt; keep the project runner unchanged).
-# Wrap test commands with scripts/agent-test.sh for agent-parseable output.
-# if command -v bun >/dev/null 2>&1; then bun install && scripts/agent-test.sh bun test; fi
-# if command -v pnpm >/dev/null 2>&1; then pnpm install && scripts/agent-test.sh pnpm test --run; fi
-# if command -v npm >/dev/null 2>&1; then npm ci && scripts/agent-test.sh npm test; fi
+if [[ ! -f project.yml ]]; then
+  echo "!! project.yml missing — the declaration every gate reads. Restore it before working."
+  exit 1
+fi
 
-echo "== Done (add install/test/dev commands for your stack) =="
+# Read one scalar from the flat `verify:` block. Handles quoted values and
+# trailing `# comments`; deliberately not a general YAML parser.
+read_verify() {
+  awk -v want="$1" '
+    /^verify:/ { inblk = 1; next }
+    inblk && /^[^[:space:]#]/ { inblk = 0 }
+    inblk && match($0, /^[[:space:]]+[A-Za-z_]+:/) {
+      key = substr($0, RSTART, RLENGTH - 1); gsub(/[[:space:]]/, "", key)
+      if (key != want) next
+      val = substr($0, RSTART + RLENGTH); sub(/^[[:space:]]+/, "", val)
+      if (val ~ /^["\047]/) {
+        q = substr(val, 1, 1); val = substr(val, 2)
+        i = index(val, q); if (i > 0) val = substr(val, 1, i - 1)
+      } else {
+        sub(/[[:space:]]+#.*$/, "", val); sub(/[[:space:]]+$/, "", val)
+      }
+      print val; exit
+    }
+  ' project.yml
+}
+
+echo
+echo "Declared surfaces: $(grep -E '^surfaces:' project.yml || echo '(none — fix project.yml)')"
+echo "Release channel:   $(awk '/^release:/{r=1;next} r&&/^[^[:space:]#]/{r=0} r&&/^[[:space:]]+channel:/{print $2;exit}' project.yml)"
+
+if [[ -n "$INSTALL_CMD" ]]; then
+  echo
+  echo "-- install: $INSTALL_CMD"
+  bash -c "$INSTALL_CMD"
+fi
+
+# Order matters: a type error makes a test failure unreadable, so types run
+# before tests. Wrap the test command with scripts/agent-test.sh so the output
+# is agent-parseable.
+FAILED=0
+for check in lint types test coverage dep_audit; do
+  cmd="$(read_verify "$check")"
+  echo
+  if [[ -z "$cmd" ]]; then
+    echo "-- $check: declared none in project.yml (gate explicitly unnamed, not skipped)"
+    continue
+  fi
+  if [[ "$check" == "test" && -x scripts/agent-test.sh ]]; then
+    cmd="scripts/agent-test.sh $cmd"
+  fi
+  echo "-- $check: $cmd"
+  if bash -c "$cmd"; then
+    echo "   [ok] $check"
+  else
+    echo "   [FAIL] $check"
+    FAILED=$((FAILED + 1))
+  fi
+done
+
+echo
+if [[ $FAILED -gt 0 ]]; then
+  echo "== Baseline RED ($FAILED check(s) failing) =="
+  echo "Fixing the baseline is this session's slice — no new features on a broken base."
+  exit 1
+fi
+echo "== Baseline green — take one slice from memory/feature-list.json =="

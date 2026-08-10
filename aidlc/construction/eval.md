@@ -35,4 +35,4 @@ Metrics: **pass@k** = any of k trials succeeds (capability); **pass^k** = all k 
 - Agents optimize against the sensor: audit graders and contracts for gameable criteria before trusting green.
 - Track traces/metrics that explain regressions: tool calls, tokens, latency, error loops, and verification evidence.
 - Re-run after model upgrades; tune prompts/rules with traces as signal.
-- Keep tasks under `evals/` (or the path named in `aidlc/rules/tech-stack.md`); record the runner command there too.
+- Keep tasks under `evals/` (or the `verify.eval` path in `project.yml`); record the runner command there too.

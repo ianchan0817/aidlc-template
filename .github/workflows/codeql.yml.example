@@ -23,6 +23,13 @@ on:
 permissions:
   contents: read
 
+# One analysis per ref. `cancel-in-progress` is deliberately PR-only: cancelling
+# a push or scheduled run on the default branch leaves the code-scanning
+# baseline stale, and every later PR is then diffed against nothing.
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: analyze (${{ matrix.language }})
@@ -46,17 +53,24 @@ jobs:
         # language: [csharp]        # needs a build
         # language: [actions]       # scans workflow files themselves
     steps:
-      - uses: actions/checkout@v4
+      # Every `uses:` is SHA-pinned with the version in a trailing comment: a
+      # tag is mutable, so `@v4` asks for whatever that name points at today —
+      # and this action runs with `security-events: write`. Dependabot reads
+      # the comment and bumps pin and comment together.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: github/codeql-action/init@v3
+      # All three codeql-action steps ship from one repo, so one SHA serves
+      # init/autobuild/analyze. Bump them together — mixed versions are
+      # unsupported.
+      - uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
           languages: ${{ matrix.language }}
           # security-and-quality is the widest query pack: security alerts plus
           # maintainability. Use security-extended for security-only.
           queries: security-and-quality
 
-      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/autobuild@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
 
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
           category: "/language:${{ matrix.language }}"

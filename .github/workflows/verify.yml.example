@@ -1,0 +1,186 @@
+# Verify — the adopter's one CI pipeline. Copy to verify.yml once this repo
+# holds application code:
+#
+#   cp .github/workflows/verify.yml.example .github/workflows/verify.yml
+#
+# Shipped inactive (`.yml.example`, which Actions ignores — same idiom as
+# codeql.yml.example and init.sh.example): the template itself declares no
+# `verify:` commands, so an active run here would do nothing but go green and
+# teach you the pipeline is meaningless.
+#
+# ONE workflow, not one per stack. The pipeline SHAPE is the same for a Go API,
+# a React Native app and a Next.js site — checkout, toolchain, lint, types,
+# test, coverage, dep audit. Only the COMMANDS differ, and those live in
+# project.yml's `verify:` block, which is also what init.sh and the phase files
+# read. Five per-shape workflows would just relocate profile explosion into
+# .github/, and would drift from init.sh the first time someone edits one.
+#
+# An empty value in project.yml is a declaration that the project has no such
+# check: the step reports "declared none" instead of silently passing.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Every `uses:` is SHA-pinned with the version in a trailing comment: a
+      # tag is mutable, so `@v7` asks for whatever that name points at today.
+      # Dependabot reads the comment and bumps pin and comment together.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # --- Toolchain: the one genuinely stack-dependent step ------------------
+      # project.yml declares WHAT to run, not which runtime runs it. Uncomment
+      # the one your project needs; delete the rest.
+      #
+      # - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      #   with: { node-version-file: .nvmrc, cache: npm }
+      # - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      #   with: { go-version-file: go.mod, cache: true }
+      # - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      #   with: { python-version-file: .python-version }
+      #
+      # - name: Install dependencies
+      #   run: npm ci        # or: go mod download · uv sync · bundle install
+      #                      # Locked installs only — no floating ranges
+      #                      # (aidlc/rules/reproducibility.md).
+
+      - name: Read verify commands from project.yml
+        id: decl
+        run: |
+          test -f project.yml || { echo "::error::project.yml missing — it is what every gate reads"; exit 1; }
+          read_verify() {
+            awk -v want="$1" '
+              /^verify:/ { inblk = 1; next }
+              inblk && /^[^[:space:]#]/ { inblk = 0 }
+              inblk && match($0, /^[[:space:]]+[A-Za-z_]+:/) {
+                key = substr($0, RSTART, RLENGTH - 1); gsub(/[[:space:]]/, "", key)
+                if (key != want) next
+                val = substr($0, RSTART + RLENGTH); sub(/^[[:space:]]+/, "", val)
+                if (val ~ /^["\047]/) {
+                  q = substr(val, 1, 1); val = substr(val, 2)
+                  i = index(val, q); if (i > 0) val = substr(val, 1, i - 1)
+                } else {
+                  sub(/[[:space:]]+#.*$/, "", val); sub(/[[:space:]]+$/, "", val)
+                }
+                print val; exit
+              }
+            ' project.yml
+          }
+          for k in lint types test coverage dep_audit; do
+            v="$(read_verify "$k")"
+            printf '%s=%s\n' "$k" "$v" >> "$GITHUB_OUTPUT"
+            if [ -z "$v" ]; then
+              echo "::notice::$k — declared none in project.yml"
+            else
+              echo "$k -> $v"
+            fi
+          done
+
+      # Each command is passed through `env:` and executed as "$CMD" — never
+      # interpolated as `run: ${{ ... }}`. A `${{ }}` expansion is pasted into
+      # the shell script BEFORE it runs, so a crafted project.yml could rewrite
+      # the surrounding script and run anything else in the step.
+      #
+      # What env buys is narrower than "data, not source": the value cannot
+      # alter THIS workflow's source, but `bash -c "$CMD"` still executes it as
+      # a shell command. project.yml is therefore trusted input. The containment
+      # is the trigger and the token, not the quoting: `pull_request` runs a
+      # fork's code with a read-only `contents: read` token and no secrets.
+      # Never move this job to `pull_request_target` — that grants the write
+      # token and repo secrets to the fork's project.yml.
+      - name: Lint
+        if: steps.decl.outputs.lint != ''
+        env:
+          CMD: ${{ steps.decl.outputs.lint }}
+        run: bash -c "$CMD"
+
+      # Types before tests: a type error makes a test failure unreadable.
+      - name: Types
+        if: steps.decl.outputs.types != ''
+        env:
+          CMD: ${{ steps.decl.outputs.types }}
+        run: bash -c "$CMD"
+
+      - name: Test
+        if: steps.decl.outputs.test != ''
+        env:
+          CMD: ${{ steps.decl.outputs.test }}
+        run: scripts/agent-test.sh bash -c "$CMD"   # agent-parseable output
+
+      # Empty `coverage:` does not mean "no coverage gate" — it means the
+      # project owes a named coverage EQUIVALENT (aidlc/rules/testing.md).
+      - name: Coverage
+        if: steps.decl.outputs.coverage != ''
+        env:
+          CMD: ${{ steps.decl.outputs.coverage }}
+        run: bash -c "$CMD"
+
+      - name: Dependency audit
+        if: steps.decl.outputs.dep_audit != ''
+        env:
+          CMD: ${{ steps.decl.outputs.dep_audit }}
+        run: bash -c "$CMD"
+
+# --- Release lanes: the parts that genuinely differ by channel ----------------
+# Add ONE of these, matching `release.channel` in project.yml. They are separate
+# jobs, not separate workflows: they need `needs: verify`.
+#
+# channel: continuous — a deploy gate. Merge to main ships; the gate is that
+# verify passed and a human-owned environment approves.
+#
+#   deploy:
+#     needs: verify
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#     runs-on: ubuntu-latest
+#     environment: production      # required reviewers + secrets live here
+#     permissions:
+#       contents: read
+#       id-token: write            # OIDC to your cloud — never long-lived keys
+#     concurrency:
+#       group: deploy-production   # NO cancel-in-progress: never kill a deploy
+#     steps:
+#       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#       - run: ./deploy.sh "$GITHUB_SHA"   # artifact traceable to the commit SHA
+#     # rollback: revert-commit — the deploy must be re-runnable from the parent
+#     # commit, or declare a different `release.rollback` (aidlc/construction/ship.md).
+#
+# channel: store-staged — a build/upload lane. There is no deploy; there is an
+# artifact handed to a review queue, and it cannot be un-shipped.
+#
+#   package:
+#     needs: verify
+#     runs-on: ubuntu-latest       # macos-latest for iOS
+#     permissions:
+#       contents: read
+#     steps:
+#       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#       - run: ./build-release.sh  # signing material from the environment, never in the repo
+#       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+#         with:
+#           name: release-${{ github.sha }}
+#           path: dist/
+#           retention-days: 30
+#     # rollback: forward-fix-only or halt-rollout+kill-switch — a submitted
+#     # binary cannot be reverted. Verify the kill switch before shipping.
+#
+# channel: registry — publish on a tag, with provenance:
+#   permissions: { contents: read, id-token: write, packages: write }
+#   trigger on `push: tags: ['v*']`; rollback is previous-artifact (yank + republish).
+#
+# channel: scheduled — run the lane on `schedule:` and alert on failure;
+# rollback is the previous artifact, and the soak window is one full cycle.

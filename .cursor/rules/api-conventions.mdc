@@ -1,6 +1,6 @@
 ---
-description: REST API conventions — URLs, envelope, status codes, pagination
-globs: **/api/**/*.ts, **/api/**/*.tsx, **/api/**/*.js, **/api/**/*.py, **/api/**/*.go, **/api/**/*.rs, **/routes/**/*.ts, **/routes/**/*.tsx, **/routes/**/*.js, **/routes/**/*.py, **/routes/**/*.go, **/routes/**/*.rs, **/handlers/**/*.ts, **/handlers/**/*.tsx, **/handlers/**/*.js, **/handlers/**/*.py, **/handlers/**/*.go, **/handlers/**/*.rs, **/controllers/**/*.ts, **/controllers/**/*.js, **/controllers/**/*.py
+description: API conventions — resource naming, request/response envelope, error codes, pagination, auth, idempotency, versioning; transport-neutral (HTTP, gRPC, events)
+globs: **/api/**/*.ts, **/api/**/*.tsx, **/api/**/*.js, **/api/**/*.py, **/api/**/*.go, **/api/**/*.rs, **/routes/**/*.ts, **/routes/**/*.tsx, **/routes/**/*.js, **/routes/**/*.py, **/routes/**/*.go, **/routes/**/*.rs, **/handlers/**/*.ts, **/handlers/**/*.tsx, **/handlers/**/*.js, **/handlers/**/*.py, **/handlers/**/*.go, **/handlers/**/*.rs, **/controllers/**/*.ts, **/controllers/**/*.tsx, **/controllers/**/*.js, **/controllers/**/*.py, **/controllers/**/*.go, **/controllers/**/*.rs, **/consumers/**, **/subscribers/**, **/events/**, **/proto/**, **/*.proto
 alwaysApply: false
 ---
 

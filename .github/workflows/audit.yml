@@ -1,13 +1,34 @@
 name: template-audit
+
+# The harness's own health check: word budgets, adapter parity, hook schemas,
+# and the command-guard self-test (scripts/audit.sh). It gates the methodology,
+# so it needs no write access to anything.
+
 on:
   push:
     branches: [main]
   pull_request:
 
+# Least privilege: reading the checkout is the only thing this job does.
+permissions:
+  contents: read
+
+# A superseded push has nothing to say about the tip of the branch. Keyed per
+# ref so main and each PR queue independently.
+concurrency:
+  group: audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      # SHA-pinned, not tag-pinned: a tag is mutable, so `@v7` is an
+      # unauthenticated request for whatever that name points at today.
+      # Dependabot reads the trailing comment and bumps both together.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - name: Run template health audit
         run: bash scripts/audit.sh

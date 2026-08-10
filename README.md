@@ -1,12 +1,11 @@
 # aidlc-template
 
-[![template-audit](https://github.com/ianchan0817/aidlc-template/actions/workflows/audit.yml/badge.svg)](https://github.com/ianchan0817/aidlc-template/actions/workflows/audit.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tools: 3](https://img.shields.io/badge/tools-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Cursor-blue.svg)](#quick-start)
+[![Tools: 3](https://img.shields.io/badge/tools-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Cursor-blue.svg)](#day-0)
 
 Tool-agnostic AI Development Lifecycle template for **Claude Code**, **OpenAI Codex CLI**, and **Cursor IDE**. One canonical methodology, three thin adapters, harness patterns for long-running agentic work.
 
-**Jump to:** [Why](#why) · [Quick start](#quick-start) · [Architecture](#architecture) · [Workflow](#daily-workflow) · [Guardrails](#guardrails--sensors) · [Reference](#reference) · [Sources](#sources)
+**Jump to:** [Why](#why) · [Day 0](#day-0) · [Adaptation](#adaptation-model) · [Architecture](#architecture) · [Workflow](#daily-workflow) · [Guardrails](#guardrails--sensors) · [Reference](#reference) · [Sources](#sources)
 
 [Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Repo setup: security & quality](docs/repo-setup.md)
 
@@ -18,11 +17,12 @@ Tool-agnostic AI Development Lifecycle template for **Claude Code**, **OpenAI Co
 
 **This template separates methodology from wiring.** Methodology lives once in `aidlc/`; each tool gets a thin adapter directory pointing at it via repo-rooted paths. It also bakes in long-running-agent research: a structured session lifecycle, a JSON feature backlog, sprint contracts between engineer and reviewer, and a dedicated eval phase for AI behavior.
 
-Six commitments, enforced by CI where possible:
+Seven commitments, enforced by CI where possible:
 
 | Commitment | Meaning |
 |---|---|
 | Single source of truth | Lives once in `aidlc/`; adapters are pointers |
+| Shape by declaration | Gates switch on `project.yml`, never by deleting files |
 | Model + tool agnostic | `model: inherit` only, repo-rooted paths only |
 | Adapters that load | Every pointer checked against its real loader format |
 | Scoped work | One slice per session, tied to a sprint contract |
@@ -33,21 +33,34 @@ The harness is five-part: **Instructions** (focused files, no giant prompt) · *
 
 ---
 
-## Quick start
+## Day 0
 
-```bash
-git clone https://github.com/ianchan0817/aidlc-template.git my-project
-cd my-project && rm -rf .git && git init
-```
+**Start here:** GitHub → **Use this template** → *Create a new repository*. This repo is marked as a template, so that button exists. It buys a clean history — `git clone` would drag the template's commits into your project's log.
 
-1. **Pick your tool(s).** Using only one? Delete the other adapter dirs (`.claude/`, `.codex/`, `.cursor/`) — `aidlc/`, `AGENTS.md`, and `memory/` work standalone.
-2. **Fill in your stack** — `aidlc/rules/tech-stack.md` (one place; every tool points at it).
-3. **Bootstrap** — `cp init.sh.example init.sh`, add install / dev / smoke commands.
-4. **Seed memory** — set `Current Focus` in `memory/progress.md`. Leave `memory/feature-list.json` empty; `/spec` appends items.
-5. **Audit** — `bash scripts/audit.sh` (budgets + structure; also runs in CI).
-6. **Turn on the repo-side switches** — private vulnerability reporting, Dependabot alerts, secret-scanning push protection, and a ruleset requiring the `audit` check. These can't be committed; exact paths in [`docs/repo-setup.md`](docs/repo-setup.md).
-7. **Open it** — `claude` loads `CLAUDE.md`; `codex` loads `AGENTS.md`; Cursor loads `.cursor/rules/*.mdc`.
-8. **First feature** — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
+Then six steps, in order. Each says what it buys.
+
+1. **Delete `aidlc/.template`.** That marker is what tells `scripts/audit.sh` this repo *is* the template. Removing it drops the maintainer-only sensors (word budgets, three-tool parity, README mobile render, upstream-URL check, hygiene file list) and starts the adopter checks instead. The safety sensors — guard self-test, secrets, broken references, shell syntax — run in **both** modes.
+2. **Fill in `project.yml`.** The one file you must edit: `surfaces`, `stateful`, `multi_tenant`, `release`, `verify`. Every conditional gate reads it, and it loads on every session. See [Adaptation model](#adaptation-model).
+3. **Delete the adapter dirs you do not use** — `.claude/`, `.codex/`, `.cursor/`. `aidlc/`, `AGENTS.md`, `project.yml`, and `memory/` work standalone; parity is checked only for the tools still present.
+4. **Replace `OWNER/REPO`** in `.github/ISSUE_TEMPLATE/config.yml`. Left as a placeholder, your reporters' "Report a vulnerability" link opens an advisory on a stranger's repository.
+5. **Copy the two `.example` files** — `init.sh.example` → `init.sh` (session-start smoke) and `.github/workflows/verify.yml.example` → `.github/workflows/verify.yml` (the same checks in CI). Both read `verify:` from `project.yml`, so your shell and your PR run one contract instead of two that drift.
+6. **Uncomment your ecosystem in `.github/dependabot.yml`** — its header maps manifest file → ecosystem name (`go.mod` → `gomod`, `package.json` → `npm`). The `github-actions` block already ships active, which is what keeps the workflow SHA pins current; nothing watches your *application* dependencies until you uncomment their block.
+
+Then set `Current Focus` in `memory/progress.md`, run `bash scripts/audit.sh`, and turn on the repo-side switches no commit can set ([`docs/repo-setup.md`](docs/repo-setup.md)).
+
+Open it: `claude` loads `CLAUDE.md`; `codex` loads `AGENTS.md`; Cursor loads `.cursor/rules/*.mdc`. First feature — `/spec`, then `/plan` → `/build` → `/test` → `/review` → `/ship`.
+
+---
+
+## Adaptation model
+
+**You declare; you do not delete.** `project.yml` names this project's surfaces and capabilities. A gate whose surface or capability you did not declare **does not apply and needs no skip rationale**; a gate you did declare **cannot be skipped**. That contract is the whole adaptation mechanism.
+
+Deleting methodology files is *not* how you adapt, and it breaks the build. Drop the two UI rules for a headless API and the backtick reference to them in `aidlc/inception/design.md` dangles, so `scripts/audit.sh` fails on a broken reference. Files stay; gates go inert.
+
+One tree serves a Go API, a React Native app and a Next.js site because the methodology names **invariants**, not spellings — "address every element by a stable, purpose-named identifier", not "use `data-testid`". [`docs/project-shapes.md`](docs/project-shapes.md) holds the spelling per surface: E2E identity, health signals, rollback lever, and the coverage equivalent for code that cannot be line-instrumented.
+
+The two deletions adoption *does* want are `aidlc/.template` (step 1) and the tool dirs you skipped (step 3). Both are sensed: the audit switches modes on the first and checks parity only for tools present.
 
 ---
 
@@ -72,7 +85,8 @@ cd my-project && rm -rf .git && git init
 ```
 
 - **Repo-rooted paths only** — no `../../` chains, so moving a file never breaks a reference. Enforced by `scripts/audit.sh`.
-- **Rules live once** in [`aidlc/rules/`](aidlc/rules/). `.claude/rules/*.md` (`paths:`) and `.cursor/rules/*.mdc` (`globs:`/`alwaysApply:`) are thin pointers in each tool's native frontmatter.
+- **Rules live once** in [`aidlc/rules/`](aidlc/rules/), one body per topic. `.claude/rules/*.md` (`paths:`) and `.cursor/rules/*.mdc` (`globs:`/`alwaysApply:`) are thin pointers in each tool's native frontmatter.
+- **One always-on rule has no canonical body**: `project` points at [`project.yml`](project.yml) and loads unconditionally (Claude: no `paths:` block; Cursor: `alwaysApply: true`). Codex has no rules directory, so `AGENTS.md` tells it to read the declaration directly — that is the parity fix, not an oversight.
 - **Commands live once** in `aidlc/{inception,construction,operations}/`. Each tool gets a `skills/<name>/SKILL.md` pointer — all three converged on the same [Agent Skills](https://agentskills.io) layout, so pointer bodies are identical and only the parent directory differs.
 - **Keep root instructions compact.** Deep methodology stays under `aidlc/` and loads on demand.
 
@@ -138,9 +152,9 @@ Definitions in [`aidlc/agents/`](aidlc/agents/):
 
 ### Design & UX
 
-Two rules, split by the question they answer.
+Two rules, split by the question they answer. Both open by stating they apply only when `project.yml` declares a `web` or `mobile` surface — on a headless API they go inert, and you delete neither.
 
-[`design-tokens.md`](aidlc/rules/design-tokens.md) is the **vocabulary**: color named by *role*, never by hue (`--color-primary`, not `blue-500`, which is a leak that won't survive a rebrand); every foreground/background pair the product uses named with a measured contrast ratio, because an unnamed pair is an unchecked pair; dark mode as a second set of role values rather than inverted lightness; a type scale with line-height inverse to size and a 45–75 character measure; and spacing, radius, elevation and motion as fixed steps.
+[`design-tokens.md`](aidlc/rules/design-tokens.md) is the **vocabulary**: color named by *role*, never by hue (`primary`, not `blue-500`, which is a leak that won't survive a rebrand); every foreground/background pair the product uses named with a measured contrast ratio, because an unnamed pair is an unchecked pair; dark mode as a second set of role values rather than inverted lightness; a type scale with line-height inverse to size and a 45–75 character measure; and spacing, radius, elevation and motion as fixed steps.
 
 [`ux-guidelines.md`](aidlc/rules/ux-guidelines.md) is the **behavior**: hierarchy and position (one primary action per view; proximity *is* grouping; primary actions in the thumb zone and destructive ones never), all five states designed (loading, empty, partial, error, success), interaction (undo over confirm, prevent errors rather than report them, forgiving on input and strict on storage, never lose typed work), responsive rules, and a WCAG 2.1 AA floor — including the three-flashes-per-second seizure threshold, which is a legal limit rather than a preference and which `prefers-reduced-motion` does not cover.
 
@@ -228,25 +242,15 @@ scripts/agent-test.sh bun test      # or pytest, go test …
 
 PASS/FAIL and exit code first · ANSI/OSC stripped · stack traces truncated (default 50, `AGENT_TEST_MAX_TRACE`) · output capped (default 400, `AGENT_TEST_MAX_LINES`) · untouched per-run raw log preserved, parallel-safe · exit code passes through, so it works in CI and hooks.
 
-### Template CI
+### The audit
 
-`bash scripts/audit.sh`, also on every push/PR. Exits non-zero on structural failure.
+`bash scripts/audit.sh`, also on every push/PR. Exits non-zero on structural failure. It runs in **two modes**, decided by whether `aidlc/.template` is present — full per-sensor list in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-- **Word budgets** — three numbers, each measuring what actually reaches a context window: root entry points (load every session), methodology (loads on demand), artifact templates (read one at a time). Plus a per-file limit, because an agent loads *one* phase file and long files lose their tail instructions.
-- **JSON validity** of hook configs — a syntax error silently disables a safety hook.
-- **Broken internal references** — pointers to files that moved or never existed.
-- **No hardcoded model IDs** (`model: inherit` only) — adapters pinned to a model that will be deprecated.
-- **No `../` path chains** — references that break when a file moves.
-- **Shell syntax** (`bash -n`) — a sensor script that cannot run.
-- **Skill shape** — `<tool>/skills/<name>/SKILL.md` with `name` + `description`, identical set across tools. Catches flat files no tool loads, and commands that exist in one tool only.
-- **Agent shape** — `name` + `description` in every agent file, or the subagent never registers.
-- **Rule parity** — every `aidlc/rules/*.md` has a pointer per tool, so no rule is enforced in one tool and invisible in another.
-- **Rule attach path** — a rule needs `alwaysApply: true` or a working glob. Cursor splits `globs` on commas, so brace expansion (`*.{ts,tsx}`) shreds into invalid fragments; three rules shipped dead this way before the check existed.
-- **Hook output schemas** — each tool has its own contract, and the wrong key is *ignored*, not rejected: a Cursor `sessionStart` hook emitting `agent_message` instead of `additional_context` is a no-op that still reports success.
-- **Command-guard self-test** — the guard is run against a table of must-block and must-allow commands, plus a fail-closed check, so a safety sensor can't quietly stop working.
-- **Docs render on mobile** — table rows and code blocks stay under width, so the README never needs horizontal scrolling on a phone.
+**Universal**, because they are true of any repo: JSON validity of every hook config (a syntax error silently disables a safety hook) · broken internal references · no hardcoded model IDs (`model: inherit` only) · no `../` path chains · shell syntax (`bash -n`) · agent frontmatter, since a file without `name:` never registers as a subagent · skill *shape*, `<tool>/skills/<name>/SKILL.md`, because a flat file produces no slash command and no error · every rule has a working attach path · hook output schemas per tool, where the wrong key is *ignored* rather than rejected · the command guard's own self-test · `.gitignore` covers secrets and none is tracked · **anti-explosion**: a surface name in an `aidlc/` gate must name the `project.yml` field that switches it.
 
-Every one of these is negative-tested: regressing each invariant on a scratch copy must make the audit exit non-zero. A sensor that cannot fail is theater.
+**Maintainer-only**, dropped the moment you delete the marker: word budgets · three-tool parity · README mobile render · upstream-URL check · this template's hygiene file list. **Adopter-only**, which start once it is gone: `project.yml` parses and declares real values · `memory/feature-list.json` is well-formed and every `passes: true` resolves to a real commit · `init.sh` exists and is not a byte-identical copy of the example · every workflow declares `permissions:`.
+
+Every one of these is negative-tested: regressing the invariant on a scratch copy must make the audit exit non-zero. A sensor that cannot fail is theater.
 
 ---
 
@@ -257,11 +261,13 @@ Every one of these is negative-tested: regressing each invariant on a scratch co
 
 ```
 aidlc-template/
+├── project.yml          Shape declaration — the file you edit
 ├── AGENTS.md            Universal entry (Codex reads natively)
 ├── CLAUDE.md            Claude entry — imports AGENTS.md
 ├── README.md            This file
 ├── init.sh.example      Copy to init.sh — install + smoke
 ├── aidlc/               Canonical methodology
+│   ├── .template          Marker: delete on adoption
 │   ├── core-workflow.md   Phase index
 │   ├── agents/            engineer, manager, reviewer
 │   ├── inception/         spec, design
@@ -269,10 +275,10 @@ aidlc-template/
 │   │                      review, security, e2e, ship
 │   ├── operations/        operate, retro, investigate,
 │   │                      daily-report
-│   ├── rules/             8 canonical rule bodies
+│   ├── rules/             Canonical rule bodies
 │   ├── common/            decision-gates, unknowns,
 │   │                      session-lifecycle
-│   └── examples/          8 fill-in artifact templates
+│   └── examples/          Fill-in artifact templates
 ├── memory/              Tool-agnostic handoff state
 │   ├── progress.md        Decisions, last/next, issues
 │   ├── feature-list.json  Backlog (append-only)
@@ -291,8 +297,16 @@ aidlc-template/
 │   ├── skills/<name>/SKILL.md  → aidlc/<phase>/
 │   ├── config.toml             MCP, feature flags
 │   └── hooks.json              Guard + bearings
-├── .github/workflows/   CI — audit.sh on push/PR
-├── docs/adr/            ADRs (tool-neutral)
+├── .github/
+│   ├── workflows/         audit + code-quality; codeql and
+│   │                      verify ship as .yml.example
+│   ├── dependabot.yml     Uncomment your ecosystem
+│   └── ISSUE_TEMPLATE/    Replace OWNER/REPO
+├── docs/
+│   ├── adr/               Architecture decision records
+│   ├── project-shapes.md  Per-surface gate spellings
+│   ├── repo-setup.md      GitHub toggles no commit can set
+│   └── history.md         Maintainer log (yours to replace)
 └── scripts/
     ├── audit.sh         Footprint + structural audit
     ├── agent-test.sh    AI-friendly test sensor

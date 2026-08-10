@@ -15,25 +15,49 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: code-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shellcheck:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
+      security-events: write # upload-sarif writes to the Code scanning tab
     steps:
-      - uses: actions/checkout@v4
+      # SHA-pinned: `@v7` is a mutable name, a SHA is not. The trailing comment
+      # is what Dependabot reads to bump the pin.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: ShellCheck (SARIF for Code scanning)
         run: |
           shellcheck --version
           mapfile -t files < <(git ls-files '*.sh' 'init.sh.example')
-          printf 'checking: %s\n' "${files[@]}"
-          # -S warning: style nits shouldn't fail CI; real bugs should.
-          shellcheck -S warning -f json1 "${files[@]}" > sc.json || true
+          # An adopter repo with no tracked shell scripts is the normal case,
+          # not an error. shellcheck with zero file arguments prints its usage
+          # to stderr and writes nothing, so sc.json ended up empty and the
+          # converter died on `json.load` of a 0-byte file — a hard red X for
+          # having no shell to check. Synthesize the empty result instead, and
+          # still upload it: an empty SARIF clears stale alerts.
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "no tracked shell scripts — emitting an empty result set"
+            echo '{"comments":[]}' > sc.json
+          else
+            printf 'checking: %s\n' "${files[@]}"
+            # -S warning: style nits shouldn't fail CI; real bugs should.
+            shellcheck -S warning -f json1 "${files[@]}" > sc.json || true
+            # `|| true` also swallows usage/crash exits, which produce no JSON.
+            # Empty output means "shellcheck never ran", not "no findings" —
+            # fail loudly rather than reporting a clean scan that never happened.
+            if [ ! -s sc.json ]; then
+              echo "::error::shellcheck produced no output for ${#files[@]} file(s)"
+              exit 1
+            fi
+          fi
           python3 .github/scripts/shellcheck-to-sarif.py sc.json sarif.json
 
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
           sarif_file: sarif.json
           category: shellcheck

@@ -1,0 +1,81 @@
+# Copy to project.yml and replace every REPLACE-ME before the first session.
+# Project shape — the declaration this template adapts to.
+#
+# Loaded on every session through the always-on `project` rule
+# (.claude/rules/project.md, .cursor/rules/project.mdc; Codex reads this file
+# via AGENTS.md). Concrete per-surface reference table: docs/project-shapes.md
+#
+# THE CONTRACT: a gate whose surface or capability this file does not declare
+# does not apply and needs no skip rationale; a gate it does declare cannot be
+# skipped. Adapt the template by editing this file — never by deleting
+# methodology files. Deleting them breaks cross-references and the audit.
+#
+# Every field below switches a NAMED gate, and says which. Decoration is not
+# a field: if you cannot name the gate it switches, do not add it.
+
+# Which surfaces this project ships. A LIST — most real repos ship several.
+# Allowed: web · mobile · http-api · grpc · events · cli · batch
+# Gates switched:
+#   web|mobile   → aidlc/inception/design.md, aidlc/rules/design-tokens.md,
+#                  aidlc/rules/ux-guidelines.md
+#   any          → e2e identity in aidlc/construction/e2e.md, and which row of
+#                  docs/project-shapes.md applies
+# This repo ships markdown plus two shell programs (scripts/audit.sh,
+# scripts/guard-command.sh) whose whole contract is argv + exit code.
+surfaces: [REPLACE-ME]
+
+# Does the project own persistent state it can corrupt or lose?
+# Gates switched: migration reversibility in aidlc/construction/plan.md and
+# aidlc/construction/ship.md; encryption-at-rest items in aidlc/rules/security.md.
+stateful: false
+
+# Does one deployment serve more than one customer?
+# Gates switched: tenant isolation (row-level security, per-tenant rate limits)
+# in aidlc/rules/security.md and the architecture step of
+# aidlc/construction/plan.md.
+multi_tenant: false
+
+release:
+  # continuous | store-staged | registry | scheduled
+  # Gate switched: which four health signals aidlc/operations/operate.md checks,
+  # and the default soak window. Defaults per channel: docs/project-shapes.md.
+  channel: continuous
+
+  # revert-commit | previous-artifact | forward-fix-only | halt-rollout+kill-switch
+  # Gate switched: the rollback pre-condition in aidlc/construction/ship.md and
+  # the stable gate in aidlc/operations/operate.md.
+  # A shipped store binary cannot be un-shipped and an applied migration often
+  # cannot be reverted. Declare forward-fix-only or halt-rollout+kill-switch and
+  # verify the kill switch — do not pretend a redeploy exists.
+  rollback: revert-commit
+
+  # The four signals watched after release, named for THIS release model.
+  # Gate switched: step 1 and the stable gate in aidlc/operations/operate.md.
+  # This repo has no runtime, so its four signals are CI-observable.
+  signals:
+    - audit exit code
+    - CI workflow result
+    - broken internal references
+    - adopter issue reports
+
+  # Observation period before a release counts as done.
+  # Gate switched: the stable gate in aidlc/operations/operate.md.
+  # Continuous default is 24h; store-staged is one staged-rollout step.
+  window: one green CI run on main
+
+# The commands every phase invokes, so no phase file has to name a stack.
+# Gates switched: aidlc/construction/build.md, test.md, ship.md, review.md.
+# An empty value is a declaration that the project has no such check — the gate
+# is then explicitly unnamed, not silently passed. Where `coverage` is empty,
+# aidlc/rules/testing.md requires a named coverage EQUIVALENT instead.
+verify:
+  test: REPLACE-ME
+  lint: REPLACE-ME
+  types: REPLACE-ME
+  coverage: ""    # equivalent: scripts/guard-cases.tsv, one case per guard branch
+  dep_audit: ""   # no package manifest; Dependabot watches the GitHub Actions
+  # Eval runner and task directory for AI-facing behavior.
+  # Gate switched: the eval pre-condition in aidlc/construction/ship.md and the
+  # runner/task path in aidlc/construction/eval.md. Empty = no AI-facing
+  # behavior, so that gate does not apply.
+  eval: ""

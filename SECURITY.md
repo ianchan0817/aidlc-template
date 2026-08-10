@@ -14,8 +14,13 @@ Use GitHub's private vulnerability reporting: **Security → Report a
 vulnerability** on this repository. It creates a private advisory visible only
 to maintainers.
 
+If that button is not on the Security tab, the repository toggle is off and this
+policy has no working channel — do **not** post details in a public issue. Ask
+the maintainer to enable it first (exact path and verified current state:
+[`docs/repo-setup.md`](docs/repo-setup.md)).
+
 <!-- Maintainer: add a fallback contact here (email or Keybase) if you want one,
-     and enable Settings → Security → Private vulnerability reporting. -->
+     and enable Settings → Advanced Security → Private vulnerability reporting. -->
 
 Please include:
 
@@ -87,14 +92,20 @@ you would rather stay anonymous.
 
 Day-one checklist for a project that adopted it:
 
-- Fill in `aidlc/rules/tech-stack.md`, then narrow `permissions.allow` in
-  `.claude/settings.json` from the broad interpreter globs to the entry points
-  you actually run.
+- Fill in `project.yml` — in particular `verify.*`, `multi_tenant`, and
+  `stateful`, which switch the tenant-isolation and encryption-at-rest items in
+  `aidlc/rules/security.md`. Adapt by declaring, never by deleting: a deleted
+  methodology file breaks cross-references and fails the audit.
+- Narrow `permissions.allow` in `.claude/settings.json` from the broad
+  interpreter globs to the entry points you actually run.
 - Keep `scripts/guard-command.sh` wired into all three hook configs. If you
   extend the patterns, add cases to `guard-cases.tsv` — an untested guard rule
   is a guess.
 - Verify a hook actually fires. The audit proves the config is valid JSON and
   matches each tool's output schema; only a live test proves it blocks.
+- Replace `OWNER/REPO` in `.github/ISSUE_TEMPLATE/config.yml`. Left unreplaced,
+  your reporters' "Report a vulnerability" link opens an advisory on someone
+  else's repository — a disclosure leak that looks like a working button.
 - Enable secret scanning and push protection on the repository.
 - Never commit `.env`. Sanitize verification evidence before it lands in
   `memory/progress.md` — command output can carry tokens and connection strings.

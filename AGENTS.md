@@ -1,6 +1,12 @@
 # AGENTS.md
 
-Tool-agnostic instructions for any AI coding agent (Claude Code, Codex CLI, Cursor IDE, etc.). Canonical methodology lives in `aidlc/`. Tool-specific dirs (`.claude/`, `.cursor/`, `.codex/`) hold only what each tool's loader requires — shared content lives here or in `aidlc/`.
+Tool-agnostic instructions for any AI coding agent. Canonical methodology lives in `aidlc/`; `.claude/`, `.cursor/`, and `.codex/` hold only what each tool's loader requires.
+
+## Project shape — read first
+
+`project.yml` at the repo root declares `surfaces`, `stateful`, `multi_tenant`, `release`, and `verify`. Claude Code and Cursor load it through an always-on rule; **Codex has no rules directory, so read it from here at session start.**
+
+**The contract:** a gate whose surface or capability `project.yml` does not declare does not apply and needs no skip rationale; a gate it does declare cannot be skipped. Adapt by declaring, never by deleting — a deleted file dangles a reference and fails `scripts/audit.sh`. Per-surface spellings: `docs/project-shapes.md`.
 
 ## Working style
 
@@ -27,29 +33,26 @@ Tool-agnostic instructions for any AI coding agent (Claude Code, Codex CLI, Curs
 ## Layout
 
 ```
-AGENTS.md               Universal entry (this file)
-CLAUDE.md               Claude Code adapter — @-imports this
-README.md               Human-facing docs
+project.yml             Shape declaration — read every session
+AGENTS.md · CLAUDE.md   Entry points · README.md  Human-facing docs
 init.sh.example         Copy to init.sh — bootstrap + smoke
 aidlc/                  Canonical methodology (single source of truth)
   core-workflow.md      Phase index
-  agents/               engineer, manager, reviewer
-  inception/            spec, design                            (WHAT/WHY)
-  construction/         plan, build, test, eval, review,
-                        security, e2e, ship                     (HOW)
-  operations/           operate, retro, investigate,
-                        daily-report                            (RUN)
-  rules/                8 canonical rules
-  common/               decision-gates, session-lifecycle, unknowns
-  examples/             feature-spec, feature-list, eval-suite,
-                        adr, threat-model, e2e-test-plan,
-                        implementation-notes, postmortem
+  agents/               engineer · manager · reviewer
+  inception/            spec · design                     (WHAT/WHY)
+  construction/         plan · build · test · eval · review ·
+                        security · e2e · ship             (HOW)
+  operations/           operate · retro · investigate ·
+                        daily-report                      (RUN)
+  rules/                Canonical rule bodies, one per topic
+  common/               decision-gates · session-lifecycle · unknowns
+  examples/             Fill-in artifact templates
+  .template             Marks this as the template; deleted on adoption
 memory/                 progress.md · feature-list.json · plans/ · decisions/
 .claude/ .cursor/ .codex/   Tool adapters (skills/<name>/SKILL.md per tool)
-docs/adr/               ADRs
-scripts/                audit.sh (structure + budget) · agent-test.sh (AI-friendly
-                        test sensor) · guard-command.sh (+ guard-cases.tsv):
-                        one dangerous-command matcher shared by all three tools
+docs/                   adr/ · project-shapes.md · repo-setup.md · history.md
+scripts/                audit.sh · agent-test.sh · guard-command.sh
+                        (+ guard-cases.tsv) — sensors shared by all three tools
 ```
 
 Adapters use repo-rooted paths (e.g. `aidlc/agents/engineer.md`) — no `../../` chains.
@@ -92,9 +95,9 @@ Canonical bodies in `aidlc/rules/*.md` — one source of truth. Tool adapters ar
 - Cursor → `.cursor/rules/*.mdc` (`globs:` / `alwaysApply:`)
 - Codex → reads `aidlc/rules/*.md` directly via AGENTS.md context
 
-Topics: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`, `tech-stack`. Fill in `aidlc/rules/tech-stack.md` before the first session.
+Canonical bodies: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`. Claude Code and Cursor carry one extra rule with no canonical body — an always-on `project` pointer at `project.yml`. Fill `project.yml` in before the first session; there is no stack file to edit.
 
-UI work reads two of these: `design-tokens` for the vocabulary (color roles, type scale, spacing, motion) and `ux-guidelines` for behavior (hierarchy, states, interaction, accessibility).
+UI work reads two of these when `surfaces` includes `web` or `mobile`: `design-tokens` for the vocabulary (color roles, type scale, spacing, motion) and `ux-guidelines` for behavior (hierarchy, states, interaction, accessibility).
 
 ## Non-negotiables
 
@@ -102,7 +105,7 @@ UI work reads two of these: `design-tokens` for the vocabulary (color roles, typ
 - No release without E2E sign-off
 - No skipping security review on auth, data, or external API changes
 - No secrets, credentials, or `.env` files in commits
-- No bypassing the 100% coverage gate on new/modified code
+- No bypassing the coverage gate on new/modified code — 100% of changed lines, or the surface's named equivalent from `docs/project-shapes.md` where lines cannot be instrumented
 - No floating dependency ranges in production
 - No fix without a test (every prod incident → fix, test, or rule update)
 - No code without a plan for non-trivial changes
@@ -112,14 +115,14 @@ UI work reads two of these: `design-tokens` for the vocabulary (color roles, typ
 
 A change is done when:
 
-- Tests pass at 100% coverage on new/modified files
+- Tests pass at 100% coverage on new/modified files, or the declared equivalent
 - Verified on the real target, not a proxy — and what was verified stated plainly, along with what was not
 - Reviewed, all critical issues resolved
 - E2E journeys signed off for changed flows
 - Agent eval suite green when AI-facing behavior changed (`aidlc/construction/eval.md`)
 - Security audit clean if auth/data/API touched
 - Build reproducible (locked deps, pinned runtime, deploy traceable to commit SHA)
-- 24h post-deploy with green signals (latency, error rate, traffic, saturation)
+- The declared `release.window` elapsed with the four declared `release.signals` green
 
 ## Decision gates
 
@@ -134,3 +137,5 @@ Structured-question format in `aidlc/common/decision-gates.md`. Creates an audit
 | Cursor IDE | `.cursor/rules/*.mdc` | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |
 
 All three load skills as `<tool>/skills/<name>/SKILL.md` (the Agent Skills layout) — one directory per phase command, body identical across tools. A flat `skills/<name>.md` is silently ignored by all three; `scripts/audit.sh` fails on it.
+
+All three additionally read `project.yml` and `docs/project-shapes.md`, which are tool-neutral and stay put when you delete the adapter dirs you do not use. Adoption sequence: `README.md` → Day 0.

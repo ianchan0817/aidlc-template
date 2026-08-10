@@ -1,0 +1,1 @@
+This file marks the repo as the aidlc template itself; delete it as step 1 of adoption and scripts/audit.sh drops the maintainer-only sensors (word budgets, three-tool parity, README mobile render, upstream-URL check, repo-hygiene file list) and runs the adopter arm instead (project.yml declaration, memory/feature-list.json, init.sh, workflow permissions).

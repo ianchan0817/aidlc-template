@@ -1,6 +1,6 @@
 # Core Workflow — AIDLC
 
-Tool-agnostic phase index. AGENTS.md holds the harness rules and non-negotiables; this file lists phases, gates, and canonical prompts.
+Tool-agnostic phase index. AGENTS.md holds the harness rules and non-negotiables; this file lists phases and gates.
 
 Session lifecycle: `aidlc/common/session-lifecycle.md`. Backlog: `memory/feature-list.json`.
 
@@ -13,9 +13,12 @@ Inception (WHAT/WHY) → Construction (HOW) → Operations (RUN)
 
 Every initiative passes through all three. Each phase has a human-approved gate before the next, and opens by surfacing unknowns — elicitation moves in `aidlc/common/unknowns.md`.
 
+## Project shape
+`project.yml` declares surfaces, tenancy, release model, and verify commands. A gate whose surface or capability the project does not declare does not apply and needs no skip rationale; a gate it does declare cannot be skipped. Adapt by declaring, never by deleting.
+
 ### Inception
 - `aidlc/inception/spec.md` — problem, use cases, RICE, acceptance criteria
-- `aidlc/inception/design.md` — UI/component specs (when UI applies)
+- `aidlc/inception/design.md` — UI/component specs (`project.yml` declares `web`/`mobile`)
 
 **Gate:** measurable success metric, ≥1 use case with acceptance criteria, explicit out-of-scope.
 
@@ -37,16 +40,13 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 - `aidlc/operations/investigate.md` — structured debugging
 - `aidlc/operations/daily-report.md` — manager's daily summary
 
-**Gate:** 24h stable signals; every prod incident produces a fix, test, or rule update.
+**Gate:** signals green through the declared `release.window`; every prod incident produces a fix, test, or rule update.
 
 ## Roles
-`aidlc/agents/`: `engineer` (build), `reviewer` (quality/security/QA/evals/E2E), `manager` (orchestrate + harness review).
+`aidlc/agents/`: `engineer` (build), `reviewer` (quality/security/QA/E2E), `manager` (orchestrate).
 
-## Decision gates
-Structured `[Answer]:` format in `aidlc/common/decision-gates.md`. Creates an audit trail for anything ambiguous.
-
-## Unknowns
-Elicitation moves per phase (blindspot pass, interview, tweakable plan, change quiz, …) in `aidlc/common/unknowns.md`.
+## Decision gates & unknowns
+`aidlc/common/decision-gates.md` — structured `[Answer]:` audit trail. `aidlc/common/unknowns.md` — elicitation moves per phase.
 
 ## Examples
-Fill-in templates in `aidlc/examples/`: `feature-spec`, `feature-list`, `eval-suite`, `adr`, `threat-model`, `e2e-test-plan`, `implementation-notes`, `postmortem`.
+Fill-in templates in `aidlc/examples/`.

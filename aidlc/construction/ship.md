@@ -8,7 +8,7 @@ Phase: Construction. Land the current branch.
 - 100% coverage on new/modified code
 - Security review done for auth/data/API changes
 - Agent/LLM feature changes: regression eval suite green, when a suite exists (`aidlc/construction/eval.md`)
-- Rollback path verified (redeploy previous artifact or revert commit)
+- Rollback verified for the lever declared in `project.yml` → `release.rollback`. A shipped binary or applied migration cannot be un-shipped, so `forward-fix-only` and `halt-rollout+kill-switch` are first-class — each verifies a kill switch instead.
 
 ## Process
 1. Sync with main (rebase/merge, resolve conflicts)
