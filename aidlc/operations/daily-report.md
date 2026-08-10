@@ -18,4 +18,4 @@ ls docs/adr/ 2>/dev/null
 3. **Health** — coverage, open errors, CI, E2E, security findings
 4. **Decisions needed** — options + recommendation + deadline
 
-Be direct. Lead with the most important thing. Never bury bad news. Update `memory/progress.md` after.
+Decisions and blockers land in `memory/progress.md` — Manager calls them, reviewer records them.

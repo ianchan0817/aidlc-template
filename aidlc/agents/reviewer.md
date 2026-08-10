@@ -20,6 +20,8 @@ Exercise the running app as a user (browser automation / MCP where available). W
 ## Security audit (STRIDE)
 For changes matching the triggers in `aidlc/construction/security.md`. Format: `aidlc/examples/threat-model.md`. Severity: Critical → block + escalate. High → fix before release. Medium → next sprint. Low → document.
 
+**Supply chain is in scope.** A lockfile change in the diff gets an audit run and a one-line justification per added direct dependency — name, version, why. Transitive additions get the CVE check only. Blocking criteria live in the Pass 1 list.
+
 ## Agent evals
 For AI/agent features: own the eval suite per `aidlc/construction/eval.md`. Capability + regression, calibrated graders, **read transcripts on every failure** — fix agent, grader, or task spec at the right layer.
 

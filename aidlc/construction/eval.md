@@ -21,6 +21,8 @@ Grade **outcomes and artifacts** before process. Avoid brittle "must call tool X
 - **Capability** — tasks the agent should struggle with (<100% pass; hill to climb).
 - **Regression** — must stay green (~100%); run on every harness/prompt change.
 
+**Injection resistance.** Hold fixture repo files, documents, and tool outputs carrying embedded instructions; grade the action taken — did it call an unrequested tool, fetch an attacker-supplied URL, move data — not whether the text looked suspicious. Run before any release that changes tools or prompts.
+
 Graduate stable capability tasks to regression. Watch **eval saturation** (all tasks pass → suite no longer differentiates).
 
 Metrics: **pass@k** = any of k trials succeeds (capability); **pass^k** = all k succeed (reliability). They diverge fast — 75% per-trial ≈ 42% pass^3. Gate releases on pass^k for user-facing flows.
@@ -34,5 +36,3 @@ Metrics: **pass@k** = any of k trials succeeds (capability); **pass^k** = all k 
 - Track traces/metrics that explain regressions: tool calls, tokens, latency, error loops, and verification evidence.
 - Re-run after model upgrades; tune prompts/rules with traces as signal.
 - Keep tasks under `evals/` (or the path named in `aidlc/rules/tech-stack.md`); record the runner command there too.
-
-Future extension: hooks/middleware (pre-completion checklist, loop detection) — add per-tool when needed.

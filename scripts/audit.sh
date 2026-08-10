@@ -179,6 +179,71 @@ for f in .claude/agents/*.md .cursor/agents/*.md; do
 done
 echo "  [ok]   subagent frontmatter check complete"
 
+# 2c2. The reviewer holds the only exclusive write duty in the harness: flipping
+#      `passes: true` and stamping `verified_sha` in memory/feature-list.json,
+#      plus logging findings to memory/progress.md. A read-only reviewer makes
+#      sign-off fail silently, or pushes the flip onto whoever wrote the code —
+#      breaching the AGENTS.md non-negotiable.
+#      Assert the capability POSITIVELY on both tools. Checking only for the
+#      literal `readonly: true` passes when the key is deleted outright, and
+#      says nothing about Claude's `tools:` list — both are silent regressions.
+WRITE_FAIL=0
+if [[ -f .cursor/agents/reviewer.md ]]; then
+  grep -qE '^readonly:[[:space:]]*false' .cursor/agents/reviewer.md || {
+    printf "  [FAIL] .cursor/agents/reviewer.md must declare 'readonly: false' — reviewer writes passes/verified_sha\n"
+    FAIL=$((FAIL+1)); WRITE_FAIL=$((WRITE_FAIL+1))
+  }
+fi
+# `tools:` is a comma-separated list, so the match must be delimiter-anchored.
+# A bare `grep -q Write` is satisfied by `TodoWrite` — the arm then passes even
+# with `Write` deleted, which is exactly the regression it exists to catch.
+has_tool() { grep -m1 -E '^tools:' "$1" | grep -qE "(^|[,:[:space:]])$2([,[:space:]]|\$)"; }
+if [[ -f .claude/agents/reviewer.md ]]; then
+  for t in Write Edit; do
+    has_tool .claude/agents/reviewer.md "$t" || {
+      printf "  [FAIL] .claude/agents/reviewer.md tools: lacks %s — reviewer cannot record its verdict\n" "$t"
+      FAIL=$((FAIL+1)); WRITE_FAIL=$((WRITE_FAIL+1))
+    }
+  done
+fi
+# The inverse invariant: manager decides but never writes, so a manager that
+# gains write capability has quietly taken on the reviewer's recording duty.
+if [[ -f .cursor/agents/manager.md ]] && ! grep -qE '^readonly:[[:space:]]*true' .cursor/agents/manager.md; then
+  printf "  [FAIL] .cursor/agents/manager.md must stay 'readonly: true' — manager decides, reviewer records\n"
+  FAIL=$((FAIL+1)); WRITE_FAIL=$((WRITE_FAIL+1))
+fi
+if [[ -f .claude/agents/manager.md ]]; then
+  for t in Write Edit; do
+    ! has_tool .claude/agents/manager.md "$t" || {
+      printf "  [FAIL] .claude/agents/manager.md tools: grants %s — manager decides, reviewer records\n" "$t"
+      FAIL=$((FAIL+1)); WRITE_FAIL=$((WRITE_FAIL+1))
+    }
+  done
+fi
+[[ $WRITE_FAIL -eq 0 ]] && echo "  [ok]   write capability matches role duty (reviewer writes, manager does not)"
+
+# 2c3. Description COVERAGE, not presence. The description is the routing table:
+#      it is what the delegating model reads when choosing a role. Presence-only
+#      checking is what let all three descriptions drift while staying green,
+#      leaving security and infra work with no named destination.
+DESC_WARN=0
+desc_needs() { # file, keyword regex, human label
+  local f="$1" pat="$2" label="$3" desc
+  [[ -f "$f" ]] || return 0
+  desc=$(grep -m1 -E '^description:' "$f" || true)
+  if ! printf '%s' "$desc" | grep -qiE "$pat"; then
+    printf "  [WARN] %s description omits %s — that work will not route here\n" "$f" "$label"
+    WARN=$((WARN+1)); DESC_WARN=$((DESC_WARN+1))
+  fi
+}
+for d in .claude/agents .cursor/agents; do
+  [[ -d "$d" ]] || continue
+  desc_needs "$d/engineer.md" 'infra|deploy'    'infra/deploy'
+  desc_needs "$d/reviewer.md" 'security'        'security'
+  desc_needs "$d/manager.md"  'escalation|risk' 'escalation/risk'
+done
+[[ $DESC_WARN -eq 0 ]] && echo "  [ok]   adapter descriptions cover infra/deploy, security, escalation/risk"
+
 # 2d. Rule parity: every canonical rule needs a pointer in each tool's native format.
 for c in aidlc/rules/*.md; do
   [[ -f "$c" ]] || continue
