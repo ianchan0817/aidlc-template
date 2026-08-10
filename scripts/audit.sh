@@ -190,7 +190,11 @@ echo "  [ok]   internal reference check complete"
 #     skills/<name>.md is silently ignored, so the slash command never exists.
 SKILL_REF=""
 SKILL_FAIL=0
-for tool in .claude .cursor .codex; do
+# Codex discovers skills at `.agents/skills`, NOT `.codex/skills` — verified
+# 2026-08-10 at https://learn.chatgpt.com/docs/build-skills. This repo shipped 14
+# SKILL.md files under `.codex/skills` and this sensor printed [ok], so every
+# phase command was dead in Codex while CI was green. Assert the documented path.
+for tool in .claude .cursor .agents; do
   [[ -d "$tool/skills" ]] || continue
   while IFS= read -r stray; do
     printf "  [FAIL] flat skill file (needs %s/skills/<name>/SKILL.md): %s\n" "$tool" "$stray"
@@ -914,15 +918,33 @@ elif ! jq -e '.features | type == "array"' "$FL" >/dev/null 2>&1; then
   printf "  [FAIL] %s: .features is missing or not an array\n" "$FL"
   FAIL=$((FAIL+1)); FL_FAIL=$((FL_FAIL+1))
 else
+  # Subject set is DERIVED from the manifest's own `records` glob, not assumed to
+  # be the inline array. Schema 2 ships `features: []` by design, so reading only
+  # the array meant this sensor verified zero records and still reported [ok].
+  FEAT_JSONL=$(mktemp "${TMPDIR:-/tmp}/aidlc-feat.XXXXXX")
+  jq -c '.features[]?' "$FL" >"$FEAT_JSONL" 2>/dev/null || true
+  REC_GLOB=$(jq -r '.records // empty' "$FL" 2>/dev/null || true)
+  REC_N=0
+  if [[ -n $REC_GLOB ]]; then
+    for _r in $REC_GLOB; do
+      [[ -f $_r ]] || continue
+      if jq -e . "$_r" >/dev/null 2>&1; then
+        jq -c '.' "$_r" >>"$FEAT_JSONL"; REC_N=$((REC_N+1))
+      else
+        printf "  [FAIL] %s is not valid JSON — an unparseable record is an invisible sign-off\n" "$_r"
+        FAIL=$((FAIL+1)); FL_FAIL=$((FL_FAIL+1))
+      fi
+    done
+  fi
   # Presence before uniqueness. `[.features[].id // empty]` drops untagged
   # entries BEFORE group_by, so a feature with no id could never collide with
   # anything and the dup check silently skipped it.
-  NOID=$(jq -r '[.features | to_entries[] | select(((.value.id // "") | tostring) == "") | .key] | join(" ")' "$FL")
+  NOID=$(jq -rs '[to_entries[] | select(((.value.id // "") | tostring) == "") | .key] | join(" ")' "$FEAT_JSONL")
   if [[ -n "$NOID" ]]; then
     printf "  [FAIL] %s: feature(s) at index %s have no id — an untagged entry is invisible to the duplicate check and to every sign-off\n" "$FL" "$NOID"
     FAIL=$((FAIL+1)); FL_FAIL=$((FL_FAIL+1))
   fi
-  DUPES=$(jq -r '[.features[].id // empty] | group_by(.) | map(select(length>1) | .[0]) | join(" ")' "$FL")
+  DUPES=$(jq -rs '[.[].id // empty] | group_by(.) | map(select(length>1) | .[0]) | join(" ")' "$FEAT_JSONL")
   if [[ -n "$DUPES" ]]; then
     printf "  [FAIL] %s: duplicate feature id(s): %s\n" "$FL" "$DUPES"
     FAIL=$((FAIL+1)); FL_FAIL=$((FL_FAIL+1))
@@ -946,9 +968,13 @@ else
       printf "  [FAIL] %s: '%s' verified_sha %s is not a commit in this repo\n" "$FL" "$id" "$sha"
       FAIL=$((FAIL+1)); FL_FAIL=$((FL_FAIL+1))
     fi
-  done < <(jq -r '.features[]? | select(.passes==true) | [(.id // "?"), (.verified_sha // "")] | @tsv' "$FL")
+  done < <(jq -r 'select(.passes==true) | [(.id // "?"), (.verified_sha // "")] | @tsv' "$FEAT_JSONL")
+  rm -f "$FEAT_JSONL"
 fi
-[[ $FL_FAIL -eq 0 ]] && echo "  [ok]   feature-list parses, ids unique, every passes:true has a resolvable sha"
+if [[ $FL_FAIL -eq 0 ]]; then
+  printf "  [ok]   backlog: %s record(s) checked from %s — ids present and unique, every passes:true has a 40-char sha in this repo\n" \
+    "${REC_N:-0}" "${REC_GLOB:-inline array}"
+fi
 
 # 3b-3. `./init.sh` is session-lifecycle step 5 — the smoke that decides whether
 #       this session builds a feature or fixes the baseline. An unedited copy of

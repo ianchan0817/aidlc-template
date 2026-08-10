@@ -78,12 +78,23 @@ READERS='cat|bat|less|more|head|tail|nl|od|xxd|hexdump|strings|base64|openssl|so
 # patterns also work if a caller feeds a raw string past the tokenizer.
 Q='["'"'"']?'
 # A path prefix glued to a filename: ./x, ../x, /srv/app/x, ~/x.
-PFX='[^;|&[:space:]"'"'"']*'
+# It must END IN `/` when non-empty. That single constraint is what stops
+# `process.env` and `os.environ.x` matching as if they were paths — an
+# identifier before the dot is not a directory — while still catching every
+# real prefixed spelling. Putting the exclusion in the TAIL instead broke
+# `cat .env` outright, because the preceding space was already consumed.
+PFX='([^;|&[:space:]"'"'"']*/)?'
 
 ENV_TAIL='\.env([^[:alnum:]]|$)'
 ENV_READ='(^|[[:space:]])('$READERS')[[:space:]]+([^;|&]*[[:space:]])?'$Q$PFX$ENV_TAIL
 ENV_REDIR='[<>][[:space:]]*'$Q$PFX$ENV_TAIL
 ENV_FLAG='--env-file[[:space:]=]'$Q$PFX$ENV_TAIL
+
+# Copying the shipped example INTO .env is the documented first-run step, not a
+# read. Global because both rules_shell and rules_code must consult it, and
+# rules_code must consult it BEFORE it strips the example token — stripping
+# first turns `cp .env.example .env` into `cp .env`, which is a read.
+ENV_FROM_EXAMPLE='\.env\.(example|sample|template|dist)[^;|&]*[[:space:]]+[^;|&]*\.env([^[:alnum:].]|$)'
 
 # Private keys. Two derived shapes plus ssh-keygen's own closed type list:
 # anything named id_* under a .ssh directory, and the private-key file
@@ -356,11 +367,30 @@ emit_seg() { # raw segment, separator
   # Scaffolding filenames are exempt at WORD level, not by substring. Testing
   # the exemption against the whole segment let a benign mention disarm a real
   # read on the same line: `cat .env.example && cat .env` exited 0.
+  # A copy FROM the example INTO .env is the documented first-run step. Dropping
+  # only the example word left `cp .env`, which is indistinguishable from a read,
+  # so setup was blocked. Detect the pair here — where both words are still
+  # visible — and drop the destination too.
+  local has_example=0 setup=0
+  for ((k=0; k<${#K[@]}; k++)); do
+    case ${K[k]} in
+      *.env.example*|*.env.sample*|*.env.template*|*.env.dist*) has_example=1 ;;
+    esac
+  done
+  case $cw in
+    cp|mv|ln|install|rsync) [ "$has_example" -eq 1 ] && setup=1 ;;
+  esac
+
   local K2=()
   for ((k=0; k<${#K[@]}; k++)); do
     case ${K[k]} in
       *.env.example*|*.env.sample*|*.env.template*|*.env.dist*) continue ;;
     esac
+    if [ "$setup" -eq 1 ]; then
+      case ${K[k]} in
+        .env|*/.env) continue ;;
+      esac
+    fi
     K2[${#K2[@]}]=${K[k]}
   done
   [ ${#K2[@]} -eq 0 ] && return 0
@@ -385,7 +415,12 @@ tokenize() {
 
 # --- rules -------------------------------------------------------------------
 sql_rules() { # $1 = text
-  [[ $1 =~ (DROP|TRUNCATE)[[:space:]]+(TABLE|DATABASE|SCHEMA) ]] &&
+  # The object keyword is OPTIONAL: `TRUNCATE users` and `DROP INDEX ix` are
+  # valid SQL in every engine and both used to exit 0, because the rule required
+  # TABLE|DATABASE|SCHEMA. Keep the regex in a variable — a literal backtick
+  # inside [[ =~ ]] opens command substitution and breaks the script.
+  local SQL_DESTRUCTIVE='(DROP|TRUNCATE)[[:space:]]+((TABLE|DATABASE|SCHEMA|VIEW|INDEX)[[:space:]]+)?[[:alnum:]_."]+'
+  [[ $1 =~ $SQL_DESTRUCTIVE ]] &&
     block "destructive SQL (DROP/TRUNCATE)"
   [[ $1 =~ DELETE[[:space:]]+FROM[[:space:]]+[[:alnum:]_.\"]+[[:space:]]*(\;|\"|$) ]] &&
     block "unbounded DELETE (no WHERE clause)"
@@ -393,16 +428,29 @@ sql_rules() { # $1 = text
 }
 
 secret_rules() { # $1 = text (already example-stripped by the caller)
-  [[ $1 =~ $ENV_TAIL ]] &&
+  # A bare $ENV_TAIL here matched `process.env.PORT` and `os.environ`, because in
+  # a code payload there is no reader/position context to lean on. Require the
+  # PATH shape: `.env` must not be preceded by an identifier character, since an
+  # identifier before the dot is a property access, not a directory.
+  local ENV_AS_PATH='(^|[^[:alnum:]_.])'$Q$PFX'\.env([^[:alnum:]]|$)'
+  [[ $1 =~ $ENV_AS_PATH ]] &&
     block "reads or writes a .env file — take secrets from your secrets manager, not the shell"
   [[ $1 =~ $KEY_TAIL ]] && block "reads a private key file"
-  [[ $1 =~ $POLICY ]] &&
-    block "touches an agent policy file — that grants capability to the next session (aidlc/rules/security.md)"
+  # Deliberately NOT checking $POLICY here. This runs on foreign code payloads
+  # where read and write cannot be told apart, and it blocked
+  # `python3 -c "json.load(open('.cursor/hooks.json'))"` — an ordinary read.
+  # Writes are still caught in rules_shell, where the command word gives the
+  # direction. Accepted gap: a code one-liner that writes a policy file. Those
+  # files are git-tracked, so the change shows in a diff and reverts.
   return 0
 }
 
 rules_code() { # foreign code payload: $2 = C (language runtime) or T (text tool)
   local t=$1 p
+  # Order matters. Strip the example token only AFTER deciding whether this is
+  # the setup shape, and when it is, remove the destination as well — otherwise
+  # `cp .env.example .env` reduces to `cp .env` and blocks first-run setup.
+  [[ $t =~ $ENV_FROM_EXAMPLE ]] && t=${t//.env/}
   for p in example sample template dist; do t=${t//.env.$p/}; done
   secret_rules "$t"
   [ "$2" = C ] && sql_rules "$t"
@@ -427,6 +475,12 @@ rules_shell() {
       esac
       case $t in
         /tmp|/tmp/*|/private/tmp|/private/tmp/*|/var/folders/*|/var/tmp/*) continue ;;
+        # A cache rebuilds from a registry, so clearing one is routine and
+        # blocking it is noise. Anchored to known cache roots, not any path
+        # containing the word cache.
+        */.cache|*/.cache/*|*/Library/Caches|*/Library/Caches/*) continue ;;
+        */.npm/*|*/.yarn/cache/*|*/.pnpm-store/*|*/.gradle/caches/*|*/.m2/repository/*) continue ;;
+        */node_modules|*/node_modules/*|*/.venv|*/.venv/*) continue ;;
       esac
       block "recursive force-delete of a root-anchored path: $t"
     done
@@ -439,36 +493,37 @@ rules_shell() {
     block "git push --force (prefer --force-with-lease; never on main/master)"
   fi
 
-  # Recursive chmod that grants write to OTHERS. Derived from the bit, not from a
-  # list of mode strings: numerically, the last octal digit carries others-write
-  # (2,3,6,7); symbolically, the class must actually name `o` or `a`. Enumerating
-  # `777|666` missed `707`, and the loose symbolic form `[ago]*\+[rwx]*w` matched
-  # `chmod -R u+rw src/` — owner-only, ordinary work, and a false block there is
-  # how the whole guard gets deleted.
+  # Recursive chmod granting write to OTHERS. Derived from the bit, not from a
+  # list of mode strings: numerically the last octal digit carries others-write
+  # (2,3,6,7); symbolically the class must actually name `o` or `a`. Kept when
+  # the reversible rules were dropped because no benign command in the
+  # false-positive corpus triggers it, and `chmod -R 777 /` is not reversible in
+  # practice even though each bit technically is.
   if [[ $seg =~ (^|[[:space:]])chmod([[:space:]]|$) ]] &&
      [[ $seg =~ (-[[:alnum:]-]*R|--recursive) ]] &&
      [[ $seg =~ ([[:space:]][0-7]?[0-7][0-7][2367]([[:space:]]|$)|(^|[[:space:]])[ugoa]*[oa][ugoa]*\+[rwxXst]*w) ]]; then
     block "recursive chmod granting write to others"
   fi
 
-  [[ $seg =~ (^|[[:space:]])git[[:space:]]+reset[[:space:]]+--hard ]] &&
-    block "git reset --hard discards uncommitted work"
-
-  # git clean deletes untracked files irreversibly; -n/--dry-run is the safe form.
-  if [[ $seg =~ (^|[[:space:]])git[[:space:]]+clean([[:space:]]|$) ]] &&
-     [[ $seg =~ (-[[:alnum:]]*f|--force) ]] &&
-     [[ ! $seg =~ ((^|[[:space:]])-[[:alnum:]]*n([[:space:]]|$)|--dry-run) ]]; then
-    block "git clean -f deletes untracked files with no recovery path"
-  fi
-
   # Secret files, in a file-consuming POSITION. Matching .env anywhere is what
   # blocked `git commit -m "fix .env handling"`, and a guard that blocks
   # committing protects nothing because it gets removed.
-  if [[ $seg =~ $ENV_READ ]] || [[ $seg =~ $ENV_REDIR ]] || [[ $seg =~ $ENV_FLAG ]]; then
-    block "reads or copies a .env file — take secrets from your secrets manager, not the shell"
+  # Direction matters. READING .env moves secrets somewhere they can be seen.
+  # CREATING .env from the shipped example is the documented first-run step, and
+  # --env-file is how compose is normally invoked; blocking either taught
+  # nothing and blocked setup.
+  # Regex in a variable: an unquoted `;` or `|` inside [[ =~ ]] is parsed as
+  # shell syntax, not as part of the pattern.
+  ENV_SETUP=0
+  [[ $seg =~ $ENV_FROM_EXAMPLE ]] && ENV_SETUP=1
+  if [[ $ENV_SETUP -eq 0 ]] && { [[ $seg =~ $ENV_READ ]] || [[ $seg =~ $ENV_REDIR ]]; }; then
+    block "reads a .env file — take secrets from your secrets manager, not the shell"
   fi
-  [[ $seg =~ $KEY_READ ]] &&
-    block "reads a private key file — keys never pass through the shell"
+  # `openssl genrsa -out server.key` CREATES a key. Only reads are disclosure.
+  if [[ ! $seg =~ (^|[[:space:]])(genrsa|genpkey|req|ecparam|keygen)([[:space:]]|$) ]]; then
+    [[ $seg =~ $KEY_READ ]] &&
+      block "reads a private key file — keys never pass through the shell"
+  fi
 
   # Agent policy writes. Reads stay allowed (`cat .claude/settings.json`,
   # `jq empty .claude/settings.json`) — only a writer in the command position or
@@ -533,29 +588,35 @@ rules_shell() {
     block "submits a build to an app store (irreversible)"
   fi
 
+  # A preview is not an action. --dry-run / -n, and `terraform plan`, mean
+  # nothing happens. Blocking a preview is pure noise, and one gate here beats
+  # bolting the exception onto each teardown rule and forgetting one.
+  # Long form ONLY. A bare `-n` is NOT a dry-run flag in the tools this gate
+  # covers: it selects the namespace in kubectl and helm and the database index
+  # in redis-cli, so treating it as "preview" would exempt `redis-cli -n 0
+  # flushdb` — a real wipe. Verified: that case is in guard-cases.tsv as expect-2.
+  DRYRUN=0
+  [[ $seg =~ (--dry-run|--dryrun) ]] && DRYRUN=1
+  [[ $seg =~ (^|[[:space:]])(terraform|tofu|terragrunt)[[:space:]]([^;|&]*[[:space:]])?plan([[:space:]]|$) ]] && DRYRUN=1
+
   # Live-infrastructure teardown. Matched on the segment with the tool name in
   # the pattern rather than on the command word alone, so subshell grouping and
   # wrapper prefixes cannot move the tool out of the checked position.
   if [[ $seg =~ (^|[[:space:]])helm[[:space:]]([^;|&]*[[:space:]])?(uninstall|delete)([[:space:]]|$) ]]; then
-    block "helm uninstall removes a live release"
+    { [[ $DRYRUN -eq 1 ]] || block "helm uninstall removes a live release"; }
   fi
   if [[ $seg =~ (^|[[:space:]])(terraform|tofu|terragrunt)[[:space:]] ]] &&
      [[ $seg =~ (^|[[:space:]])-?destroy([[:space:]]|$) ]]; then
-    block "terraform destroy tears down live infrastructure"
+    { [[ $DRYRUN -eq 1 ]] || block "terraform destroy tears down live infrastructure"; }
   fi
   if [[ $seg =~ (^|[[:space:]])(kubectl|oc)[[:space:]] ]] &&
      [[ $seg =~ (^|[[:space:]])delete([[:space:]]|$) ]] &&
-     [[ $seg =~ ((^|[[:space:]])(ns|namespace|namespaces|crd|customresourcedefinitions?|pvc|pv|nodes?)([[:space:]]|$)|--all([[:space:]]|$)) ]]; then
-    block "kubectl delete of a namespace or a whole resource class"
+     [[ $seg =~ (^|[[:space:]])(ns|namespace|namespaces|crd|customresourcedefinitions?|pvc|pv|nodes?)([[:space:]]|$) ]]; then
+    { [[ $DRYRUN -eq 1 ]] || block "kubectl delete of a namespace or a whole resource class"; }
   fi
   if [[ $seg =~ (^|[[:space:]])(redis-cli|valkey-cli|iredis)[[:space:]] ]] &&
      [[ $seg =~ (^|[[:space:]])flush(all|db)([[:space:]]|$) ]]; then
-    block "redis FLUSHALL/FLUSHDB wipes the datastore"
-  fi
-  if [[ $seg =~ (^|[[:space:]])(docker|podman|nerdctl)[[:space:]] ]] &&
-     [[ $seg =~ (^|[[:space:]])prune([[:space:]]|$) ]] &&
-     [[ $seg =~ (--volumes|--all|(^|[[:space:]])volume([[:space:]]|$)|(^|[[:space:]])-[[:alnum:]]*a[[:alnum:]]*([[:space:]]|$)) ]]; then
-    block "docker prune with -a/--volumes deletes data and every unused image"
+    { [[ $DRYRUN -eq 1 ]] || block "redis FLUSHALL/FLUSHDB wipes the datastore"; }
   fi
 
   # Printing a credential puts it in a transcript, which is the one place a

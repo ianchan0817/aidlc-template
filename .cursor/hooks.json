@@ -8,7 +8,8 @@
     ],
     "beforeShellExecution": [
       {
-        "command": ".cursor/hooks/aidlc-guard.sh"
+        "command": ".cursor/hooks/aidlc-guard.sh",
+        "failClosed": true
       }
     ]
   }

@@ -133,10 +133,10 @@ Structured-question format in `aidlc/common/decision-gates.md`. Creates an audit
 
 | Tool | Entry | Tool-only files |
 |------|-------|-----------------|
-| Codex CLI | this `AGENTS.md` (hierarchical) | `.codex/skills/`, `.codex/config.toml`, `.codex/hooks.json` |
+| Codex CLI | this `AGENTS.md` (hierarchical) | `.agents/skills/`, `.codex/config.toml`, `.codex/hooks.json` |
 | Claude Code | `CLAUDE.md` (imports this) | `.claude/{rules,agents,skills}/`, `.claude/settings.json` |
 | Cursor IDE | `.cursor/rules/*.mdc` | `.cursor/{rules,agents,skills,hooks}/`, `.cursor/hooks.json` |
 
-All three load skills as `<tool>/skills/<name>/SKILL.md` (the Agent Skills layout) — one directory per phase command, body identical across tools. A flat `skills/<name>.md` is silently ignored by all three; `scripts/audit.sh` fails on it.
+Claude and Cursor load skills as `<tool>/skills/<name>/SKILL.md`; Codex discovers them at `.agents/skills/<name>/SKILL.md` (the Agent Skills layout) — one directory per phase command, body identical across tools. A flat `skills/<name>.md` is silently ignored by all three; `scripts/audit.sh` fails on it.
 
 All three additionally read `project.yml` and `docs/project-shapes.md`, which are tool-neutral and stay put when you delete the adapter dirs you do not use. Adoption sequence: `README.md` → Day 0.

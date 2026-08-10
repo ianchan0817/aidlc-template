@@ -63,3 +63,32 @@ stack — these are starting numbers, not physics.
    the last column is the equivalent.
 
 A project with several surfaces takes the union of the rows it declares.
+
+## What each `project.yml` field switches
+
+Read this once, when filling in `project.yml`. It used to live as comments inside
+that file — but `project.yml` is loaded on **every session by all three tools**,
+so 3,609 of its 4,155 characters (~900 tokens per session, measured with
+tiktoken cl100k) were spent explaining the schema to a human who reads it once.
+A field exists only if it switches a gate named here; if you cannot name the
+gate, it is decoration and does not belong in the declaration.
+
+| Field | Allowed values | Gate it switches |
+|---|---|---|
+| `surfaces` | web · mobile · http-api · grpc · events · cli · batch (a **list**) | `web`/`mobile` switch on `aidlc/inception/design.md`, `aidlc/rules/design-tokens.md`, `aidlc/rules/ux-guidelines.md`. Any value selects the e2e identity in `aidlc/construction/e2e.md` and the row of the table above that applies. |
+| `stateful` | true · false | Migration reversibility in `aidlc/construction/plan.md` and `aidlc/construction/ship.md`; encryption-at-rest items in `aidlc/rules/security.md`. |
+| `multi_tenant` | true · false | Tenant isolation (row-level security, per-tenant rate limits) in `aidlc/rules/security.md` and the architecture step of `aidlc/construction/plan.md`. |
+| `release.channel` | continuous · store-staged · registry · scheduled | Which four health signals `aidlc/operations/operate.md` checks, and the default soak window. Per-channel defaults are in the table above. |
+| `release.rollback` | revert-commit · previous-artifact · forward-fix-only · halt-rollout+kill-switch | The rollback pre-condition in `aidlc/construction/ship.md` and the stable gate in `aidlc/operations/operate.md`. |
+| `release.signals` | four names | Step 1 and the stable gate in `aidlc/operations/operate.md`. |
+| `release.window` | a period | The stable gate in `aidlc/operations/operate.md`. |
+| `verify.*` | commands | `aidlc/construction/build.md`, `test.md`, `ship.md`, `review.md`. |
+| `verify.eval` | command | The eval pre-condition in `aidlc/construction/ship.md` and the runner path in `aidlc/construction/eval.md`. |
+
+A shipped store binary cannot be un-shipped, and an applied migration often
+cannot be reverted — declare `forward-fix-only` or `halt-rollout+kill-switch` and
+verify the kill switch rather than pretending a redeploy exists.
+
+An **empty** `verify` value declares that the project has no such check, which
+leaves the gate explicitly unnamed rather than silently passed. Where `coverage`
+is empty, `aidlc/rules/testing.md` requires a named coverage equivalent instead.
