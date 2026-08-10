@@ -1,10 +1,13 @@
+# Adoption step: replace OWNER/REPO with your own. Left as a placeholder on purpose —
+# a hardcoded upstream URL silently routes an adopter's vulnerability reports to a
+# stranger's repo, which is a disclosure leak, not a broken link.
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/ianchan0817/aidlc-template/security/advisories/new
+    url: https://github.com/OWNER/REPO/security/advisories/new
     about: >-
       Never file security issues publicly. Use private vulnerability reporting.
       Scope and out-of-scope cases are in SECURITY.md.
   - name: Ask a question / discuss the methodology
-    url: https://github.com/ianchan0817/aidlc-template/discussions
+    url: https://github.com/OWNER/REPO/discussions
     about: Open-ended questions, workflow experience reports, and proposals.

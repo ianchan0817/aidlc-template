@@ -70,7 +70,7 @@ existing copies** — there is no update channel. After any advisory, re-check
 your copy:
 
 ```bash
-bash scripts/audit.sh        # 18 structural sensors, incl. the guard self-test
+bash scripts/audit.sh        # structural sensors, incl. the guard self-test
 ```
 
 The guard's behaviour is pinned by `scripts/guard-cases.tsv`; the audit runs

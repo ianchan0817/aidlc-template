@@ -38,18 +38,26 @@ sum_words() {
   echo "$total"
 }
 
+# `find` on a missing directory exits 1, and under `set -euo pipefail` that aborts
+# the whole run in a command substitution — silently, with zero checks reported.
+# Deleting the tool dirs you do not use is step 1 of adoption (README), so the
+# unguarded form made the audit die on the most common adopter action.
+words_in() {
+  { find "$@" -type f 2>/dev/null || true; } | sum_words
+}
+
 # Split the canonical tree by how it actually reaches a context window:
 #   methodology — roles, rules, phases, common: loaded on demand while working
 #   examples    — fill-in artifact templates, read only when producing that
 #                 artifact (README: "documentation, not auto-loaded")
 # Budgeting them as one number measures the wrong thing.
-METHOD_TOTAL=$(find aidlc -name '*.md' -type f -not -path 'aidlc/examples/*' 2>/dev/null | sum_words)
-EXAMPLES_TOTAL=$(find aidlc/examples -name '*.md' -type f 2>/dev/null | sum_words)
+METHOD_TOTAL=$(words_in aidlc -name '*.md' -not -path 'aidlc/examples/*')
+EXAMPLES_TOTAL=$(words_in aidlc/examples -name '*.md')
 AIDLC_TOTAL=$((METHOD_TOTAL + EXAMPLES_TOTAL))
-MEM_TOTAL=$(find memory -name '*.md' -type f 2>/dev/null | sum_words)
-CLAUDE_TOTAL=$(find .claude -name '*.md' -type f 2>/dev/null | sum_words)
-CURSOR_TOTAL=$(find .cursor \( -name '*.md' -o -name '*.mdc' \) -type f 2>/dev/null | sum_words)
-CODEX_TOTAL=$(find .codex -name '*.md' -type f 2>/dev/null | sum_words)
+MEM_TOTAL=$(words_in memory -name '*.md')
+CLAUDE_TOTAL=$(words_in .claude -name '*.md')
+CURSOR_TOTAL=$(words_in .cursor \( -name '*.md' -o -name '*.mdc' \))
+CODEX_TOTAL=$(words_in .codex -name '*.md')
 
 printf "  %-40s %6d words\n" "aidlc/ methodology (loads on demand)" "$METHOD_TOTAL"
 printf "  %-40s %6d words\n" "aidlc/examples/ (artifact templates)" "$EXAMPLES_TOTAL"
@@ -70,13 +78,17 @@ fi
 # it scales with phases (14), roles (3), rules (8) and common docs (3), any of
 # which an agent may load while working. Examples get a looser cap because only
 # one is ever read at a time, when that artifact is being produced.
+# These two are FAIL, not WARN. CONTRIBUTING.md states "Exit 0 or it isn't ready"
+# and lists the word budgets first, but a WARN exits 0 — so a PR that blew the cap
+# merged green and the discipline the methodology rests on was never enforced.
+# The budget is only a tripwire if tripping it stops something.
 if [[ $METHOD_TOTAL -gt 8000 ]]; then
-  echo "[WARN] Methodology heavy ($METHOD_TOTAL words). Target: <8000."
-  WARN=$((WARN+1))
+  echo "[FAIL] Methodology over budget ($METHOD_TOTAL words). Cap: 8000. Displace prose; do not raise the cap."
+  FAIL=$((FAIL+1))
 fi
 if [[ $EXAMPLES_TOTAL -gt 2500 ]]; then
-  echo "[WARN] Artifact templates heavy ($EXAMPLES_TOTAL words). Target: <2500."
-  WARN=$((WARN+1))
+  echo "[FAIL] Artifact templates over budget ($EXAMPLES_TOTAL words). Cap: 2500."
+  FAIL=$((FAIL+1))
 fi
 # Per-file size is the metric that actually affects adherence — an agent reads
 # one phase file, not the whole tree. Past ~700 words a file stops being
@@ -112,6 +124,16 @@ fi
 while IFS= read -r ref; do
   case "$ref" in
     *'{'*|*'*'*|*'<'*|*NNN*) continue ;;
+  esac
+  # A doc that describes all three tools names all three tools' files. Once an
+  # adopter removes the tools they do not use, those references are intentionally
+  # dangling, not broken — otherwise adoption step 1 makes the audit red and the
+  # only way back to green is editing the shared docs. Skip refs into an absent
+  # tool dir; still check them for every tool that is present.
+  case "$ref" in
+    .claude/*|.cursor/*|.codex/*)
+      [[ -d "${ref%%/*}" ]] || continue
+      ;;
   esac
   case "$ref" in
     aidlc/*|memory/*|docs/*|scripts/*|.claude/*|.cursor/*|.codex/*|AGENTS.md|CLAUDE.md|README.md|init.sh.example)
@@ -245,11 +267,14 @@ done
 [[ $DESC_WARN -eq 0 ]] && echo "  [ok]   adapter descriptions cover infra/deploy, security, escalation/risk"
 
 # 2d. Rule parity: every canonical rule needs a pointer in each tool's native format.
+#     Parity is only meaningful for tools this repo actually adapts. Adoption step 1
+#     is deleting the tool dirs you do not use, so an absent .cursor/ is a choice,
+#     not a defect — parity is checked per present tool, never for an absent one.
 for c in aidlc/rules/*.md; do
   [[ -f "$c" ]] || continue
   base=$(basename "$c" .md)
-  [[ -f ".claude/rules/$base.md" ]] || { printf "  [FAIL] no Claude rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
-  [[ -f ".cursor/rules/$base.mdc" ]] || { printf "  [FAIL] no Cursor rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
+  [[ ! -d .claude/rules ]] || [[ -f ".claude/rules/$base.md" ]] || { printf "  [FAIL] no Claude rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
+  [[ ! -d .cursor/rules ]] || [[ -f ".cursor/rules/$base.mdc" ]] || { printf "  [FAIL] no Cursor rule pointer for %s\n" "$c"; FAIL=$((FAIL+1)); }
 done
 echo "  [ok]   rule adapter parity check complete"
 
@@ -295,12 +320,54 @@ for f in SECURITY.md CONTRIBUTING.md LICENSE docs/repo-setup.md \
 done
 # codeql must stay inactive: an active CodeQL run on a markdown-only repo fails
 # every time and trains people to ignore a red X.
-if [[ -f .github/workflows/codeql.yml ]] && ! git ls-files --error-unmatch \
-     -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.rb' '*.rs' '*.java' >/dev/null 2>&1; then
+# `--error-unmatch` with several pathspecs exits 1 when ANY one is unmatched, so
+# the old form condemned a real TypeScript repo for having no .py files. Count
+# matches instead: source present is a non-empty list, not an all-pathspecs hit.
+SCANNABLE=$(git ls-files -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.rb' '*.rs' '*.java' 2>/dev/null | head -1)
+if [[ -f .github/workflows/codeql.yml && -z $SCANNABLE ]]; then
   printf "  [FAIL] codeql.yml is active but the repo has no scannable source — keep it as codeql.yml.example\n"
   FAIL=$((FAIL+1)); REPO_FAIL=$((REPO_FAIL+1))
 fi
+# Deliberately NOT sensed: "you have source, so activate CodeQL". It fired on this
+# repo's single 60-line SARIF converter, and a check that goes yellow when nothing
+# is wrong is how a team learns to ignore the colour. That guidance is prose in
+# docs/repo-setup.md, not a sensor.
 [[ $REPO_FAIL -eq 0 ]] && echo "  [ok]   repository hygiene files present (policy, CI, PR/issue templates)"
+
+# 2e3. `.gitignore` is the ONLY thing enforcing the "no .env in commits"
+#      non-negotiable locally: the command guard blocks readers of .env but
+#      nothing stops `git add .env`. Assert the rule works and that it does not
+#      over-match the example file adopters are told to commit.
+IGN_FAIL=0
+if [[ ! -f .gitignore ]]; then
+  printf "  [FAIL] no .gitignore — the 'no secrets in commits' non-negotiable has zero local enforcement\n"
+  FAIL=$((FAIL+1)); IGN_FAIL=1
+else
+  git check-ignore -q .env 2>/dev/null || {
+    printf "  [FAIL] .gitignore does not match .env\n"; FAIL=$((FAIL+1)); IGN_FAIL=1; }
+  if git check-ignore -q .env.example 2>/dev/null; then
+    printf "  [FAIL] .gitignore swallows .env.example — adopters need it committed\n"
+    FAIL=$((FAIL+1)); IGN_FAIL=1
+  fi
+fi
+# Committed secrets are the failure this exists to prevent; check the index too.
+while IFS= read -r tracked; do
+  [[ -z $tracked ]] && continue
+  printf "  [FAIL] secret-shaped file is tracked by git: %s\n" "$tracked"
+  FAIL=$((FAIL+1)); IGN_FAIL=1
+done < <(git ls-files -- '.env' '.env.*' '*.pem' '*.key' '*.p12' 2>/dev/null | grep -vE '\.(example|sample)$' || true)
+[[ $IGN_FAIL -eq 0 ]] && echo "  [ok]   .gitignore covers secrets, spares .env.example, no secrets tracked"
+
+# 2e4. Template-author URLs must not survive adoption. A hardcoded advisory link
+#      routes an adopter's vulnerability reports to a stranger's repo — a
+#      disclosure leak that looks like a working button.
+UPSTREAM=$(grep -rlE 'github\.com/[A-Za-z0-9_-]+/aidlc-template' .github 2>/dev/null || true)
+if [[ -n $UPSTREAM ]]; then
+  printf "  [FAIL] upstream template URL still hardcoded in: %s — replace with OWNER/REPO\n" "$(echo "$UPSTREAM" | tr '\n' ' ')"
+  FAIL=$((FAIL+1))
+else
+  echo "  [ok]   no upstream template URLs in .github/ (adopter reports route to the adopter)"
+fi
 
 # 2f. Hook output schemas differ per tool; the wrong key is silently ignored,
 #     which turns a hook into a no-op that still reports success.

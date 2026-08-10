@@ -1,0 +1,81 @@
+# Secrets — AGENTS.md non-negotiable: "No secrets, credentials, or `.env` files in commits".
+# The command guard blocks *reading* .env; only this file blocks committing it.
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+secrets.yml
+secrets.yaml
+credentials.json
+service-account*.json
+
+# Agent tool local state (machine-specific, never shared)
+.claude/settings.local.json
+.cursor/settings.local.json
+.codex/auth.json
+.remember/
+CLAUDE.local.md
+AGENTS.local.md
+
+# Project bootstrap — copied from init.sh.example and customized per machine
+init.sh
+
+# Dependencies
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.bundle/
+Pods/
+
+# Build output
+dist/
+build/
+out/
+target/
+*.egg-info/
+.next/
+.nuxt/
+.svelte-kit/
+DerivedData/
+*.xcuserstate
+
+# Test / coverage artifacts
+coverage/
+.coverage
+.nyc_output/
+htmlcov/
+.pytest_cache/
+junit.xml
+*.lcov
+
+# Caches
+.cache/
+.parcel-cache/
+.turbo/
+.gradle/
+.mypy_cache/
+.ruff_cache/
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
