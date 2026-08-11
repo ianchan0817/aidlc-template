@@ -20,18 +20,11 @@ This file is loaded on **every session by every tool**, so it holds only what an
 - Reviewer/eval gates are independent — never self-mark a feature `passes: true`.
 - State what you verified and what you did not. A claim beyond the evidence is worse than no claim.
 
-## Session lifecycle
+## Session lifecycle & memory
 
-**Start:** read `aidlc/common/session-lifecycle.md` — bearings from `memory/progress.md`, the newest handoff in `memory/sessions/`, the backlog in `memory/features/`, `git log`, and `./init.sh` smoke when applicable.
-**End:** commit, then write this session's handoff to `memory/sessions/`. Only `reviewer` flips `passes: true` in a `memory/features/<id>.json` record.
+Read `aidlc/common/session-lifecycle.md` at session start — bearings, reconcile against the repo, one slice, handoff at the end.
 
-## Memory & artifacts
-
-- `memory/progress.md` — cross-session state only: known issues, blockers, open questions
-- `memory/sessions/<date>-<slug>.md` — one handoff per session (a field every session rewrites is a line every concurrent session collides on)
-- `memory/features/<id>.json` — one backlog record per feature; `memory/feature-list.json` is the manifest, never appended to
-- Status comes from `git log` — don't restate it in memory files
-- ADRs: `docs/adr/ADR-NNN-title.md` (format: `aidlc/examples/adr.md`)
+State lives by lifetime: cross-session issues and blockers in `memory/progress.md`; one handoff per session in `memory/sessions/`; one backlog record per feature in `memory/features/<id>.json`, where `memory/feature-list.json` is a manifest and must never be appended to. Status comes from `git log`, so don't restate it. ADRs: `docs/adr/ADR-NNN-title.md` (format: `aidlc/examples/adr.md`). Only `reviewer` flips `passes: true`.
 
 ## Lifecycle: WHAT → HOW → RUN
 
@@ -45,7 +38,7 @@ Never let "looks done" be the stop signal — name the check that decides, and p
 |------|-------|-----------|
 | `engineer` | Build, test, deploy, architecture, DB, CI/CD | `aidlc/agents/engineer.md` |
 | `reviewer` | Code review, security, runtime QA, evals, sprint contracts, E2E | `aidlc/agents/reviewer.md` |
-| `manager`  | Initiatives, coordination, daily reports, harness review | `aidlc/agents/manager.md` |
+| `manager`  | Initiatives, coordination, routing, harness review | `aidlc/agents/manager.md` |
 
 Claude Code and Cursor load roles via `agents/` adapters (`name` + `description` required, or the role never registers). Codex has no instruction-loading agents adapter — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants hold.
 
@@ -53,34 +46,23 @@ Run `reviewer` in a **fresh context** — its own subagent or session. Reviewing
 
 ## Engineering rules
 
-Canonical bodies in `aidlc/rules/*.md`, one source of truth: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`. Tool adapters are frontmatter wrappers pointing at the canonical file — Claude `paths:`, Cursor `globs:`/`alwaysApply:`, Codex reads the canonical file directly.
+Canonical bodies in `aidlc/rules/*.md`, one source of truth: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`. Adapters are frontmatter wrappers pointing at them; only `project` and `security` load unconditionally, the rest attach by path. How each loader wires that up: `CONTRIBUTING.md` → Adapter shape.
 
-Only `project` and `security` load unconditionally; every other rule is path-scoped, because an unscoped pointer also forces a read of its canonical body on every session. `scripts/audit.sh` fails if that set changes.
+## Done — the first five are non-negotiable
 
-## Non-negotiables
+A change is done when every line below holds. The first five cannot be waived: no
+merge, no release without them.
 
-- No merge without code review
-- No release without E2E sign-off
-- No skipping security review on auth, data, or external API changes
-- No secrets, credentials, or `.env` files in commits
-- No bypassing the coverage gate on new/modified code — the gate is stated once, in `aidlc/rules/testing.md`, including what counts where lines cannot be instrumented
-- No floating dependency ranges in production
-- No fix without a test (every prod incident → fix, test, or rule update)
-- No code without a plan for non-trivial changes
-- No flipping `passes: true` on a backlog record without reviewer-verified QA and a resolvable commit SHA
-
-## Done
-
-A change is done when:
-
-- Tests pass and the `testing` rule's coverage gate is met
-- Verified on the real target, not a proxy — and what was verified stated plainly, along with what was not
-- Reviewed, all critical issues resolved
-- E2E journeys signed off for changed flows
+- **Reviewed** in a fresh context, every critical issue resolved
+- **Tested** — suite green and the coverage gate in `aidlc/rules/testing.md` met, including where lines cannot be instrumented
+- **Secure** — audit clean if auth, data or an external API changed; no secrets, credentials or `.env` in the commit
+- **E2E signed off** for every changed flow
+- **Reproducible** — exact-pinned deps, pinned runtime, deploy traceable to a commit SHA
+- Verified on the real target, not a proxy, and what was *not* verified stated plainly
 - Agent eval suite green when AI-facing behavior changed (`aidlc/construction/eval.md`)
-- Security audit clean if auth/data/API touched
-- Build reproducible (locked deps, pinned runtime, deploy traceable to a commit SHA)
-- The declared `release.window` elapsed with the four declared `release.signals` green
+- Every prod incident closed by a fix, a test, or a rule update
+- `passes: true` set only by `reviewer`, with QA evidence and a resolvable commit SHA
+- The declared `release.window` elapsed with all four `release.signals` green
 
 ## Decision gates
 

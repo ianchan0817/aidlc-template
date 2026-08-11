@@ -173,6 +173,67 @@ something. State what you compressed.
 add guidance after the same failure has appeared twice, and delete rules the
 model already follows unprompted.
 
+## What the backlog sensor asserts
+
+For `scripts/audit.sh` (adopter arm). Schema and recipes are in
+[`memory/features/README.md`](memory/features/README.md); this is the sensor's
+contract, which belongs with the harness rather than with the data.
+
+**Derive the scope, do not enumerate it**: read `.records` from the manifest,
+strip the trailing `/*.json` for the directory, and `find` it. Moving the records
+then moves the sensor with them, and no hand-written file list can drift.
+
+On the manifest: it exists, parses, `.records` is a string ending in `/*.json`,
+that directory exists, and `.features` is absent or empty — a non-empty array is a
+second backlog the aggregate never reads.
+
+On every `*.json` in the derived directory: it is a JSON **object**; `git
+check-ignore` does **not** match it; `.id` is non-empty, matches
+`^[A-Za-z0-9][A-Za-z0-9._-]*$`, and equals the filename minus `.json`; `.passes`
+is a boolean; `.priority`, if present, is an integer. When `.passes` is `true`:
+`.verified_sha` matches `^[0-9a-f]{40}$` — which is what rejects `HEAD`, `main` and
+`HEAD~0`, since a revision expression resolves to today's tip and the QA it claims
+could never be re-run against what was reviewed — **and** `git cat-file -e
+"$sha^{commit}"` succeeds, and `.verified_by` is non-empty.
+
+Not asserted, deliberately: ancestry of `verified_sha` (false on shallow clones
+and after squash-merges), and any claim that the reviewer rather than the engineer
+authored the flip — git authorship of the record's commit is the record, and a
+one-file diff is what makes it reviewable.
+
+## Adapter shape
+
+What each loader requires. This lives here, not in `CLAUDE.md`, because it is
+needed when you *change* the harness — charging every session to carry it is the
+cost this template exists to avoid.
+
+- **Prose pointers, not `@`-imports.** Adapters say "Read and execute
+  `aidlc/<phase>/<name>.md`". `@` paths resolve relative to the containing file,
+  forcing `../../` chains, and do not exist in Cursor or Codex. One Read per
+  invocation buys repo-rooted paths and three-tool symmetry; the audit verifies
+  every target exists.
+- **`agents/<role>.md`** — `name` + `description` (both **required**, or the
+  subagent never registers), `model: inherit`, comma-separated `tools`, then a
+  repo-rooted ref to `aidlc/agents/{engineer,manager,reviewer}.md`.
+- **`skills/<name>/SKILL.md`** — the directory name is the command. A flat
+  `skills/<name>.md` is **not** loaded. `/ship` carries
+  `disable-model-invocation: true` on Claude and a sibling `agents/openai.yaml`
+  with `policy: allow_implicit_invocation: false` on Codex, because it pushes.
+- **`rules/`** — path-scoped via `paths:` (Claude) or `globs:`/`alwaysApply:`
+  (Cursor); bodies are pointers to canonical `aidlc/rules/*.md`. Codex reads the
+  canonical file directly. Exactly **two** load unconditionally — `project` (how
+  the `project.yml` declaration reaches every session) and `security` — because an
+  unconditional pointer also forces a read of its canonical body every session.
+  The audit fails if that set changes. An *empty* `paths:` block is a dead rule
+  and fails the audit; an absent block does not.
+- **`settings.json` hooks** — `SessionStart` (bearings) and `PreToolUse`
+  (dangerous-command guard, delegating to `scripts/guard-command.sh` so the
+  pattern is shared rather than pasted three times). `permissions.allow` is a
+  convenience boundary, not a security boundary: it permits interpreters, so the
+  secret-file check has to live in the hook. A `Stop` hook is the deterministic
+  completion gate; wire one per project once a check reliably passes on a clean
+  tree (`aidlc/common/session-lifecycle.md` → Close the loop).
+
 ## Verifying adapter changes
 
 The audit checks *shape*, not behaviour. A structurally valid adapter can still

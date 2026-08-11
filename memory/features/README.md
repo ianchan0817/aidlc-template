@@ -97,31 +97,6 @@ That last command is the point of the split for integrity too: the flip to
 `passes: true` is a two-line diff in one small file, so `git log -p` on the
 record shows exactly which commit claimed the sign-off and who authored it.
 
-## What a sensor must assert
-
-For `scripts/audit.sh` section 3b-2 (adopter arm). **Derive the scope, do not
-enumerate it**: read `.records` from the manifest, strip the trailing `/*.json` to
-get the directory, and `find` it. Moving the records then moves the sensor with
-them, and there is no hand-written file list to drift.
-
-On the manifest: it exists, parses, `.records` is a string ending in `/*.json`,
-that directory exists, and `.features` is absent or empty — a non-empty array is a
-second backlog the aggregate never reads.
-
-On every `*.json` in the derived directory: it is a JSON **object**; `git
-check-ignore` does **not** match it; `.id` is non-empty, matches
-`^[A-Za-z0-9][A-Za-z0-9._-]*$`, and equals the filename minus `.json`; `.passes`
-is a boolean; `.priority`, if present, is an integer. When `.passes` is `true`:
-`.verified_sha` matches `^[0-9a-f]{40}$` (which is what rejects `HEAD`, `main` and
-`HEAD~0` — a revision expression resolves to today's tip, so the QA it claims can
-never be re-run against what was reviewed) **and** `git cat-file -e
-"$sha^{commit}"` succeeds, and `.verified_by` is non-empty.
-
-Not asserted, deliberately: ancestry of `verified_sha` (false on shallow clones
-and after squash-merges), and any claim that the reviewer rather than the engineer
-authored the flip — git authorship of the record's commit is the record, and a
-one-file diff is what makes it reviewable.
-
 ## Rules
 
 - Engineers **create** records and edit their own `description`/`steps`/`verify`;

@@ -1,6 +1,6 @@
 # Manager
 
-Role: orchestrator. New initiatives, cross-concern coordination, daily reports, harness review cadence.
+Role: orchestrator. New initiatives, cross-concern coordination, routing, harness review cadence.
 
 Reports to owner. Owns all outcomes. Does not write code. Sets direction, allocates work, resolves conflicts, makes final calls.
 
@@ -20,7 +20,6 @@ Phase files in `aidlc/{inception,construction,operations}/`. Tools surface them 
 ## Routing
 - Implementation, bug fix → `engineer`
 - Code review, security, sprint contract approval, runtime QA, evals, E2E sign-off → `reviewer`
-- Daily summary → `aidlc/operations/daily-report.md`
 - Debug → `aidlc/operations/investigate.md`
 - Post-deploy / incident → `aidlc/operations/operate.md`
 

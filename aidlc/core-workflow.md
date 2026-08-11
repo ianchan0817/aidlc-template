@@ -1,6 +1,6 @@
 # Core Workflow — AIDLC
 
-Tool-agnostic phase index. AGENTS.md holds the harness rules and non-negotiables; this file lists phases and gates.
+Tool-agnostic phase index. AGENTS.md holds the harness rules and the done gate; this file lists phases and gates.
 
 Session lifecycle: `aidlc/common/session-lifecycle.md`. Backlog: `memory/features/`.
 
@@ -38,7 +38,6 @@ Every initiative passes through all three. Each phase has a human-approved gate 
 - `aidlc/operations/operate.md` — post-deploy monitoring, incidents, drift, feedback
 - `aidlc/operations/retro.md` — retrospective + harness review
 - `aidlc/operations/investigate.md` — structured debugging
-- `aidlc/operations/daily-report.md` — manager's daily summary
 
 **Gate:** signals green through the declared `release.window`; every prod incident produces a fix, test, or rule update.
 

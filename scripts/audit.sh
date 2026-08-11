@@ -812,6 +812,27 @@ elif [[ $TEMPLATE -eq 1 ]]; then
   FAIL=$((FAIL+1))
 fi
 
+# 2i2. Markdown links resolve. The reference sensor above checks backtick-quoted
+#      repo paths, which left `[text](path)` unchecked — and a link is resolved
+#      RELATIVE TO ITS OWN FILE, so `docs/x.md` writing `(CONTRIBUTING.md)` points
+#      at `docs/CONTRIBUTING.md` and silently 404s. Cost of a dead link is an agent
+#      spending a tool call to find nothing. Anchors, mail and http are skipped.
+LINK_FAIL=0
+while IFS= read -r f; do
+  [[ -z $f ]] && continue
+  while IFS= read -r l; do
+    [[ -z $l ]] && continue
+    case $l in http*|mailto:*|'#'*) continue ;; esac
+    target=${l%%#*}
+    [[ -z $target ]] && continue
+    if [[ ! -e "$(dirname "$f")/$target" ]]; then
+      printf "  [FAIL] %s links to %s, which does not exist relative to it\n" "$f" "$l"
+      FAIL=$((FAIL+1)); LINK_FAIL=$((LINK_FAIL+1))
+    fi
+  done < <(grep -oE '\]\([^)]+\)' "$f" 2>/dev/null | sed 's/](\(.*\))/\1/' || true)
+done < <(git ls-files '*.md' 2>/dev/null || true)
+[[ $LINK_FAIL -eq 0 ]] && echo "  [ok]   every relative markdown link resolves from its own file"
+
 # 2j. No calendar dates anywhere in the tree. A template is copied to start every
 #     project, so a date in it is stale the moment it is written and tells an
 #     adopter nothing — a "verified on <date>" line ages into a false claim

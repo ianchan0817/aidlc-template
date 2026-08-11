@@ -16,7 +16,7 @@ If ambiguity remains, run the **interview** move (agent asks one question at a t
 - **Use cases** — business context, user segments, JTBD, actor/preconditions/flow/postconditions, out of scope
 - **RICE** — Reach × Impact × Confidence / Effort
 - **Feature spec** — problem, solution, acceptance criteria (Given/When/Then), success metrics, constraints, integration impact
-- **Backlog** — append accepted use cases to `memory/feature-list.json` as `passes: false` entries (shape: `aidlc/examples/feature-list.md`)
+- **Backlog** — one `passes: false` record per accepted use case at `memory/features/<id>.json`. Never append to `memory/feature-list.json`; it is a manifest and a non-empty `features` array fails the audit (schema: `memory/features/README.md`)
 
 ## Gate
 Do not proceed to plan or design until: measurable success metric, at least one use case with acceptance criteria, explicit out-of-scope.

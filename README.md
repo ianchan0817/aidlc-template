@@ -129,7 +129,6 @@ convenience, not requirement.
 | `/operate` | Post-deploy, incident, or the stable check |
 | `/investigate` | Bug or failure — root cause before fix |
 | `/retro` | Sprint end, or after a model upgrade |
-| `/daily-report` | Standup or status roll-up |
 
 Common paths:
 
@@ -193,7 +192,6 @@ aidlc/               Canonical methodology
   construction/      plan · build · test · eval · review ·
                      security · e2e · ship
   operations/        operate · retro · investigate ·
-                     daily-report
   rules/             7 canonical rule bodies
   common/            decision-gates · unknowns · lifecycle
   examples/          Fill-in artifact templates
