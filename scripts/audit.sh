@@ -235,6 +235,47 @@ if [[ $SKILL_FAIL -eq 0 ]]; then
   echo "  [ok]   skills load as <tool>/skills/<name>/SKILL.md, identical set per tool"
 fi
 
+# 2b-2. A manual-only skill must be manual-only ON EVERY TOOL. `/ship` pushes and
+#       opens PRs, and `disable-model-invocation: true` is a Claude Code field —
+#       Codex accepts only `name` and `description` in SKILL.md and ignores the
+#       rest silently, so the model could invoke /ship on Codex unasked. Codex's
+#       mechanism is a sibling `agents/openai.yaml` with
+#       `policy: allow_implicit_invocation: false` (verified 2026-08-11,
+#       https://learn.chatgpt.com/docs/build-skills). Assert the pair: a skill
+#       marked manual for one tool must be marked manual for the other.
+MANUAL_FAIL=0
+if [[ -d .agents/skills ]]; then
+  while IFS= read -r sk; do
+    [[ -z $sk ]] && continue
+    name=$(basename "$(dirname "$sk")")
+    pol="$(dirname "$sk")/agents/openai.yaml"
+    if [[ ! -f $pol ]]; then
+      printf "  [FAIL] .agents/skills/%s is manual-only elsewhere but has no agents/openai.yaml — Codex would invoke it implicitly\n" "$name"
+      FAIL=$((FAIL+1)); MANUAL_FAIL=$((MANUAL_FAIL+1))
+    elif ! grep -qE '^[[:space:]]*allow_implicit_invocation:[[:space:]]*false' "$pol"; then
+      printf "  [FAIL] %s does not set allow_implicit_invocation: false\n" "$pol"
+      FAIL=$((FAIL+1)); MANUAL_FAIL=$((MANUAL_FAIL+1))
+    fi
+  done < <(grep -rl 'disable-model-invocation:[[:space:]]*true' .agents/skills 2>/dev/null || true)
+  [[ $MANUAL_FAIL -eq 0 ]] && echo "  [ok]   manual-only skills are manual on Codex too (agents/openai.yaml policy)"
+fi
+
+# 2b-3. A SessionStart hook that fires only on a fresh start misses the sessions
+#       that need bearings most — resumed, cleared and compacted ones, where the
+#       context is stale or was just discarded. Codex documents the source set as
+#       startup|resume|clear|compact and treats `matcher` as a regex (verified
+#       2026-08-11, https://learn.chatgpt.com/docs/hooks); ours matched only
+#       "startup" for months.
+if [[ -f .codex/hooks.json ]] && command -v jq >/dev/null 2>&1; then
+  narrow=$(jq -r '[.hooks.SessionStart[]?.matcher // ""] | map(select(. == "startup")) | length' .codex/hooks.json 2>/dev/null || echo 0)
+  if [[ "${narrow:-0}" -gt 0 ]]; then
+    printf "  [FAIL] .codex/hooks.json SessionStart matches only \"startup\" — no bearings on resume, clear or compact\n"
+    FAIL=$((FAIL+1))
+  else
+    echo "  [ok]   SessionStart fires on resumed and compacted sessions, not only fresh starts"
+  fi
+fi
+
 # 2c. Subagent frontmatter: `name` and `description` are required by Claude Code
 #     and Cursor. Without `name` the agent silently fails to register.
 for f in .claude/agents/*.md .cursor/agents/*.md; do

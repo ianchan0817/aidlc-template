@@ -6,7 +6,7 @@ This file is loaded on **every session by every tool**, so it holds only what an
 
 ## Project shape — read first
 
-`project.yml` at the repo root declares `surfaces`, `stateful`, `multi_tenant`, `release`, and `verify`. Claude Code and Cursor load it through an always-on rule; **Codex has no rules directory, so read `project.yml` from here at session start.**
+`project.yml` at the repo root declares `surfaces`, `stateful`, `multi_tenant`, `release`, and `verify`. Claude Code and Cursor load it through an always-on rule; **Codex has no path-scoped instruction rules, so read `project.yml` from here at session start.**
 
 **The contract:** a gate whose surface or capability `project.yml` does not declare does not apply and needs no skip rationale; a gate it does declare cannot be skipped. Adapt by declaring, never by deleting — a deleted file dangles a reference and fails `scripts/audit.sh`. What each field switches, and the per-surface spellings: `docs/project-shapes.md`.
 
@@ -47,7 +47,7 @@ Never let "looks done" be the stop signal — name the check that decides, and p
 | `reviewer` | Code review, security, runtime QA, evals, sprint contracts, E2E | `aidlc/agents/reviewer.md` |
 | `manager`  | Initiatives, coordination, daily reports, harness review | `aidlc/agents/manager.md` |
 
-Claude Code and Cursor load roles via `agents/` adapters (`name` + `description` required, or the role never registers). Codex has no agents dir — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants hold.
+Claude Code and Cursor load roles via `agents/` adapters (`name` + `description` required, or the role never registers). Codex has no instruction-loading agents adapter — state the role explicitly ("act as reviewer per `aidlc/agents/reviewer.md`") so role invariants hold.
 
 Run `reviewer` in a **fresh context** — its own subagent or session. Reviewing inline, in the context that wrote the code, defeats the split.
 

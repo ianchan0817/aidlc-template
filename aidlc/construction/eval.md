@@ -25,14 +25,15 @@ Grade **outcomes and artifacts** before process. Avoid brittle "must call tool X
 
 Graduate stable capability tasks to regression. Watch **eval saturation** (all tasks pass → suite no longer differentiates).
 
-Metrics: **pass@k** = any of k trials succeeds (capability); **pass^k** = all k succeed (reliability). They diverge fast — 75% per-trial ≈ 42% pass^3. Gate releases on pass^k for user-facing flows.
+Metrics: **pass@k** = any of k trials succeeds (capability); **pass^k** = all k succeed. They diverge fast — 75% per-trial ≈ 42% pass^3. Gate user-facing flows on pass^k.
 
 ## Practice
 - Start with 20–50 real failures; unambiguous tasks; reference solution proving solvability.
-- Isolate trials — reset environment between runs; no state leakage across trials.
+- Isolate trials — reset environment between runs, no state leakage, and pin the resource
+  envelope (CPU, memory, timeout): an unpinned gate is measuring the runner.
 - Balance **should** vs **should not** (search when needed vs avoid over-searching).
 - Read transcripts on failures — fix agent, grader, or task spec at the right layer. 0% across all trials usually means a broken task.
 - Agents optimize against the sensor: audit graders and contracts for gameable criteria before trusting green.
-- Track traces/metrics that explain regressions: tool calls, tokens, latency, error loops, and verification evidence.
-- Re-run after model upgrades; tune prompts/rules with traces as signal.
+- Track what explains a regression: tool calls, tokens, latency, error loops, evidence.
+- Re-run after model upgrades (`aidlc/operations/retro.md` step 3).
 - Keep tasks under `evals/` (or the `verify.eval` path in `project.yml`); record the runner command there too.

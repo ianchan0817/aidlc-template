@@ -134,3 +134,19 @@ Tests that run when someone remembers to run them are not a gate. Everything in
 `project.yml`'s `verify` block runs in CI on every pull request, unprompted, and
 a red run blocks the merge — that is what `.github/workflows/verify.yml.example`
 wires up. A suite you have to ask for measures intent, not the code.
+
+## Browser-surface security checklist
+
+Applies when `project.yml` declares a `web` surface. The invariant lives in
+`aidlc/rules/security.md`; these are its spellings, kept here because they are
+concrete and per-surface.
+
+- No `dangerouslySetInnerHTML` (or equivalent raw-HTML injection) without
+  sanitizing the input first.
+- User-supplied URLs restricted to `https?://` — a `javascript:` or `data:` URL
+  in an `href` is script execution.
+- A Content-Security-Policy without `unsafe-eval` and without `unsafe-inline`.
+- Auth cookies `HttpOnly`, `Secure`, `SameSite=Strict` — or `Lax` only where a
+  documented cross-site flow needs it.
+- Nothing sensitive in `localStorage` or `sessionStorage`: both are readable by
+  any script on the origin, so an XSS becomes a token theft.

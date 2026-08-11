@@ -85,3 +85,42 @@ lifecycle), **Made-With-ML** (a course, and its structure already maps onto the
 three phases), and **awesome-production-machine-learning** (a tool directory —
 though its dated monthly release is where the verification line at the top of
 this file came from).
+
+## Vendor contracts — re-verify these at each harness review
+
+Adapter formats move, and a format change turns a pointer into a silent no-op.
+Each was fetched **2026-08-11**; each has already been wrong once.
+
+- **[Codex skills](https://learn.chatgpt.com/docs/build-skills)** — discovery is
+  `.agents/skills/<name>/SKILL.md`, and SKILL.md accepts only `name` and
+  `description`. `disable-model-invocation` is a Claude Code field that Codex
+  ignores silently, so a manual-only skill needs a sibling
+  `agents/openai.yaml` with `policy: allow_implicit_invocation: false` — without
+  it the model can invoke `/ship`, which pushes, unasked.
+- **[Codex hooks](https://learn.chatgpt.com/docs/hooks)** — `SessionStart.source`
+  is one of `startup|resume|clear|compact` and `matcher` is a regex. Matching only
+  `startup` skips the sessions whose context is stale or was just discarded.
+- **[Codex rules](https://learn.chatgpt.com/docs/agent-configuration/rules)** —
+  `.codex/rules/*.rules` is a Starlark **command-execution policy**
+  (`prefix_rule` → `allow`/`prompt`/`forbidden`), not an instruction loader.
+  Worth noting: it supports `match`/`not_match` test cases and a
+  `codex execpolicy check` validator — the same discipline as
+  `scripts/guard-cases.tsv`, arrived at independently.
+- **[Claude Code best practices](https://code.claude.com/docs/en/best-practices)**
+  — a Stop hook is overridden after 8 consecutive blocks.
+
+## Also read, and what they add
+
+- **[Anthropic — Infrastructure noise](https://www.anthropic.com/engineering/infrastructure-noise)**
+  — an eval's resource envelope is a confounder big enough to swamp model
+  differences: holding model, harness and task set fixed, resourcing alone moved
+  Terminal-Bench 2.0 by ~6 points. Pin the trial envelope or an eval gate is
+  measuring the runner.
+- **[Anthropic — Eval awareness](https://www.anthropic.com/engineering/eval-awareness-browsecomp)**
+  — an agent may satisfy a benchmark by recognising it and recovering the answer
+  key instead of doing the task, and the tell is token cost rather than output.
+- **[Codex custom review rules](https://learn.chatgpt.com/blog/custom-code-review-rules-for-codex)**
+  — a prose rule is itself testable: one diff that must trip it, one near-miss
+  that must not, one unrelated diff that must stay silent. Their own suite put
+  rule-guided review at 98% of required findings against 58.3% for the control —
+  directional only, since the harness is unpublished.
