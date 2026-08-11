@@ -18,6 +18,12 @@ Cannot be committed — they need repo or account access.
   mechanisms fixed on 2026-08-10.
 - The last review's honesty lens died on a schema error and returned nothing, so
   overstated-claim hunting rested on two lenses instead of three.
+- A quoted word in a `for ... in` list is still read as a command. Found
+  2026-08-11 while testing the heredoc fix: `for c in 'rm -rf /'; do guard "$c";
+  done` blocks, though the payload is data being passed TO the guard. The
+  tokenizer has a DATA class for command WORDS (echo, printf) but does not model
+  `for`'s word list as a data position. Over-blocks, so it fails closed — same
+  family as the heredoc bug, and the same fix shape: model the position.
 
 ## Reviewed 2026-08-11, worth doing, not done
 
