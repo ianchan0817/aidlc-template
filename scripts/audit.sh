@@ -500,7 +500,11 @@ fi
 # `--error-unmatch` with several pathspecs exits 1 when ANY one is unmatched, so
 # the old form condemned a real TypeScript repo for having no .py files. Count
 # matches instead: source present is a non-empty list, not an all-pathspecs hit.
-SCANNABLE=$(git ls-files -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.rb' '*.rs' '*.java' 2>/dev/null | head -1)
+# The trailing `|| true` is load-bearing: outside a git work tree `git ls-files`
+# exits 128, and under `pipefail` that status survives the pipe and `set -e`
+# aborts the whole audit here — 18 checks in, exit 128, no [FAIL] line. A sensor
+# that dies silently is worse than one that is missing.
+SCANNABLE=$(git ls-files -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.rb' '*.rs' '*.java' 2>/dev/null | head -1 || true)
 if [[ -f .github/workflows/codeql.yml && -z $SCANNABLE ]]; then
   printf "  [FAIL] codeql.yml is active but the repo has no scannable source — keep it as codeql.yml.example\n"
   FAIL=$((FAIL+1)); REPO_FAIL=$((REPO_FAIL+1))
@@ -741,6 +745,59 @@ PY
   fi
 elif [[ $TEMPLATE -eq 0 ]]; then
   echo "  [skip] README mobile render — template-only sensor"
+fi
+
+# 2i. External-link registry. docs/references.md is the one place a source link
+#     lives, and it ratchets: entries gain verdicts, they do not get deleted.
+#     This sensor exists because the failure already happened — a README section
+#     was cut to save tokens and took five source links with it, including the
+#     origin of aidlc/common/unknowns.md. The methodology stayed in the repo, the
+#     attribution left it, and every check still passed. Two arms:
+#       floor    — the registry may only grow; shrinking it is a deliberate edit
+#       superset — a link cited anywhere else must also be registered, so cutting
+#                  the citing section can never be what loses the link
+#     Template-only: an adopter's docs/ is theirs, and they may not keep this file.
+if [[ $TEMPLATE -eq 1 ]] && [[ -f docs/references.md ]]; then
+  REF_FLOOR=49
+  urls_in() { grep -ohE 'https?://[^ )>"`,]+' "$@" 2>/dev/null | sed 's/[.,)]*$//' | sort -u; }
+  REF_N=$(urls_in docs/references.md | wc -l | tr -d ' ')
+  if [[ ${REF_N:-0} -lt $REF_FLOOR ]]; then
+    printf "  [FAIL] docs/references.md holds %s links; the floor is %d. Restore the entry.\n" "$REF_N" "$REF_FLOOR"
+    printf "         If a source is genuinely gone, keep the entry with its verdict and lower\n"
+    printf "         REF_FLOOR in this sensor — deliberately, in the same commit.\n"
+    FAIL=$((FAIL+1))
+  else
+    printf "  [ok]   external-link registry holds %s links (floor %d)\n" "$REF_N" "$REF_FLOOR"
+  fi
+
+  # Placeholders and badges are not sources: OWNER/REPO templates, shields.io
+  # badges, this repo's own URLs, and example hosts inside code samples.
+  CITED=$(mktemp); REGISTERED=$(mktemp)
+  # No mapfile: macOS ships bash 3.2, and the rest of this script runs there.
+  OTHER_MD=(); OTHER_N=0
+  while IFS= read -r f; do
+    OTHER_MD+=("$f"); OTHER_N=$((OTHER_N+1))
+  done < <(find README.md AGENTS.md CLAUDE.md docs aidlc -name '*.md' \
+    -not -path 'docs/references.md' -type f 2>/dev/null | sort)
+  if [[ $OTHER_N -gt 0 ]]; then
+    urls_in "${OTHER_MD[@]}" \
+      | grep -vE 'img\.shields\.io|example\.com|yourdomain|localhost|OWNER/REPO|github\.com/ianchan0817/' \
+      > "$CITED" || true
+    urls_in docs/references.md > "$REGISTERED" || true
+    UNREG=$(comm -23 "$CITED" "$REGISTERED" || true)
+    if [[ -n "$UNREG" ]]; then
+      printf "  [FAIL] link(s) cited outside the registry — add them to docs/references.md,\n"
+      printf "         so that cutting the citing section cannot be what loses them:\n"
+      printf "         %s\n" $UNREG
+      FAIL=$((FAIL+1))
+    else
+      printf "  [ok]   every link cited in %d other doc(s) is registered\n" "$OTHER_N"
+    fi
+  fi
+  rm -f "$CITED" "$REGISTERED"
+elif [[ $TEMPLATE -eq 1 ]]; then
+  printf "  [FAIL] docs/references.md is missing — it is the external-link registry\n"
+  FAIL=$((FAIL+1))
 fi
 
 # 3. Always-true invariants: model-agnostic and path-rooted.

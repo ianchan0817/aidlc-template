@@ -56,9 +56,27 @@ a rate limit or an offline runner is an audit people stop trusting. So the
 comment could drift from the pin and nothing would say so; re-check by hand at
 each harness review.
 
-When you do, dereference annotated tags. `git/matching-refs/tags/vX` returns the
+When dereferencing annotated tags: `git/matching-refs/tags/vX` returns the
 **tag object's** SHA for an annotated tag, not the commit — comparing that to a
 pin reports a false mismatch. Verified 2026-08-11: `github/codeql-action` v4.37.6
 has ref object `9e3211c9…` of type `tag`, which dereferences via
 `git/tags/<sha>` to commit `5595ccaf912e…`, which is what the workflows pin. All
 six pins were correct; the first check that said otherwise was the thing at fault.
+
+## Re-checking references at a harness review
+
+`bash scripts/check-links.sh` walks every URL in `docs/references.md` and reports
+alive / blocked / unreachable / dead, failing only on 4xx-5xx. It is not in
+`scripts/audit.sh` on purpose: the audit has to pass with no egress. Run it by
+hand, fix any dead URL **in place**, then bump the verification date and the
+last-run counts at the top of the file.
+
+Two things the script cannot tell you, so they stay manual: whether a hub has
+posted something new since the date at the top (that is what the *Re-check on a
+cadence* table is for), and whether a page's content still says what the entry
+claims — a vendor can rewrite a doc at the same URL and return 200.
+
+The ratchet is `REF_FLOOR` in `scripts/audit.sh`. Adding links is free; removing
+one fails the audit until you lower the floor in the same commit, which is the
+point — the sensor exists because five links vanished as collateral damage from a
+token-budget edit to `README.md`, with every check still green.

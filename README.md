@@ -211,8 +211,11 @@ Adapters use repo-rooted paths, so moving a file never breaks a reference. Your
 personal layer (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`) stays uncommitted
 and applies across projects; everything here is the project layer.
 
-Where the ideas come from, and which ones earned their place:
-[`docs/references.md`](docs/references.md).
+Where the ideas come from, which ones earned their place, and the doc hubs worth
+re-reading on a cadence: [`docs/references.md`](docs/references.md). It is the
+registry for every external link in the repo — entries keep their verdict instead
+of being deleted, `bash scripts/check-links.sh` re-verifies them, and the audit
+fails if the list shrinks.
 
 ---
 
