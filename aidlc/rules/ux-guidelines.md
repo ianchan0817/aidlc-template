@@ -31,7 +31,7 @@ Ship all five: **loading** (skeleton, not spinner, past 300ms), **empty** (say w
 - Correct input types and `autocomplete` so the mobile keyboard matches the field.
 - Bottom sheet over modal on small screens. No hover-only affordance — touch has no hover.
 - Wide content (tables, code, diagrams) scrolls in its own container; the page never scrolls sideways.
-- Reserve space for async content so nothing shifts on load. Budget numbers per surface: `docs/project-shapes.md`.
+- Reserve space for async content so nothing shifts on load.
 
 ## Accessibility (WCAG 2.1 AA floor)
 - Contrast per the named pairs in `design-tokens.md`.

@@ -56,10 +56,9 @@ For non-trivial implementation, separate planning from execution:
 
 When a gated decision is reversed mid-flight: list the downstream artifacts it invalidates (plan steps, ADRs, tests, specs), confirm with the human, then update them all in the same change. Record the reversal in `memory/progress.md` Decisions.
 
-## Workspace Detection (Brownfield)
+## Existing codebases
 
-Before starting an initiative in an existing codebase:
-1. Detect existing artifacts (specs, ADRs, prior plans)
-2. If undocumented, write a one-page survey before planning: what the system does, components + dependencies, tech stack, test/lint state
-3. Before trusting existing docs/ADRs, check freshness against git history — refresh stale ones rather than planning on fiction
-4. Modify in place — do not create parallel-track files
+Find the specs, ADRs and prior plans first; if none exist, write a one-page survey
+before planning. Check any you find against git history before trusting them —
+refresh a stale doc rather than planning on fiction. Modify in place; a
+parallel-track file is a second source of truth.

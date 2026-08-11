@@ -19,7 +19,7 @@ Bearings (start) and handoff (end) so work survives context resets.
 5. Record evidence, not confidence.
 
 ### Close the loop on "done"
-An agent stops when work *looks* done, so name the check that decides and pick how hard it gates: **per-prompt** (name it in the request), **per-session** (a standing goal condition, where the tool has one), **deterministic** (a stop hook blocking the turn until the check exits 0 — strongest and most brittle, so wire it only once a command passes reliably on a clean tree, with a bypass for the session that fixes the check), or a **second opinion** (fresh-context `reviewer`, diff and contract only). Until the hook is safe, use the first plus `reviewer`. Grade the outcome, never the path.
+An agent stops when work *looks* done, so name the check that decides and pick how hard it gates: **per-prompt** (name it in the request), **per-session** (a standing goal condition, where the tool has one), **deterministic** (a stop hook blocking the turn until the check exits 0 — strongest, but bounded: the tool ends the turn anyway after ~8 consecutive blocks, so wire it only once a command passes reliably on a clean tree), or a **second opinion** (fresh-context `reviewer`, diff and contract only). Until the hook is safe, use the first plus `reviewer`. Grade the outcome, never the path.
 
 ## Compact — when context degrades
 Long sessions rot: attention dilutes, early instructions fade. Triggers: ~half the window consumed, **two corrections on the same point** (a third rarely lands — the failures are now the context), or re-asking answered questions. Then:
