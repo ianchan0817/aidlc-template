@@ -45,6 +45,9 @@
 0	pytest -q
 0	git push origin feature-branch
 0	git push --force-with-lease origin my-branch
+0	git commit -F msg.txt && git push origin main
+0	git commit -q -F /tmp/m.txt; git push origin main
+2	git push -f origin main && git commit -F msg.txt
 0	git reset --soft HEAD~1
 0	chmod +x scripts/foo.sh
 0	chmod 755 scripts/foo.sh

@@ -487,8 +487,13 @@ rules_shell() {
   fi
 
   # git push --force. --force-with-lease is the safe form and stays allowed.
+  # The FLAG test must be case-sensitive. `shopt -s nocasematch` is on for the SQL
+  # and Redis keyword rules, and it made `-f` match `-F` — so `git commit -F msg`
+  # in the same command as a push read as a force push and blocked a real commit.
+  # Shell flags are case-sensitive; only SQL keywords are not. grep without -i
+  # gives a case-sensitive test without disturbing the global setting.
   if [[ $seg =~ (^|[[:space:]])git[[:space:]]+push([[:space:]]|$) ]] &&
-     [[ $seg =~ (--force([[:space:]]|$)|(^|[[:space:]])-f([[:space:]]|$)) ]] &&
+     printf '%s' "$seg" | grep -qE -e '(--force([[:space:]]|$)|(^|[[:space:]])-f([[:space:]]|$))' &&
      [[ ! $seg =~ --force-with-lease ]]; then
     block "git push --force (prefer --force-with-lease; never on main/master)"
   fi
