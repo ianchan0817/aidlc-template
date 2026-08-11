@@ -674,6 +674,10 @@ if [[ -x scripts/guard-command.sh ]]; then
   # shellcheck disable=SC2016
   while IFS=$'\t' read -r want cmd; do
     [[ -z "${want:-}" ]] && continue
+    # The corpus is line-based but a heredoc is not, so a row encodes newlines as
+    # the two characters \n. Substituting only that sequence, rather than running
+    # the field through `printf %b`, leaves every other backslash alone.
+    cmd=${cmd//'\n'/$'\n'}
     set +e; bash scripts/guard-command.sh "$cmd" >/dev/null 2>&1; got=$?; set -e
     if [[ "$got" != "$want" ]]; then
       printf "  [FAIL] guard-command.sh: want exit %s, got %s, for: %s\n" "$want" "$got" "$cmd"

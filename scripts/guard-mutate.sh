@@ -78,6 +78,17 @@ while IFS=$'\t' read -r want cmd; do
   [ -z "${cmd:-}" ] && continue
   ROWS=$((ROWS + 1))
 
+  # A row may encode newlines as the two characters \n — the corpus is
+  # line-based and a heredoc is not. Every mutation below rewrites the command as
+  # a single line (wrapping, prefixing, re-spacing, re-casing), and all of those
+  # change what a heredoc MEANS: `sudo cat <<'EOF'` moves the body, and
+  # `${cmd// /  }` re-spaces a delimiter line so it no longer terminates. Skip
+  # the row rather than generate cases whose expected verdict is a guess.
+  case $cmd in
+    *'\n'*) skip "$want" heredoc-multiline "row spans lines; every mutation here is single-line and would change its meaning: $cmd"
+            continue ;;
+  esac
+
   # --- invariance: a wrapper, a prefix or extra whitespace changes nothing ----
   case $cmd in
     sudo\ *) skip "$want" sudo-prefix "already sudo-prefixed: $cmd" ;;

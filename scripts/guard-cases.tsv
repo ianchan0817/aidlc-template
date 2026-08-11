@@ -198,3 +198,21 @@
 2	fastlane supply
 0	fastlane scan
 0	fastlane build_app --export_method development
+0	cat > notes.md <<'EOF'\n.env files must never be committed\nEOF
+0	cat > notes.md <<'EOF'\nrm -rf / is the canonical example\nEOF
+0	cat > notes.md <<'EOF'\nDROP TABLE users; -- do not do this\nEOF
+0	cat > notes.md <<'EOF'\ngit push --force origin main\nEOF
+0	cat > notes.md <<"EOF"\nchmod -R 777 /var is a finding\nEOF
+0	cat > notes.md <<-'EOF'\n\tcat .env is blocked\n\tEOF
+0	cat > notes.md <<\EOF\ncat .env is blocked\nEOF
+0	cat > doc.md <<'EOF'\nkubectl delete namespace prod\nEOF
+0	cat <<'EOF' > out.txt\nhello\nEOF
+2	cat <<'EOF' > .claude/settings.json\n{}\nEOF
+2	cat > f.txt <<EOF\n$(cat .env)\nEOF
+2	cat > f.txt <<EOF\n`cat .env`\nEOF
+2	cat > f.txt <<EOF\n$(rm -rf /)\nEOF
+0	cat > f.txt <<EOF\nplain text, no substitution\nEOF
+2	echo '<<X'\nrm -rf /
+2	cat > f.txt <<'EOF'\nharmless\nrm -rf /
+0	cat <<< hello
+2	cat <<< .env

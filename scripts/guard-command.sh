@@ -399,8 +399,109 @@ emit_seg() { # raw segment, separator
   add_seg "$sep" "${K2[*]}" "$cw" "$s1" "$s2" "$last"
 }
 
+# A HEREDOC BODY IS DATA, NOT COMMANDS.
+# Found 2026-08-11: writing a scratch file whose PROSE mentions `.env` was blocked
+# as "reads a .env file", and one quoting `rm -rf /` as "recursive force-delete".
+# The tokenizer splits on newlines, so every line of the body landed in a command
+# position. Same defect as the earlier `git commit -m "...chmod -R 777..."` case:
+# dangerous text matched where nothing dangerous executes.
+#
+# Direction of the fix matters, because a heredoc is only inert when quoted:
+#   <<'EOF' / <<"EOF" / <<\EOF  the shell expands NOTHING — body is pure data
+#   <<EOF                       the body still expands, so `$(...)` and backticks
+#                               inside it DO execute and must survive as segments
+# The rest of the introducing LINE stays command text: `cat <<EOF > out.txt` still
+# redirects, and the redirect rules must still see it.
+#
+# Two ways this could fail OPEN, both closed here. It must be quote-aware, or
+# `echo "<<X"` on one line would eat the next line as body and hide whatever it
+# holds. And an UNTERMINATED heredoc consumes nothing at all — swallowing to
+# end-of-input is exactly the swallowing a bypass would want, so a missing
+# terminator leaves the text alone and the ordinary rules run on it.
+strip_heredocs() { # command text -> HD_OUT (body-free command, substitutions kept)
+  local s=$1 n=${#1} i=0 out='' subs='' c q=''
+  while [ "$i" -lt "$n" ]; do
+    c=${s:i:1}
+    if [ -n "$q" ]; then                      # inside quotes: copy through
+      [ "$c" = "$q" ] && q=''
+      out=$out$c; i=$((i+1)); continue
+    fi
+    case $c in
+      "'"|'"') q=$c; out=$out$c; i=$((i+1)); continue ;;
+      '\') out=$out$c${s:i+1:1}; i=$((i+2)); continue ;;
+    esac
+    # `<<<` is a here-STRING (one word, no body to consume) — leave it to pass 1.
+    if [ "$c" = '<' ] && [ "${s:i+1:1}" = '<' ] && [ "${s:i+2:1}" != '<' ]; then
+      # `dq`, not `q`: `local q` here would re-bind the outer quote state, since
+      # bash `local` is function-scoped and this is the same function.
+      local j=$((i+2)) delim='' quoted=0 dq body='' term=0
+      [ "${s:j:1}" = '-' ] && j=$((j+1))
+      while [ "$j" -lt "$n" ] && [ "${s:j:1}" = ' ' ]; do j=$((j+1)); done
+      case ${s:j:1} in
+        "'"|'"')
+          quoted=1; dq=${s:j:1}; j=$((j+1))
+          while [ "$j" -lt "$n" ] && [ "${s:j:1}" != "$dq" ]; do delim=$delim${s:j:1}; j=$((j+1)); done
+          j=$((j+1)) ;;
+        '\')
+          quoted=1; j=$((j+1))
+          while [ "$j" -lt "$n" ]; do
+            case ${s:j:1} in [A-Za-z0-9_]) delim=$delim${s:j:1}; j=$((j+1)) ;; *) break ;; esac
+          done ;;
+        *)
+          while [ "$j" -lt "$n" ]; do
+            case ${s:j:1} in [A-Za-z0-9_]) delim=$delim${s:j:1}; j=$((j+1)) ;; *) break ;; esac
+          done ;;
+      esac
+      # No delimiter word: not a heredoc (`a << b` is a shift in arithmetic, or
+      # simply malformed). Emit the `<<` and carry on.
+      if [ -z "$delim" ]; then out=$out'<<'; i=$((i+2)); continue; fi
+      # Keep the remainder of the introducing line as command text.
+      local rest=''
+      while [ "$j" -lt "$n" ] && [ "${s:j:1}" != $'\n' ]; do rest=$rest${s:j:1}; j=$((j+1)); done
+      j=$((j+1))
+      # Consume body lines until one is exactly the delimiter (leading tabs and
+      # surrounding blanks tolerated, as <<- and real shells do).
+      local line=''
+      while [ "$j" -le "$n" ]; do
+        if [ "$j" -eq "$n" ] || [ "${s:j:1}" = $'\n' ]; then
+          case ${line#"${line%%[![:space:]]*}"} in
+            "$delim") term=1 ;;
+            *) body=$body$line$'\n' ;;
+          esac
+          line=''; j=$((j+1))
+          [ "$term" -eq 1 ] && break
+          continue
+        fi
+        line=$line${s:j:1}; j=$((j+1))
+      done
+      # No terminator: consume NOTHING. Emit `<<` and resume one char on, so the
+      # ordinary rules still see every line that follows.
+      if [ "$term" -eq 0 ]; then out=$out'<<'; i=$((i+2)); continue; fi
+      out=$out$rest
+      # Unquoted delimiter: the body still expands, so its substitutions run.
+      # Append them as their own commands; drop the literal text.
+      if [ "$quoted" -eq 0 ]; then
+        local b=$body k=0 m=${#body}
+        while [ "$k" -lt "$m" ]; do
+          if [ "${b:k:1}" = '$' ] && [ "${b:k+1:1}" = '(' ]; then
+            grab_paren "$b" $((k+1)); subs=$subs';'$GRAB_TXT; k=$GRAB_END; continue
+          fi
+          if [ "${b:k:1}" = '`' ]; then
+            grab_backtick "$b" "$k"; subs=$subs';'$GRAB_TXT; k=$GRAB_END; continue
+          fi
+          k=$((k+1))
+        done
+      fi
+      out=$out$'\n'; i=$j; continue
+    fi
+    out=$out$c; i=$((i+1))
+  done
+  HD_OUT=$out$subs
+}
+
 tokenize() {
-  Q_TXT=("$1"); Q_SEP=('^')
+  strip_heredocs "$1"
+  Q_TXT=("$HD_OUT"); Q_SEP=('^')
   SEG_SEP=(); SEG_TXT=(); SEG_CW=(); SEG_S1=(); SEG_S2=(); SEG_LAST=()
   local qi=0
   while [ "$qi" -lt "${#Q_TXT[@]}" ]; do
@@ -677,7 +778,9 @@ if [ "$#" -eq 2 ] && [ "$1" = "--batch" ]; then
   [ -r "$2" ] || { echo "guard-command.sh --batch: cannot read $2" >&2; exit 1; }
   while IFS= read -r line || [ -n "$line" ]; do
     [ -z "$line" ] && continue
-    ( evaluate "$line" ) >/dev/null 2>&1
+    # Same `\n` convention as scripts/guard-cases.tsv: the batch file is
+    # line-based, so a multi-line command encodes its newlines as two characters.
+    ( evaluate "${line//'\n'/$'\n'}" ) >/dev/null 2>&1
     printf '%s\t%s\n' "$?" "$line"
   done <"$2"
   exit 0
