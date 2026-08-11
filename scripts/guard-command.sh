@@ -400,11 +400,11 @@ emit_seg() { # raw segment, separator
 }
 
 # A HEREDOC BODY IS DATA, NOT COMMANDS.
-# Found 2026-08-11: writing a scratch file whose PROSE mentions `.env` was blocked
-# as "reads a .env file", and one quoting `rm -rf /` as "recursive force-delete".
-# The tokenizer splits on newlines, so every line of the body landed in a command
-# position. Same defect as the earlier `git commit -m "...chmod -R 777..."` case:
-# dangerous text matched where nothing dangerous executes.
+# Writing a file whose PROSE mentions `.env` used to be blocked as "reads a .env
+# file", and one quoting `rm -rf /` as "recursive force-delete": the tokenizer
+# splits on newlines, so every line of the body landed in a command position. Same
+# defect as `git commit -m "...chmod -R 777..."` — dangerous text matched where
+# nothing dangerous executes.
 #
 # Direction of the fix matters, because a heredoc is only inert when quoted:
 #   <<'EOF' / <<"EOF" / <<\EOF  the shell expands NOTHING — body is pure data

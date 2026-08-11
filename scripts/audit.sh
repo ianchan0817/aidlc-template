@@ -190,10 +190,10 @@ echo "  [ok]   internal reference check complete"
 #     skills/<name>.md is silently ignored, so the slash command never exists.
 SKILL_REF=""
 SKILL_FAIL=0
-# Codex discovers skills at `.agents/skills`, NOT `.codex/skills` — verified
-# 2026-08-10 at https://learn.chatgpt.com/docs/build-skills. This repo shipped 14
-# SKILL.md files under `.codex/skills` and this sensor printed [ok], so every
-# phase command was dead in Codex while CI was green. Assert the documented path.
+# Codex discovers skills at `.agents/skills`, NOT `.codex/skills` — per
+# https://learn.chatgpt.com/docs/build-skills. A full set of SKILL.md files under
+# `.codex/skills` once passed this sensor as [ok], so every phase command was dead
+# in Codex while CI stayed green. Assert the documented path.
 for tool in .claude .cursor .agents; do
   [[ -d "$tool/skills" ]] || continue
   while IFS= read -r stray; do
@@ -240,8 +240,8 @@ fi
 #       Codex accepts only `name` and `description` in SKILL.md and ignores the
 #       rest silently, so the model could invoke /ship on Codex unasked. Codex's
 #       mechanism is a sibling `agents/openai.yaml` with
-#       `policy: allow_implicit_invocation: false` (verified 2026-08-11,
-#       https://learn.chatgpt.com/docs/build-skills). Assert the pair: a skill
+#       `policy: allow_implicit_invocation: false`
+#       (https://learn.chatgpt.com/docs/build-skills). Assert the pair: a skill
 #       marked manual for one tool must be marked manual for the other.
 MANUAL_FAIL=0
 if [[ -d .agents/skills ]]; then
@@ -263,9 +263,9 @@ fi
 # 2b-3. A SessionStart hook that fires only on a fresh start misses the sessions
 #       that need bearings most — resumed, cleared and compacted ones, where the
 #       context is stale or was just discarded. Codex documents the source set as
-#       startup|resume|clear|compact and treats `matcher` as a regex (verified
-#       2026-08-11, https://learn.chatgpt.com/docs/hooks); ours matched only
-#       "startup" for months.
+#       startup|resume|clear|compact and treats `matcher` as a regex
+#       (https://learn.chatgpt.com/docs/hooks). A matcher of just "startup" is the
+#       easy mistake, and nothing about it looks broken.
 if [[ -f .codex/hooks.json ]] && command -v jq >/dev/null 2>&1; then
   narrow=$(jq -r '[.hooks.SessionStart[]?.matcher // ""] | map(select(. == "startup")) | length' .codex/hooks.json 2>/dev/null || echo 0)
   if [[ "${narrow:-0}" -gt 0 ]]; then
@@ -784,8 +784,16 @@ if [[ $TEMPLATE -eq 1 ]] && [[ -f docs/references.md ]]; then
   done < <(find README.md AGENTS.md CLAUDE.md docs aidlc -name '*.md' \
     -not -path 'docs/references.md' -type f 2>/dev/null | sort)
   if [[ $OTHER_N -gt 0 ]]; then
+    # Placeholders and badges are not sources. The repo's OWN url is derived from
+    # the remote, never hardcoded — a template that names its upstream stops being
+    # generic the moment someone copies it.
+    SELF_URL=$(git remote get-url origin 2>/dev/null \
+      | sed -e 's#^git@\([^:]*\):#https://\1/#' -e 's#\.git$##' || true)
+    SELF_RE='^$'
+    [[ -n "$SELF_URL" ]] && SELF_RE=$(printf '%s' "$SELF_URL" | sed 's#[.[\*^$/]#\\&#g')
     urls_in "${OTHER_MD[@]}" \
-      | grep -vE 'img\.shields\.io|example\.com|yourdomain|localhost|OWNER/REPO|github\.com/ianchan0817/' \
+      | grep -vE 'img\.shields\.io|example\.com|yourdomain|localhost|OWNER/REPO' \
+      | grep -vE "$SELF_RE" \
       > "$CITED" || true
     urls_in docs/references.md > "$REGISTERED" || true
     UNREG=$(comm -23 "$CITED" "$REGISTERED" || true)
@@ -802,6 +810,32 @@ if [[ $TEMPLATE -eq 1 ]] && [[ -f docs/references.md ]]; then
 elif [[ $TEMPLATE -eq 1 ]]; then
   printf "  [FAIL] docs/references.md is missing — it is the external-link registry\n"
   FAIL=$((FAIL+1))
+fi
+
+# 2j. No calendar dates anywhere in the tree. A template is copied to start every
+#     project, so a date in it is stale the moment it is written and tells an
+#     adopter nothing — a "verified on <date>" line ages into a false claim
+#     without a single edit. The same goes for dated narrative ("found while X"),
+#     which is the maintainer's session state wearing a fact's clothing.
+#     Replace a freshness date with a runnable re-check (scripts/check-links.sh);
+#     replace an incident note with the defect class it taught, stated timelessly.
+#     LICENSE is exempt: a copyright year is a legal necessity, not a freshness
+#     claim. `YYYY-MM-DD` placeholders are fine — they are format, not a date.
+if [[ $TEMPLATE -eq 1 ]]; then
+  DATED=$(git ls-files -z 2>/dev/null \
+    | xargs -0 grep -lnE '(^|[^0-9])(19|20)[0-9]{2}-[0-1][0-9]-[0-3][0-9]([^0-9]|$)' 2>/dev/null \
+    | grep -v '^LICENSE$' || true)
+  if [[ -n "$DATED" ]]; then
+    printf "  [FAIL] calendar date(s) found — a template must carry none:\n"
+    while IFS= read -r f; do
+      [[ -z $f ]] && continue
+      printf "         %s: %s\n" "$f" \
+        "$(grep -oE '(19|20)[0-9]{2}-[0-1][0-9]-[0-3][0-9]' "$f" | sort -u | tr '\n' ' ')"
+    done <<<"$DATED"
+    FAIL=$((FAIL+1))
+  else
+    echo "  [ok]   no calendar dates in the tree (LICENSE exempt)"
+  fi
 fi
 
 # 3. Always-true invariants: model-agnostic and path-rooted.
@@ -893,21 +927,11 @@ if [[ $TEMPLATE -eq 0 ]]; then
 echo
 echo "=== Adopter checks ==="
 
-# 3b-0. No template-maintenance state in an adopted copy. This repo is both a
-#       template and a project, and the two kinds of state were mixed: an adopter
-#       inherited this template's own changelog and session handoffs about fixing
-#       its command guard as their project's starting memory. Every one of those
-#       reads as project history to the next session, and a model has no way to
-#       tell somebody else's narrative from its own.
-#       Deleting `.maintainer/` is an adoption step, so its presence here is the
-#       tell that the step was skipped.
+# 3b-0. No inherited session state. A handoff describes one session's work, so any
+#       that ships with the template belongs to whoever wrote it — and it reads as
+#       project history to the next session, which has no way to tell somebody
+#       else's narrative from its own.
 MAINT_FAIL=0
-if [[ -d .maintainer ]]; then
-  printf "  [FAIL] .maintainer/ is present in an adopted copy — delete it; it holds the TEMPLATE's own history, not your project's\n"
-  FAIL=$((FAIL+1)); MAINT_FAIL=1
-fi
-# A stale handoff is the same defect one level down: session records describe one
-# session's work, so any that predate adoption belong to whoever wrote them.
 while IFS= read -r stale; do
   [[ -z $stale ]] && continue
   printf "  [FAIL] %s ships with the template — a handoff describes one session's work and cannot describe yours\n" "$stale"

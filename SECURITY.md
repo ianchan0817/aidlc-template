@@ -16,8 +16,8 @@ to maintainers.
 
 If that button is not on the Security tab, the repository toggle is off and this
 policy has no working channel — do **not** post details in a public issue. Ask
-the maintainer to enable it first (exact path and verified current state:
-[`docs/repo-setup.md`](docs/repo-setup.md)).
+the maintainer to enable it first; the exact path is in
+[`docs/repo-setup.md`](docs/repo-setup.md).
 
 <!-- Maintainer: add a fallback contact here (email or Keybase) if you want one,
      and enable Settings → Advanced Security → Private vulnerability reporting. -->

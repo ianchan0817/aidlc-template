@@ -1,7 +1,7 @@
 # `disable-model-invocation` in SKILL.md is a Claude Code field. Codex accepts
 # only `name` and `description` there and ignores the rest silently, so on Codex
 # the model could invoke /ship — which pushes and opens PRs — without being asked.
-# Verified 2026-08-11 at https://learn.chatgpt.com/docs/build-skills:
+# Per https://learn.chatgpt.com/docs/build-skills (re-verify at each harness review):
 # "When false, Codex won't implicitly invoke the skill based on user prompt;
 #  explicit $skill invocation still works."
 policy:

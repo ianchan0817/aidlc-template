@@ -113,9 +113,9 @@ deterministic. When you add an invariant, ask whether the audit can check it —
 and if you add a check, **negative-test it**: regress the invariant on a scratch
 copy and confirm the audit exits non-zero. A sensor that cannot fail is theater.
 
-Watch for substring matches while you're at it. A previous arm used
-`grep -q "Write"`, which was satisfied by `TodoWrite` and could therefore never
-fail; the fix was a delimiter-anchored match. Prove the arm fires, don't assume.
+Watch for substring matches while you're at it. `grep -q "Write"` is satisfied by
+`TodoWrite`, so an arm written that way can never fail; anchor on delimiters
+instead. Prove the arm fires, don't assume.
 
 ### Rejected sensors and accepted blind spots — do not re-propose
 

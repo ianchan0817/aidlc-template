@@ -6,18 +6,18 @@ source stops being useful** — the entry stays with its verdict, because a link
 removed is a link somebody re-researches from scratch next year. A verdict is
 cheap to write once and expensive to rediscover.
 
-Last full verification: **2026-08-11**. Re-verify with:
+There is deliberately **no "last verified" date** here. A date ages into a false
+claim without anyone touching the file; a command stays true. Re-verify with:
 
 ```bash
 bash scripts/check-links.sh
 ```
 
-That script is deliberately *not* wired into `scripts/audit.sh` — the audit must
-pass offline and on a runner with no egress, so a network check there would make a
-green build depend on someone else's uptime. Last run: **47 alive, 2 blocked, 0
-dead of 49**. The two blocked are `openai.com/index/*`, which answers **403 to
-every automated fetch** — the script labels them `[blocked]`, not dead, and they
-have to be opened in a browser.
+It is deliberately *not* wired into `scripts/audit.sh` — the audit must pass
+offline and on a runner with no egress, so a network check there would make a
+green build depend on someone else's uptime. Expect two `[blocked]`, not dead:
+`openai.com/index/*` answers **403 to every automated fetch** and has to be opened
+in a browser.
 
 ---
 
@@ -175,7 +175,7 @@ tool, where this template is a small methodology for three.
 ## Vendor contracts — re-verify these at each harness review
 
 Adapter formats move, and a format change turns a pointer into a silent no-op.
-Each was fetched **2026-08-11**; each has already been wrong once.
+Each of these has already been wrong in this repo once.
 
 - **[Codex skills](https://learn.chatgpt.com/docs/build-skills)** — discovery is
   `.agents/skills/<name>/SKILL.md`, and SKILL.md accepts only `name` and
@@ -231,6 +231,5 @@ live sources that were weighed and did not change a rule or a sensor.
 - **[Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview)**
   — a hosted-execution product. Its session, sandbox and event model is vendor-run
   infrastructure rather than a principle to copy into a repo-local harness.
-- **Anthropic's agent-security posts** — four were read during the 2026-08-11
-  round and produced no new rule or sensor: `aidlc/rules/security.md` already
-  covers the ground.
+- **Anthropic's agent-security posts** — four were read and produced no new rule
+  or sensor: `aidlc/rules/security.md` already covers the ground.

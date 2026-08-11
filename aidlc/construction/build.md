@@ -10,7 +10,7 @@ Phase: Construction. Incremental TDD in thin vertical slices.
 4. **Verify** — tests pass, no lint/type errors, the `testing` rule's coverage gate met; run runtime/E2E proof for changed user journeys.
 5. **Commit** — one slice = one commit, behavior-descriptive message.
 6. **Log surprises** — keep implementation notes (format: `aidlc/examples/implementation-notes.md`): on deviation, pick the conservative option, log it, keep going. Fold-back bullets feed the next plan.
-7. **Handoff** — update `memory/progress.md` (Last Session, Next Session, verification evidence). Leave merge-ready: no half-wired features without a Known Issues note.
+7. **Handoff** — handoff to `memory/sessions/` (changed, evidence, not verified, next); cross-session state only in `memory/progress.md`. Merge-ready: no half-wired feature without a Known Issues line.
 8. **Repeat** — after all slices: full suite green, self-review, run `aidlc/construction/review.md`.
 
 ## Operating rules

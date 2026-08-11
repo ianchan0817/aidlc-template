@@ -48,12 +48,9 @@ history; `git clone` would drag the template's commits into your log.
 
 Then seven steps. Each says what it buys.
 
-1. **Delete `aidlc/.template` and `.maintainer/`.** The marker is what tells
-   `scripts/audit.sh` this repo *is* the template — removing it drops the
-   maintainer-only sensors and starts the adopter checks. `.maintainer/` holds
-   this template's own changelog and decisions; inherited, they read as *your*
-   project's history, and a model cannot tell someone else's narrative from its
-   own. The safety sensors run in **both** modes.
+1. **Delete `aidlc/.template`.** The marker is what tells `scripts/audit.sh` this
+   repo *is* the template — removing it drops the maintainer-only sensors and
+   starts the adopter checks. The safety sensors run in **both** modes.
 2. **Start `memory/` from empty.** It ships as structure only, so the first
    session writes your first record instead of reading a stranger's.
 3. **Fill in `project.yml`.** The one file you must edit. Every conditional gate

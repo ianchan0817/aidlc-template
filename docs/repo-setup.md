@@ -17,22 +17,22 @@ that no commit can set, so they're listed here with exact paths.
 | PR gate checklist | `.github/PULL_REQUEST_TEMPLATE.md` | AIDLC gates as a review checklist |
 | Issue routing | `.github/ISSUE_TEMPLATE/` | Sends security reports to private advisories |
 
-## Verified state of *this* repository
+## Read your own state first
 
-Read from the GitHub API on 2026-08-10, so the list below is observed, not
-assumed. An adopted copy starts from GitHub's defaults, not from these values.
+No commit can set any of these, so no file can record them either — a checked-in
+list of settings is stale the moment someone flips a switch. Read the live values,
+then work the list below:
 
-| Setting | State | Consequence |
-|---|---|---|
-| Template repository | on | "Use this template" works; see README → Day 0 |
-| Secret scanning | **enabled** | committed secrets are detected |
-| Secret-scanning push protection | **enabled** | secrets blocked at `git push` |
-| Private vulnerability reporting | **disabled** | `SECURITY.md` points at a Report button that is not rendered — item 1 below |
-| Dependabot security updates | **disabled** | `dependabot.yml` opens version PRs; nothing opens *vulnerability* PRs — item 2 |
-| Branch rulesets | **none** | `audit` and `shellcheck` run but block nothing — "Quality" below |
-| Wiki | enabled, never created | the tab exists and is empty |
-| Description / topics | empty | the repo is undiscoverable by search |
-| Discussions | disabled | the issue-template link to Discussions 404s until enabled |
+```bash
+gh api repos/{owner}/{repo} --jq '{private,has_wiki,has_discussions,description,topics}'
+gh api repos/{owner}/{repo}/rulesets --jq '.[].name'
+```
+
+Security toggles are under Settings → Advanced Security. Two consequences worth
+knowing before you look: with **private vulnerability reporting** off,
+`SECURITY.md` points at a Report button GitHub does not render; with **Dependabot
+security updates** off, `dependabot.yml` still opens version PRs but nothing opens
+*vulnerability* PRs.
 
 ## Toggles you must set by hand
 
@@ -68,7 +68,7 @@ so until CodeQL runs, an injection or deserialization bug in app code has **no**
 scanner looking for it.
 
 This deliberately is **not** an audit sensor. A "you have source, activate
-CodeQL" check fires on this repo's own 60-line SARIF converter, and a check that
+CodeQL" check fires on any repo holding a single helper script, and a check that
 goes red when nothing is wrong is how a team learns to ignore the colour. It
 stays prose, here and in the header of `codeql.yml.example`. The inverse *is*
 sensed:
@@ -77,8 +77,8 @@ scannable source, because a workflow that fails every run is worse than none.
 
 ## Quality: make the gate real
 
-A green check nobody enforces is decoration — and this repo currently has **no
-rulesets**, so `audit` and `shellcheck` report without blocking. Settings →
+A green check nobody enforces is decoration: until a ruleset requires them,
+`audit` and `shellcheck` report without blocking anything. Settings →
 **Rules → Rulesets** → New branch ruleset, target `main`:
 
 - Require a pull request before merging (1 approval; dismiss stale approvals)
@@ -87,9 +87,9 @@ rulesets**, so `audit` and `shellcheck` report without blocking. Settings →
 - Block force pushes
 - Optionally require signed commits and linear history
 
-That last part matters for this repo specifically: `scripts/guard-command.sh`
-blocks force-pushes locally, but a local guard is advice. A ruleset is
-enforcement — server-side, and it applies to anyone with write access.
+Blocking force pushes matters most: `scripts/guard-command.sh` blocks them
+locally, but a local guard is advice. A ruleset is enforcement — server-side, and
+it applies to anyone with write access.
 
 ## Wiki
 
@@ -98,11 +98,13 @@ copied when someone clones or forks the template. That makes it the wrong home
 for anything an adopter needs — and mirroring the README into it would break the
 single-source-of-truth rule the template is built on.
 
-Use it for maintainer-side material that should *not* ship in the template:
+Use it for material that should *not* ship in the repo — anything dated,
+instance-specific, or narrative:
 
-- Roadmap and what's deliberately deferred (currently in `.maintainer/history.md`)
-- Methodology changelog — which reference each rule came from, and why rejected
-  ideas were rejected
+- Roadmap, and what is deliberately deferred
+- Changelog — which reference each rule came from, and why rejected ideas were
+  rejected
+- Observed state of your repo's settings, if you want it written down anywhere
 - FAQ and adoption notes ("we tried this on a Rails repo, here's what changed")
 - Migration notes between template versions, for people who copied an older one
 
