@@ -46,3 +46,19 @@ From fetching all 21 references. Each is a real gap, not a nice-to-have.
 `git push --force`. Shell flags are case-sensitive; only the SQL and Redis
 keyword rules need case-insensitivity. Fix: anchor the force-push flag test
 case-sensitively, and add both spellings to `guard-cases.tsv`.
+
+## Verifying SHA pins at a harness review
+
+`scripts/audit.sh` asserts every `uses:` carries a 40-hex ref, which is the part
+that can be checked offline. It does **not** check that the SHA matches the
+version in the trailing comment — that needs network, and an audit that fails on
+a rate limit or an offline runner is an audit people stop trusting. So the
+comment could drift from the pin and nothing would say so; re-check by hand at
+each harness review.
+
+When you do, dereference annotated tags. `git/matching-refs/tags/vX` returns the
+**tag object's** SHA for an annotated tag, not the commit — comparing that to a
+pin reports a false mismatch. Verified 2026-08-11: `github/codeql-action` v4.37.6
+has ref object `9e3211c9…` of type `tag`, which dereferences via
+`git/tags/<sha>` to commit `5595ccaf912e…`, which is what the workflows pin. All
+six pins were correct; the first check that said otherwise was the thing at fault.
