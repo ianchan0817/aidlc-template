@@ -24,6 +24,7 @@ The left column is what you see. The right column is never visible from it.
 | `Unable to Add for Review — You must choose a build` | No uploaded build has finished processing for that version. Not a metadata error; nothing on the page can clear it. |
 | App Store Connect demands iPad screenshots you don't want | The uploaded build's `UIDeviceFamily` includes `2`. Decided by the build, not by the version page. |
 | `The archive did not include a dSYM for <Vendor>.framework` | A **static** vendor framework is in an *embed* phase. Embedding produces a dylib at build time whose UUID changes per build, so the requested dSYM cannot exist. Link it instead; then nothing is embedded and nothing is asked for. |
+| App Store Connect lists a minimum OS you did not choose | The uploaded build's `MinimumOSVersion`. The exporter's deployment target, not the Xcode project you edited by hand. |
 | Upload rejected: encryption / export compliance outstanding | `ITSAppUsesNonExemptEncryption` missing from `Info.plist`. |
 | Upload rejected: duplicate build | Build number already used for that version string. |
 | Distribute succeeds but the build never appears | Processing takes 5–30 min, longer on a first submission. Wait before debugging. |
@@ -70,6 +71,13 @@ fresh upload, and another processing wait.
   determines which screenshot slots App Store Connect demands. Shipping
   universal also means the reviewer exercises your layout on an iPad, so a UI
   never tuned for one invites layout rejections on top of the screenshot rule.
+- **Deployment target: iOS 15.6 minimum.** Set `IPHONEOS_DEPLOYMENT_TARGET` in the
+  exporter, not the generated project, or the next export reverts it. Apple sets no
+  minimum deployment target — this is a project constraint, and lowering it below
+  15.6 needs a decision, not a default. What Apple *does* mandate is the **build
+  SDK**: uploads must be built with Xcode 26 or later using the iOS 26 SDK. The two
+  are independent — a current SDK does not raise your floor, and a low floor does
+  not exempt you from the SDK requirement.
 - **Export compliance.** `ITSAppUsesNonExemptEncryption`. If the app only uses
   OS-provided HTTPS, the honest declaration is `false`.
 - **Third-party static frameworks: link, do not embed.** Check before deciding —
@@ -87,6 +95,7 @@ The config is what you intended. The built `Info.plist` is what Apple grades.
 | `CFBundleVersion` | Duplicate build numbers are rejected at upload |
 | Encryption key present | Blocks the version page until supplied |
 | Ad-network app id is the **production** id | A post-export script defaulting to debug ships test ids |
+| `MinimumOSVersion` | Must be **15.6 or higher**; a correct build setting still exports wrong |
 | `UIDeviceFamily` | Decides your screenshot obligations |
 | Exactly one data pack, named after the executable | Engines that load `<executable>.pck` fail at launch, not at build |
 | No unexpected `Frameworks/` directory | An embedded static framework is the dSYM warning |
