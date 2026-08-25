@@ -110,8 +110,9 @@ languages outside the style adapters' thirteen extensions.
 ## Workflow
 
 Inception (WHAT) → Construction (HOW) → Operations (RUN), with a gate between
-each. Every command is one canonical file under `aidlc/`, surfaced as a slash
-command in all three tools. Open the file directly if you prefer — the slash is
+each. Every command is **one** canonical file surfaced as a slash command in all
+three tools — under `aidlc/` for a lifecycle phase, under `docs/` when the body is
+platform reference rather than process. Open the file directly if you prefer — the slash is
 convenience, not requirement.
 
 | Command | Use when |
@@ -126,6 +127,7 @@ convenience, not requirement.
 | `/review` | Ready to merge — two-pass review |
 | `/e2e` | Before release — journeys and sign-off |
 | `/ship` | All gates green — land the branch |
+| `/app-store-submit` | Shipping an iOS build to App Store Connect |
 | `/operate` | Post-deploy, incident, or the stable check |
 | `/investigate` | Bug or failure — root cause before fix |
 | `/retro` | Sprint end, or after a model upgrade |

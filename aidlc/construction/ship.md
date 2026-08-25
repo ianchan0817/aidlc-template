@@ -18,3 +18,5 @@ Phase: Construction. Land the current branch.
 5. Multi-stakeholder ship: package a **buy-in doc** — demo first, pre-answered objections, named sign-offs (`aidlc/common/unknowns.md`)
 
 **Do not ship without review and E2E sign-off.**
+
+Shipping to an app store is a separate gauntlet with its own ordering: `docs/app-store-submission.md` (`/app-store-submit`).

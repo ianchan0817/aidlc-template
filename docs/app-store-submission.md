@@ -1,7 +1,9 @@
 # App Store submission
 
-Reference for shipping an iOS build to App Store Connect. Read it **before** the
-first archive, not after the first rejection.
+Applies when `project.yml` declares a `mobile` surface with an iOS target.
+Reference for shipping an iOS build to App Store Connect, and the canonical body
+behind `/app-store-submit`. Read it **before** the first archive, not after the
+first rejection.
 
 The engineering is rarely what costs the time. Apple reports most causes as an
 unrelated symptom, in a dialog with no detail, hours after the edit that caused
@@ -161,9 +163,10 @@ plugins/<name>/*
 !plugins/<name>/*.<ext>
 ```
 
-Verify with `git add -An <path>`, not `git check-ignore` — `check-ignore` exits 0
-when *any* pattern matches, including a negation, so it reads as "ignored" for a
-file that is now tracked.
+Verify with `git check-ignore <path>`, which exits **1** once a negation has
+re-included the file and **0** while it is still ignored, naming the rule under
+`-v`. Prefer it to `git add -An`, which exits 0 either way and reports the
+difference only as text a script will miss.
 
 **Editor and export templates must be the same version.** A mismatch fails as a
 crash or a link error, never as a clear version message. Engine plugins built
