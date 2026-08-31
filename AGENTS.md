@@ -46,7 +46,7 @@ Run `reviewer` in a **fresh context** — its own subagent or session. Reviewing
 
 ## Engineering rules
 
-Canonical bodies in `aidlc/rules/*.md`, one source of truth: `code-style`, `testing`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`. Adapters are frontmatter wrappers pointing at them; only `project` and `security` load unconditionally, the rest attach by path. How each loader wires that up: `CONTRIBUTING.md` → Adapter shape.
+Canonical bodies in `aidlc/rules/*.md`, one source of truth: `code-style`, `testing`, `verification`, `security`, `api-conventions`, `design-tokens`, `ux-guidelines`, `reproducibility`. Adapters are frontmatter wrappers pointing at them; only `project` and `security` load unconditionally, the rest attach by path. How each loader wires that up: `CONTRIBUTING.md` → Adapter shape.
 
 ## Done — the first five are non-negotiable
 

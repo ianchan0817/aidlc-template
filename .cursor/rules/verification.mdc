@@ -1,0 +1,7 @@
+---
+alwaysApply: false
+description: Verification — measure the artefact, one decision in one place, negative controls
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx, **/*.py, **/*.go, **/*.rs, **/*.java, **/*.kt, **/*.swift, **/*.rb, **/*.cs, **/*.php, **/*.sh, **/*.sql, **/scripts/**, **/ci/**, **/.github/**, **/Makefile, **/Dockerfile, **/*.yml, **/*.yaml, **/*.toml, **/*.cfg
+---
+
+Apply rules in `aidlc/rules/verification.md`.
