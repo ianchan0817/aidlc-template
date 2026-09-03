@@ -762,7 +762,7 @@ fi
 #                  the citing section can never be what loses the link
 #     Template-only: an adopter's docs/ is theirs, and they may not keep this file.
 if [[ $TEMPLATE -eq 1 ]] && [[ -f docs/references.md ]]; then
-  REF_FLOOR=49
+  REF_FLOOR=63
   urls_in() { grep -ohE 'https?://[^ )>"`,]+' "$@" 2>/dev/null | sed 's/[.,)]*$//' | sort -u; }
   REF_N=$(urls_in docs/references.md | wc -l | tr -d ' ')
   if [[ ${REF_N:-0} -lt $REF_FLOOR ]]; then

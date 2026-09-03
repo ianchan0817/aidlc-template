@@ -201,6 +201,28 @@ and after squash-merges), and any claim that the reviewer rather than the engine
 authored the flip — git authorship of the record's commit is the record, and a
 one-file diff is what makes it reviewable.
 
+## Reviewing a skill or rule
+
+`aidlc/construction/review.md` reviews code. Nothing reviewed the harness itself,
+which is the part every future session inherits. Before merging a new or changed
+skill, rule or agent file, answer all six — an unanswerable one is the finding:
+
+1. **Trigger** — does the `description` say *when* to invoke, in words a model
+   matches on? A description that only says what the skill *is* never fires.
+2. **Scope** — is there exactly one job, and does the body say what it will NOT
+   do? Overlapping skills make the model pick, and it picks by description length.
+3. **Declaration** — if it applies to only some surfaces, does it open by naming
+   the `project.yml` condition, so it goes inert instead of misfiring?
+4. **Source** — is the body one canonical file, with adapters as pointers? Two
+   copies is the defect this repo exists to prevent.
+5. **Gate** — for anything that writes, pushes, sends or deletes: is it manual-only
+   on *every* tool, and does the body name the confirmation before the action?
+6. **Failure mode** — name the plausible wrong output and what in the body prevents
+   it. "It might be wrong" is not a failure mode; "it invents a citation" is.
+
+Then invoke it once for real. Shape passing the audit is not the same as a model
+reaching for it, and only a live invocation distinguishes them.
+
 ## Adapter shape
 
 What each loader requires. This lives here, not in `CLAUDE.md`, because it is

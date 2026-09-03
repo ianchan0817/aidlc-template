@@ -101,9 +101,16 @@ deletions from `aidlc/`.
 **Not expressible yet**, so expect to add your own gate: a published library (no
 `library` surface, no yank lever, no semver gate); a monorepo needing different
 release levers per surface (`release.*` are scalars); ML model quality
-(`eval.md` covers agent behavior, not accuracy regression or lineage); a fourth
-tool (methodology as prose, but no slash commands and **no command guard**); and
-languages outside the style adapters' thirteen extensions.
+(`eval.md` covers agent behavior, not accuracy regression or lineage); languages
+outside the style adapters' thirteen extensions; and **taking upstream fixes after
+you copy** — adoption hands you the whole tree, with no layer that stays identical
+to upstream, so an improvement here is a manual diff for you
+([`yc-software/qm`](https://github.com/yc-software/qm) answers this with a deploy-layer
+split, if you need it).
+
+A fourth tool costs less than it looks: `AGENTS.md` is a convention 20+ agents read
+([agents.md](https://agents.md)), and nested `AGENTS.md` files scope by directory,
+nearest winning. What a new tool lacks is slash commands and **the command guard**.
 
 ---
 

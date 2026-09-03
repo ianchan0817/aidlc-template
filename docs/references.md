@@ -113,6 +113,14 @@ The `skills/<name>/SKILL.md` layout all three tools load, and progressive
 disclosure — only name and description load at discovery, the body on
 activation. That is why a skill description is worth writing carefully.
 
+**[AGENTS.md convention](https://agents.md)**
+"Agents automatically read the nearest file in the directory tree, so the closest
+one takes precedence" — and 20+ agents read it. This corrected a claim in
+`AGENTS.md` itself, which said Codex has no path-scoped instruction rules: it has
+no *glob*-scoped rules, but nesting a file in a subdirectory is exactly how it
+scopes. Found by noticing that a large production repo routes with "follow the
+nearest scoped `AGENTS.md`", then checking the convention rather than the repo.
+
 ## Source of one specific file
 
 Losing these two links is how this file came to be rewritten: the ideas were
@@ -171,6 +179,38 @@ tool, where this template is a small methodology for three.
   Code / Cursor / Copilot / Codex and others. Source of the anti-rationalization
   framing, kept lightweight here. Direct comparison for anyone weighing this
   template against an off-the-shelf skill pack.
+
+- **[yc-software/qm](https://github.com/yc-software/qm)** — a multiplayer agent
+  harness whose `deploy/layers` split answers the one problem this template does
+  not: an adopter keeps core byte-identical to upstream and customises only in a
+  layer, so upstream fixes stay mergeable. Here, adoption hands you the whole tree
+  and improvements become a manual diff. Recorded as a limitation in `README.md`.
+- **[anthropics/claude-for-legal](https://github.com/anthropics/claude-for-legal)**
+  — Anthropic's own reference plugins, and the closest thing to a house style for
+  skills: skills are markdown plus `references/` files with no bundled
+  executables; a cold-start interview populates a profile file that every
+  downstream skill reads (the same shape as `project.yml`, arrived at
+  independently, and they report skipping it as the top cause of generic output);
+  and a skills-QA framework grades design parameters, failure modes and a trust
+  surface. That last one is why `CONTRIBUTING.md` now has a skill-review
+  checklist — nothing here reviewed the harness itself. **Caution:** its
+  `user-invocable` and `argument-hint` frontmatter are Claude-side fields, which
+  Codex ignores; verified against the Codex skill docs below.
+- **[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)**
+  — a foundation skill every other skill reads first for shared context, again the
+  `project.yml` shape independently. Its v2.0 consolidated 17 skills to remove
+  redundancy, which is the argument for command-count discipline rather than
+  another command.
+- **[mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill)** —
+  a single skill with a real test suite and per-host plugin manifests, treating
+  `SKILL.md` as the source of truth over its own README. Same rule as here. The
+  per-host manifest is a distribution mechanism this template does not use, and
+  would need if it were ever published to a marketplace.
+- **[shadcn-ui/ui](https://github.com/shadcn-ui/ui)** — "a distribution system for
+  code": anyone can publish a registry and install from it with the same CLI. The
+  transferable idea is a registry for skills and rules instead of copy-a-template,
+  which is the same gap `qm` attacks from the other side. Not adopted; noted
+  because it is the shape an answer would take.
 
 ## Vendor contracts — re-verify these at each harness review
 
@@ -231,5 +271,24 @@ live sources that were weighed and did not change a rule or a sensor.
 - **[Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview)**
   — a hosted-execution product. Its session, sandbox and event model is vendor-run
   infrastructure rather than a principle to copy into a repo-local harness.
+- **Product repos surveyed for transferable convention, yielding none.**
+  [dify](https://github.com/langgenius/dify) earned its place indirectly — its
+  root `AGENTS.md` routes with "follow the nearest scoped `AGENTS.md`", which is
+  what sent me to the convention above — but neither it nor
+  [supabase](https://github.com/supabase/supabase),
+  [openreplay](https://github.com/openreplay/openreplay),
+  [novu](https://github.com/novuhq/novu),
+  [formbricks](https://github.com/formbricks/formbricks),
+  [papermark](https://github.com/papermark/papermark) or
+  [CapSoftware/cap](https://github.com/CapSoftware/cap) publishes methodology a
+  different project could adopt. **Honest limit:** a GitHub landing page renders
+  file names, not contents, so for those six this is "not verifiable from a fetch",
+  not "verified absent". Cap's `CLAUDE.md` is one line pointing at `AGENTS.md`,
+  which is the pattern used here, independently.
+- **[getlago/lago](https://github.com/getlago/lago)** — documents event
+  idempotency by transaction id and atomic batch rejection. Checked against
+  `aidlc/rules/api-conventions.md`, which already requires idempotency on every
+  write, an `Idempotency-Key` on POST cached 24h, and bounded results. Nothing to
+  add; recorded so the next reader does not re-derive it.
 - **Anthropic's agent-security posts** — four were read and produced no new rule
   or sensor: `aidlc/rules/security.md` already covers the ground.

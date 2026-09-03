@@ -6,7 +6,7 @@ This file is loaded on **every session by every tool**, so it holds only what an
 
 ## Project shape — read first
 
-`project.yml` at the repo root declares `surfaces`, `stateful`, `multi_tenant`, `release`, and `verify`. Claude Code and Cursor load it through an always-on rule; **Codex has no path-scoped instruction rules, so read `project.yml` from here at session start.**
+`project.yml` at the repo root declares `surfaces`, `stateful`, `multi_tenant`, `release`, and `verify`. Claude Code and Cursor load it through an always-on rule; **Codex has no glob-scoped rule files — it scopes by directory instead, nearest `AGENTS.md` winning — so read `project.yml` from here at session start, and give a subtree that needs different rules its own nested `AGENTS.md`.**
 
 **The contract:** a gate whose surface or capability `project.yml` does not declare does not apply and needs no skip rationale; a gate it does declare cannot be skipped. Adapt by declaring, never by deleting — a deleted file dangles a reference and fails `scripts/audit.sh`. What each field switches, and the per-surface spellings: `docs/project-shapes.md`.
 

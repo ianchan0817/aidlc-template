@@ -28,6 +28,8 @@ The left column is what you see. The right column is never visible from it.
 | Upload rejected: encryption / export compliance outstanding | `ITSAppUsesNonExemptEncryption` missing from `Info.plist`. |
 | Upload rejected: duplicate build | Build number already used for that version string. |
 | Distribute succeeds but the build never appears | Processing takes 5–30 min, longer on a first submission. Wait before debugging. |
+| Rejected **Guideline 2.1 — Information Needed** on a first submission | The App Review Information → Notes field was empty. Not a defect finding: the reviewer is asking for context. Reply in the thread; no new build required. |
+| AdMob says "we couldn't verify" your app after the store listing is linked | `app-ads.txt`. Almost never the file's contents — usually there is no developer website URL on the store listing for Google to read a domain from, or that domain cannot serve a file at its root. |
 | Screenshot upload silently refuses a file | Wrong pixel dimensions (zero tolerance), or an alpha channel. Convert to RGB. |
 | `Undefined symbol` linking only in Debug, never Release | A static archive member is pulled in one configuration and dead-stripped in the other. The missing symbol is genuinely absent from the library in both. |
 
@@ -144,6 +146,35 @@ into a chat you don't control.
   *downward within* a device family, so an iPhone image cannot fill an iPad slot.
 - **Age rating, category, pricing** — cheap, and each blocks submission alone.
 
+## Gate 6 — App Review Information
+
+Apple issues **Guideline 2.1 — Information Needed** against practically every
+first submission whose Notes field is empty. It is not a defect report and needs
+no new build; it is answered in the review thread. Filling the field before the
+first submission removes an entire review round trip, measured in days.
+
+Answer all seven, even where the answer is "none" — an omitted item reads as
+unanswered:
+
+1. A screen recording from a **physical device** on the current OS, starting at
+   launch and walking the core flow. Include registration/login/deletion, any
+   purchase flow, user-generated content with its reporting and blocking
+   controls, and any permission prompt — or state explicitly that the app has
+   none of them.
+2. Device models and OS versions tested. Must be true of the **submitted
+   build**, not an earlier one.
+3. What the app does, who it is for, the problem it solves.
+4. How to set up and reach the main features; demo credentials if any.
+5. Every external service behind core functionality — data providers, auth,
+   payments, AI, ad networks.
+6. Regional differences, or an explicit statement that behaviour is identical
+   everywhere.
+7. Regulated-industry or third-party-material authorisation, or that neither
+   applies.
+
+Keep the answer in the Notes field permanently; it is re-read on every release,
+and a stale device list there is worse than none.
+
 ## Generated Xcode projects
 
 Applies to Godot, Unity, Unreal, Capacitor, Tauri — anything that emits the
@@ -208,6 +239,43 @@ Stricter than the general App Store, and the rules interact:
 - Interstitial frequency is a product decision with a review dimension: a
   full-screen ad a four-year-old cannot dismiss is both a retention cost and a
   rejection risk.
+
+## app-ads.txt, for ad-supported apps
+
+Not an App Store gate. It blocks nothing in review, and getting it wrong costs
+ad revenue rather than a rejection — unverified inventory is worth less because
+some buyers only bid on authorized inventory. Do it before launch, but do not
+let it hold up a submission.
+
+The chain has three links and the failure message names none of them:
+
+1. The **store listing** must carry a developer website URL. That is the only
+   place the ad network learns which domain to crawl.
+2. That domain must serve the file **at its root**, as `text/plain`, with no
+   BOM: the path is `/app-ads.txt` and nothing may sit in front of it.
+3. The file must contain the network's publisher line verbatim.
+
+Failures cluster on links 1 and 2 while the message points at 3. A listing with
+no developer URL, a URL whose host you cannot place a root file on, or a file
+behind a redirect that leaves the registrable domain all produce the same
+"details don't match".
+
+A private repository cannot serve it, and GitHub Pages needs a public repo. If
+the app has no website yet, this is the forcing function that creates one — and
+the same site can carry the Support and Privacy Policy URLs the store listing
+requires anyway, so build all three at once.
+
+Check it the way the crawler does, not by opening it in a browser:
+
+```bash
+SITE=...   # the developer URL from the store listing, scheme included
+curl -sSIL "$SITE/app-ads.txt" | grep -iE '^HTTP/|^content-type'
+curl -sSL  "$SITE/app-ads.txt"
+```
+
+Expect a final `200`, `content-type: text/plain`, and the publisher line. A
+`301` chain that ends on a different registrable domain fails even though a
+browser follows it happily.
 
 ## Order of operations
 
