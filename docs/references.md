@@ -29,7 +29,7 @@ session; they cost nothing until you open them.
 
 | Hub | What it is |
 |-----|------------|
-| [Anthropic — Engineering blog](https://www.anthropic.com/engineering) | Where most load-bearing entries below came from. ~25 posts as of the check date. |
+| [Anthropic — Engineering blog](https://www.anthropic.com/engineering) | Where most load-bearing entries below came from. ~27 posts on the index; new ones land at the top. |
 | [Claude — Developer platform docs](https://platform.claude.com/docs/en/home) | API, tools, agent SDK. Canonical for anything the API does. |
 | [Claude — Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) | Hosted agent harness: agent / environment / session / events. Vendor-run execution, so its session model is a product, not a portable principle — see the note under *Surveyed*. |
 | [Claude — Use cases](https://claude.com/resources/use-cases) | Filterable gallery, product-oriented. |
@@ -55,7 +55,6 @@ window, not as endorsement.
 - [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
 - [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system)
 - [Scaling Managed Agents: decoupling the brain from the hands](https://www.anthropic.com/engineering/managed-agents)
-- [How we contain Claude across products](https://www.anthropic.com/engineering/how-we-contain-claude)
 - [Claude Code auto mode: a safer way to skip permissions](https://www.anthropic.com/engineering/claude-code-auto-mode)
 - [Designing AI-resistant technical evaluations](https://www.anthropic.com/engineering/AI-resistant-technical-evaluations)
 - [Introducing advanced tool use](https://www.anthropic.com/engineering/advanced-tool-use)
@@ -107,6 +106,15 @@ reason methodology loads on demand and only two rules are unconditional.
 A tool's output is context spend: return high-signal text under an explicit
 budget, and write errors that name the cheaper next step. Implemented for the
 test sensor in `scripts/agent-test.sh`.
+
+**[Anthropic — How we contain Claude across products](https://www.anthropic.com/engineering/how-we-contain-claude)**
+Environment containment first, model-layer steering second: permission prompts
+suffer approval fatigue (~93% approve), so default-deny egress and a writable
+path allowlist are the real bound. Folded into `aidlc/rules/security.md`: defer
+project-local hook/settings parse until after folder trust; treat subagent output
+as untrusted like tool results; an egress allowlist is a *capability grant*
+(every function behind an allowed host is in scope); persistent agent state is
+the same privilege class as policy files.
 
 **[Agent Skills](https://agentskills.io)**
 The `skills/<name>/SKILL.md` layout all three tools load, and progressive
@@ -218,11 +226,14 @@ Adapter formats move, and a format change turns a pointer into a silent no-op.
 Each of these has already been wrong in this repo once.
 
 - **[Codex skills](https://learn.chatgpt.com/docs/build-skills)** — discovery is
-  `.agents/skills/<name>/SKILL.md`, and SKILL.md accepts only `name` and
-  `description`. `disable-model-invocation` is a Claude Code field that Codex
-  ignores silently, so a manual-only skill needs a sibling
-  `agents/openai.yaml` with `policy: allow_implicit_invocation: false` — without
-  it the model can invoke `/ship`, which pushes, unasked.
+  `.agents/skills/<name>/SKILL.md` scanned from the launch CWD up to the repo
+  root (nested scopes, not root-only). SKILL.md accepts only `name` and
+  `description`. The initial skills list is capped (~2% of context / 8k chars),
+  so descriptions get shortened under load — front-load trigger words.
+  `disable-model-invocation` is a Claude Code field that Codex ignores silently,
+  so a manual-only skill needs a sibling `agents/openai.yaml` with
+  `policy: allow_implicit_invocation: false` — without it the model can invoke
+  `/ship`, which pushes, unasked.
 - **[Codex hooks](https://learn.chatgpt.com/docs/hooks)** — `SessionStart.source`
   is one of `startup|resume|clear|compact` and `matcher` is a regex. Matching only
   `startup` skips the sessions whose context is stale or was just discarded.
@@ -245,6 +256,18 @@ Each of these has already been wrong in this repo once.
 - **[Anthropic — Eval awareness](https://www.anthropic.com/engineering/eval-awareness-browsecomp)**
   — an agent may satisfy a benchmark by recognising it and recovering the answer
   key instead of doing the task, and the tell is token cost rather than output.
+- **[Claude — Agent harness design: 3 patterns](https://claude.com/blog/harnessing-claudes-intelligence)**
+  — as models improve, re-ask "what can I stop doing": harness scaffolding that
+  compensated for an older model's weakness becomes dead weight that can
+  bottleneck a newer one (their example: context resets for "context anxiety"
+  became unnecessary under Opus 4.5). Reinforces progressive disclosure and
+  keeping adapters thin; no new sensor.
+- **[LangChain — The anatomy of an agent harness](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness)**
+  — companion definition to their Terminal Bench post above: Agent = Model +
+  Harness. Names the same pieces this template already has (filesystem state,
+  skills progressive disclosure, hooks for verification). Ralph-loop
+  continuation is their spelling of a Stop/completion gate reinjecting the
+  goal; already covered by session lifecycle + review. No design change.
 - **[Codex custom review rules](https://learn.chatgpt.com/blog/custom-code-review-rules-for-codex)**
   — a prose rule is itself testable: one diff that must trip it, one near-miss
   that must not, one unrelated diff that must stay silent. Their own suite put
@@ -291,4 +314,21 @@ live sources that were weighed and did not change a rule or a sensor.
   write, an `Idempotency-Key` on POST cached 24h, and bounded results. Nothing to
   add; recorded so the next reader does not re-derive it.
 - **Anthropic's agent-security posts** — four were read and produced no new rule
-  or sensor: `aidlc/rules/security.md` already covers the ground.
+  or sensor: `aidlc/rules/security.md` already covers the ground. *(Superseded
+  in part by [How we contain Claude](https://www.anthropic.com/engineering/how-we-contain-claude),
+  which did change the rule.)*
+- **[Anthropic — An update on recent Claude Code quality reports](https://www.anthropic.com/engineering/april-23-postmortem)**
+  — three product-layer regressions (default effort, thinking-cache clear bug,
+  verbosity length caps in the system prompt). Reinforces what
+  `aidlc/construction/eval.md` already requires: ablating prompt/harness changes
+  and gating them on a regression suite. No portable rule beyond that.
+- **Peer churn since the last study (track, don't copy).**
+  [awslabs/aidlc-workflows](https://github.com/awslabs/aidlc-workflows) 2.9 adds
+  commit-provenance attest and intent archive — product-specific; the three-phase
+  lifecycle divergence recorded above still holds.
+  [garrytan/gstack](https://github.com/garrytan/gstack),
+  [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills),
+  [yc-software/qm](https://github.com/yc-software/qm),
+  [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) keep
+  shipping skill/product fixes; none published a transferable methodology delta
+  that changes a rule or sensor here.
