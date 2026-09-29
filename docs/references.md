@@ -52,7 +52,6 @@ window, not as endorsement.
 - [Beyond permission prompts: Claude Code sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing)
 - [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
 - [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp)
-- [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
 - [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system)
 - [Scaling Managed Agents: decoupling the brain from the hands](https://www.anthropic.com/engineering/managed-agents)
 - [Claude Code auto mode: a safer way to skip permissions](https://www.anthropic.com/engineering/claude-code-auto-mode)
@@ -120,6 +119,24 @@ the same privilege class as policy files.
 The `skills/<name>/SKILL.md` layout all three tools load, and progressive
 disclosure — only name and description load at discovery, the body on
 activation. That is why a skill description is worth writing carefully.
+
+**[Anthropic — Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)**
+The workflow/agent distinction and the pattern catalog behind
+`docs/agent-patterns.md`: a workflow runs "LLMs and tools orchestrated through
+predefined code paths", an agent is a system where "LLMs dynamically direct their
+own processes and tool usage", and agentic systems "often trade latency and cost
+for better task performance" — so add complexity "only when it demonstrably
+improves outcomes". Two things it changed here: `aidlc/construction/eval.md` now
+puts the architecture choice before the measurement, and
+`aidlc/rules/api-conventions.md` treats an agent tool as an interface owing
+documentation, an output budget and poka-yoke, on the argument that a tool fix
+helps every call where a prompt fix helps one path. It also names this template's
+own shape — engineer proposes, reviewer grades in a fresh context against a
+blocking threshold — as **evaluator-optimizer**, which is worth knowing before
+building a second copy of it inside a product. **Dated in part, by its own
+admission:** the post carries a note that much of its tooling landscape has
+changed since it was written, so the patterns and the cost argument travel and the
+framework advice does not.
 
 **[AGENTS.md convention](https://agents.md)**
 "Agents automatically read the nearest file in the directory tree, so the closest

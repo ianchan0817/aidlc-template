@@ -4,6 +4,8 @@ Phase: Construction. **Automated evaluation** for AI/agent behavior — distinct
 
 Use when the product includes tools, prompts, multi-turn flows, or autonomous loops. Task format: `aidlc/examples/eval-suite.md`.
 
+**Shape before measurement.** Take the cheapest pattern that works, add autonomy only when an eval shows it beating the fixed version, and bound every self-directing loop: `docs/agent-patterns.md`.
+
 ## Vocabulary
 - **Task** — one test with defined inputs and success criteria.
 - **Trial** — one run of a task; multiple trials when outputs vary.
@@ -15,13 +17,13 @@ Use when the product includes tools, prompts, multi-turn flows, or autonomous lo
 - **Model-based** — rubric / LLM-as-judge. Calibrate against humans; allow "unknown" on insufficient evidence.
 - **Human** — spot-checks and calibration for subjective or high-stakes behavior.
 
-Grade **outcomes and artifacts** before process. Avoid brittle "must call tool X then Y" checks unless compliance or safety requires that path. For multi-part tasks, include partial credit so evals distinguish near misses from total failures.
+Grade **outcomes and artifacts** before process; avoid "must call tool X then Y" unless compliance or safety requires that path. Give multi-part tasks partial credit, so a near miss is distinguishable from total failure.
 
 ## Suites
 - **Capability** — tasks the agent should struggle with (<100% pass; hill to climb).
 - **Regression** — must stay green (~100%); run on every harness/prompt change.
 
-**Injection resistance.** Hold fixture repo files, documents, and tool outputs carrying embedded instructions; grade the action taken — did it call an unrequested tool, fetch an attacker-supplied URL, move data — not whether the text looked suspicious. Run before any release that changes tools or prompts.
+**Injection resistance.** Fixtures — repo files, documents, tool outputs — carrying embedded instructions; grade the action taken (unrequested tool call, attacker URL fetched, data moved), not whether the text looked suspicious. Run before any release that changes tools or prompts.
 
 Graduate stable capability tasks to regression. Watch **eval saturation** (all tasks pass → suite no longer differentiates).
 

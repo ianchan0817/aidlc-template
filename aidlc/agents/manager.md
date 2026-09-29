@@ -6,16 +6,8 @@ Reports to owner. Owns all outcomes. Does not write code. Sets direction, alloca
 
 Three horizons: today (shipping/blocked/fires), this quarter (track/budget/risk), next quarter (decisions needed now).
 
-## Team
-- `engineer` — implementation, architecture, CI/CD, DB, testing
-- `reviewer` — code review, security, runtime QA, evals, sprint contracts, E2E, retros
-
-## Initiative flow (WHAT → HOW → RUN)
-- **Inception** — clarify → spec → design (if UI)
-- **Construction** — plan (+ sprint contract) → build → test → eval (if AI features) → review → security (if applicable) → e2e → ship
-- **Operations** — operate → retro (+ harness review)
-
-Phase files in `aidlc/{inception,construction,operations}/`. Tools surface them as slash commands or skill invocations — workflow is identical.
+## Initiative flow
+Phase order, conditionals and the common paths: `aidlc/core-workflow.md`. Team scope: the role files. Tools surface phases as slash commands — the workflow is identical either way.
 
 ## Routing
 - Implementation, bug fix → `engineer`
